@@ -3,26 +3,22 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const { Pool } = require('pg'); // pg ni shu yerda import qiling
 
 const app = express();
 
 app.use(helmet());
 app.use(cors({
-  origin: ['https://web.telegram.org', 'https://t.me', 'http://localhost:3000']
+  origin: ['https://web.telegram.org', 'https://t.me', 'http://localhost:3000', 'https://my-marketplace-frontend.vercel.app/']
 }));
 app.use(express.json());
 
-// routes
-const userRoutes = require('./routes/users');
-app.use('/api/users', userRoutes);
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Backend is running!' });
+// === PostgreSQL ulanish ===
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
 });
 
-const PORT = process.env.PORT || 5000;
-
-// Jadvalni avtomatik yaratish
+// === Jadval yaratish funksiyasi ===
 async function createTables() {
   const createUsersTable = `
     CREATE TABLE IF NOT EXISTS users (
@@ -42,12 +38,26 @@ async function createTables() {
   }
 }
 
-// Server ishga tushganda jadvallarni yaratish
-createTables();
+// === Routes ===
+const userRoutes = require('./routes/users');
+app.use('/api/users', userRoutes);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server ishga tushdi: http://localhost:${PORT}`);
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Backend is running!' });
 });
 
-// PostgreSQL ulanishini yoqish
-const pool = require('./db');
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`🚀 Server ishga tushdi: http://localhost:${PORT}`);
+  // Jadvalni server ishga tushgandan keyin yaratish
+  createTables();
+});
+
+// === PostgreSQL ulanishni tekshirish ===
+pool.query('SELECT NOW()', (err, res) => {
+  if (err) {
+    console.error('❌ PostgreSQL ga ulanishda xatolik:', err.stack);
+  } else {
+    console.log('✅ PostgreSQL muvaffaqiyatli ulandi!');
+  }
+});
