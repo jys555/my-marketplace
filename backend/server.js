@@ -12,7 +12,8 @@ app.use(cors({
     'https://t.me',
     'http://localhost:3000',
     'https://my-marketplace-frontend.vercel.app'
-  ]
+  ],
+  credentials: true
 }));
 app.use(express.json());
 
