@@ -21,6 +21,30 @@ app.get('/api/health', (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
+
+// Jadvalni avtomatik yaratish
+async function createTables() {
+  const createUsersTable = `
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      telegram_id BIGINT UNIQUE NOT NULL,
+      first_name VARCHAR(100),
+      last_name VARCHAR(100),
+      phone VARCHAR(20),
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `;
+  try {
+    await pool.query(createUsersTable);
+    console.log('✅ Jadval(lar) tayyor.');
+  } catch (err) {
+    console.error('❌ Jadval yaratishda xatolik:', err);
+  }
+}
+
+// Server ishga tushganda jadvallarni yaratish
+createTables();
+
 app.listen(PORT, () => {
   console.log(`🚀 Server ishga tushdi: http://localhost:${PORT}`);
 });
