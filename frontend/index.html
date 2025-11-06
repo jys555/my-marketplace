@@ -2,88 +2,48 @@
 <html lang="uz">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>My Market</title>
-  <!-- Telegram WebApp skripti -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Amazing Store</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f5f5f5;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      background: #0088cc;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover { background: #006699; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h2>🛒 My Marketplace</h2>
-    <div id="status">Ma'lumotlar yuklanmoqda...</div>
+  <!-- Yuklanayotgan... -->
+  <div id="loading">Ma'lumotlar yuklanmoqda...</div>
+
+  <!-- Asosiy sahifa (barcha sahifalar shu yerda o'zgaradi) -->
+  <div id="main" class="hidden"></div>
+
+  <!-- Ro'yxatdan o'tish modal -->
+  <div id="registerModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Profilingizni to'ldiring</h3>
+      <input type="text" id="firstName" placeholder="Ism" required>
+      <input type="text" id="lastName" placeholder="Familiya">
+      
+      <div class="phone-input">
+        <select id="countryCode">
+          <option value="+998">🇺🇿 +998</option>
+          <option value="+7">🇷🇺 +7</option>
+          <option value="+1">🇺🇸 +1</option>
+        </select>
+        <input type="tel" id="phone" placeholder="90 123 45 67" required>
+      </div>
+
+      <button onclick="registerUser()">Saqlash</button>
+      <button onclick="closeModal()">Bekor qilish</button>
+    </div>
   </div>
 
-  <script>
-    // Telegram foydalanuvchi ma'lumotlarini olish
-    const WebApp = window.Telegram.WebApp;
-    const user = WebApp.initDataUnsafe?.user;
+  <!-- Doimiy navigatsiya paneli -->
+  <nav id="navbar" class="navbar hidden">
+    <button onclick="showPage('home')" class="active">🏠</button>
+    <button onclick="showPage('catalog')">🛍️</button>
+    <button onclick="requireRegistration(() => showPage('favorites'))">❤️</button>
+    <button onclick="requireRegistration(() => showPage('cart'))">🛒</button>
+    <button onclick="showPage('profile')">👤</button>
+  </nav>
 
-    const statusDiv = document.getElementById('status');
-
-    if (!user) {
-      statusDiv.innerHTML = '⚠️ Telegram ichida ochilmadi.';
-    } else {
-      statusDiv.innerHTML = `Salom, <b>${user.first_name}</b>!`;
-      statusDiv.innerHTML += '<br><button onclick="askPhone()">Telefon raqamingizni kiriting</button>';
-    }
-
-    async function askPhone() {
-      const phone = prompt('Telefon raqamingizni kiriting (masalan: +998901234567):');
-      if (!phone) return;
-
-      statusDiv.innerHTML = 'Ma\'lumotlar saqlanmoqda...';
-
-      try {
-        // ⚠️ BU YERDA O'Z BACKEND MANZILINGIZNI QO'YING!
-        const backendUrl = 'https://my-marketplace-production.up.railway.app';
-
-        const response = await fetch(`${backendUrl}/api/users`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            telegram_id: user.id,
-            first_name: user.first_name,
-            last_name: user.last_name || '',
-            phone: phone
-          }),
-          credentials: 'include'
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-          statusDiv.innerHTML = `✅ Muvaffaqiyatli saqlandi!<br>Salom, ${data.first_name}!`;
-          WebApp.close();
-        } else {
-          throw new Error(data.error || 'Xatolik');
-        }
-      } catch (err) {
-        statusDiv.innerHTML = `❌ Xatolik: ${err.message}`;
-      }
-    }
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
