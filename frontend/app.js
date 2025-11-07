@@ -142,25 +142,27 @@ function updateCarousel() {
 }
 
 // Tovarlar ro'yxati
-function loadProducts() {
-  // Keyinchalik backenddan olinadi
-  const mockProducts = [
-    { id: 1, name: "Kapyushonli kurtka", image: "https://via.placeholder.com/150x200", salePrice: "119000", originalPrice: "149000" },
-    { id: 2, name: "PowerBank 10000mAh", image: "https://via.placeholder.com/150x200", salePrice: "156600", originalPrice: "180000" },
-    { id: 3, name: "Quloqchin Bluetooth", image: "https://via.placeholder.com/150x200", salePrice: "99000", originalPrice: "120000" },
-    { id: 4, name: "Baqirg'ich shisha", image: "https://via.placeholder.com/150x200", salePrice: "45000", originalPrice: "55000" }
-  ];
+async function loadProducts() {
+  try {
+    const res = await fetch(`${backendUrl}/api/products`);
+    const products = await res.json();
+    
+    const productsHtml = products.map(p => `
+      <div class="product-card" onclick="requireRegistration(() => viewProduct(${p.id}))">
+        <img src="${p.image}" alt="${p.name}">
+        <div class="like-btn" onclick="event.stopPropagation(); requireRegistration(() => toggleLike(${p.id}))">♡</div>
+        <h4>${p.name}</h4>
+        <p>
+          <span class="price">${p.display_price} so'm</span>
+          ${p.sale_price ? `<span class="old-price">${p.price} so'm</span>` : ''}
+        </p>
+      </div>
+    `).join('');
 
-  const productsHtml = mockProducts.map(p => `
-    <div class="product-card" onclick="requireRegistration(() => viewProduct(${p.id}))">
-      <img src="${p.image}" alt="${p.name}">
-      <div class="like-btn" onclick="event.stopPropagation(); requireRegistration(() => toggleLike(${p.id}))">♡</div>
-      <h4>${p.name}</h4>
-      <p><span class="price">${p.salePrice} so'm</span> <span class="old-price">${p.originalPrice} so'm</span></p>
-    </div>
-  `).join('');
-
-  document.getElementById('products').innerHTML = productsHtml;
+    document.getElementById('products').innerHTML = productsHtml;
+  } catch (err) {
+    document.getElementById('products').innerHTML = '<p>❌ Tovarlar yuklanmadi</p>';
+  }
 }
 
 // Actiondan keyin modal ochish
