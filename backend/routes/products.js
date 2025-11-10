@@ -25,13 +25,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// namuna products
-INSERT INTO products (name, description, price, sale_price, image_url) VALUES
-('Kapyushonli erkaklar kurtasi', 'Qishki issiq kurtka', 149000.00, 119000.00, 'https://via.placeholder.com/150x200/4a90e2/ffffff?text=Kurtka'),
-('PowerBank 10000mAh', 'Portativ zaryadlovchi', 180000.00, 156600.00, 'https://via.placeholder.com/150x200/50c878/ffffff?text=PowerBank'),
-('Quloqchin Bluetooth', 'Bekor qilishli mikrofonli', 120000.00, 99000.00, 'https://via.placeholder.com/150x200/ff6f61/ffffff?text=Quloqchin'),
-('Baqirg‘ich shisha', 'Issiq va sovuq ichimliklar uchun', 55000.00, 45000.00, 'https://via.placeholder.com/150x200/9b59b6/ffffff?text=Shisha');
-
 // GET /api/products/:id — bitta tovar
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
