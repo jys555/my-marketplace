@@ -19,28 +19,27 @@ async function checkRegistration() {
     const res = await fetch(`${backendUrl}/api/users/check/${user.id}`);
     const data = await res.json();
     isRegistered = data.exists;
-    
-    if (isRegistered) {
-      showPage('home');
-    } else {
-      showGuestHome();
-    }
+    showHome(); // Bitta asosiy sahifa
   } catch (err) {
     console.error("Xatolik:", err);
     document.getElementById('loading').innerText = '⚠️ Server bilan aloqada xatolik.';
   }
 }
 
-// Guest rejimda asosiy sahifa
-function showGuestHome() {
+// Bitta asosiy sahifa — guest ham, ro'yxatdan o'tgan ham shu ko'rinishda
+function showHome() {
   document.getElementById('loading').classList.add('hidden');
   document.getElementById('main').classList.remove('hidden');
   document.getElementById('navbar').classList.remove('hidden');
 
+  // Foydalanuvchi ismini ko'rsatish (agar ro'yxatdan o'tgan bo'lsa)
+  const displayName = isRegistered ? user.first_name : 'Mehmon';
+
   document.getElementById('main').innerHTML = `
     <header class="header">
       <div class="logo">🛒 Amazing Store</div>
-      <input type="text" placeholder="Mahsulotlarni toping..." disabled>
+      <div class="user-greeting">Salom, <strong>${displayName}</strong>!</div>
+      <input type="text" placeholder="Mahsulotlarni toping..." ${isRegistered ? '' : 'disabled'}>
       <button id="location">Buyerdan olib ketish mumkin</button>
     </header>
 
@@ -54,14 +53,28 @@ function showGuestHome() {
     <div class="products-grid" id="products"></div>
   `;
 
+  // Har doim navigatsiya belgilangan bo'lsin
+  document.querySelectorAll('.navbar button').forEach(btn => btn.classList.remove('active'));
+  document.querySelector('.navbar button').classList.add('active'); // Home aktiv
+
   initCarousel();
   loadProducts();
+
+  // Lokatsiya tugmasi
+  document.getElementById('location')?.addEventListener('click', () => {
+    WebApp.openTelegramLink('https://t.me/nearby');
+  });
 }
 
-// Ro'yxatdan o'tgan foydalanuvchi uchun asosiy sahifa
+// Navigatsiya — boshqa sahifalar
 function showPage(pageName) {
   if (!isRegistered && pageName !== 'home') {
     requireRegistration(() => showPage(pageName));
+    return;
+  }
+
+  if (pageName === 'home') {
+    showHome();
     return;
   }
 
@@ -70,40 +83,23 @@ function showPage(pageName) {
   document.getElementById('navbar').classList.remove('hidden');
 
   let content = '';
-  if (pageName === 'home') {
-    content = `
-      <header class="header">
-        <div class="logo">🛒 Amazing Store</div>
-        <input type="text" placeholder="Mahsulotlarni toping...">
-        <button id="location">Buyerdan olib ketish mumkin</button>
-      </header>
-
-      <div class="carousel" id="carousel">
-        <img src="https://via.placeholder.com/375x150/4a90e2/ffffff?text=Banner+1" class="slide active">
-        <img src="https://via.placeholder.com/375x150/50c878/ffffff?text=Banner+2" class="slide">
-        <img src="https://via.placeholder.com/375x150/ff6f61/ffffff?text=Banner+3" class="slide">
-      </div>
-
-      <h3>🔥 Mashhur tovarlar</h3>
-      <div class="products-grid" id="products"></div>
-    `;
-    initCarousel();
-    loadProducts();
-  } else if (pageName === 'profile') {
+  if (pageName === 'profile') {
     content = `<h2>👤 Profilim</h2><p>Salom, ${user.first_name}!</p>`;
   } else {
-    content = `<h2>${pageName}</h2><p>Sahifa hali tayyor emas.</p>`;
+    content = `<h2>${pageName} sahifasi hali tayyor emas.</h2>`;
   }
 
   document.getElementById('main').innerHTML = content;
 
   // Navigatsiyani yangilash
   document.querySelectorAll('.navbar button').forEach(btn => btn.classList.remove('active'));
-  const activeBtn = [...document.querySelectorAll('.navbar button')].find(btn => 
-    btn.innerHTML.includes(pageName === 'home' ? '🏠' : 
+  const activeBtn = [...document.querySelectorAll('.navbar button')].find(btn =>
+    btn.innerHTML.includes(
+      pageName === 'home' ? '🏠' :
       pageName === 'catalog' ? '🛍️' :
       pageName === 'favorites' ? '❤️' :
-      pageName === 'cart' ? '🛒' : '👤')
+      pageName === 'cart' ? '🛒' : '👤'
+    )
   );
   activeBtn?.classList.add('active');
 }
@@ -122,6 +118,8 @@ function initCarousel() {
 
   // Surish (touch)
   const carousel = document.getElementById('carousel');
+  if (!carousel) return; // Agar element yo'q bo'lsa — xavfsizlik
+
   carousel.addEventListener('touchstart', e => startX = e.touches[0].clientX);
   carousel.addEventListener('touchend', e => {
     const endX = e.changedTouches[0].clientX;
@@ -165,13 +163,12 @@ async function loadProducts() {
   }
 }
 
-// Actiondan keyin modal ochish
+// Harakatdan keyin ro'yxatdan o'tish
 function requireRegistration(callback) {
   if (isRegistered) {
     callback();
   } else {
     openModal();
-    // Callbackni saqlash (modal yopilganda ishlatish uchun)
     window.pendingAction = callback;
   }
 }
@@ -218,6 +215,8 @@ async function registerUser() {
         window.pendingAction();
         delete window.pendingAction;
       }
+      // Ro'yxatdan keyin yana asosiy sahifaga qaytish
+      showHome();
     } else {
       throw new Error("Saqlashda xatolik");
     }
@@ -226,9 +225,10 @@ async function registerUser() {
   }
 }
 
-// Lokatsiya (Telegram orqali)
-document.addEventListener('click', (e) => {
-  if (e.target.id === 'location') {
-    WebApp.openTelegramLink('https://t.me/nearby');
-  }
-});
+// `viewProduct` va `toggleLike` funksiyalari (hali to'ldirilmagan)
+function viewProduct(id) {
+  alert(`Tovar #${id} tafsiloti hali tayyor emas.`);
+}
+function toggleLike(id) {
+  alert(`Tovar #${id} sevimlilarga qo'shildi.`);
+}
