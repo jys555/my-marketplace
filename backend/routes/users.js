@@ -7,7 +7,6 @@ const router = express.Router();
 router.post('/', async (req, res) => {
   const { telegram_id, first_name, last_name, phone } = req.body;
 
-  // Majburiy maydonlarni tekshirish
   if (!telegram_id) {
     return res.status(400).json({ error: 'telegram_id majburiy' });
   }
@@ -27,6 +26,21 @@ router.post('/', async (req, res) => {
     const result = await pool.query(query, values);
 
     res.status(200).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server xatosi' });
+  }
+});
+
+// GET /api/users/check/:telegram_id — foydalanuvchi mavjudligini tekshirish
+router.get('/check/:telegram_id', async (req, res) => {
+  const { telegram_id } = req.params;
+  try {
+    const result = await pool.query(
+      'SELECT 1 FROM users WHERE telegram_id = $1',
+      [telegram_id]
+    );
+    res.json({ exists: result.rows.length > 0 });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server xatosi' });
