@@ -22,7 +22,12 @@ router.post('/', async (req, res) => {
         phone = EXCLUDED.phone
       RETURNING *;
     `;
-    const values = [telegram_id, first_name || null, last_name || null, phone || null];
+    const values = [
+      telegram_id,
+      first_name || null,
+      last_name || null,
+      phone || null
+    ];
     const result = await pool.query(query, values);
 
     res.status(200).json(result.rows[0]);
@@ -32,15 +37,38 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /api/users/check/:telegram_id — foydalanuvchi mavjudligini tekshirish
+// GET /api/users/:telegram_id — foydalanuvchi ma'lumotlarini olish
+router.get('/:telegram_id', async (req, res) => {
+  const { telegram_id } = req.params;
+  try {
+    const result = await pool.query(
+      'SELECT telegram_id, first_name, last_name, phone FROM users WHERE telegram_id = $1',
+      [telegram_id]
+    );
+    if (result.rows.length > 0) {
+      res.json(result.rows[0]);
+    } else {
+      res.status(404).json({ error: 'Foydalanuvchi topilmadi' });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server xatosi' });
+  }
+});
+
+// GET /api/users/check/:telegram_id — foydalanuvchi mavjudligi
 router.get('/check/:telegram_id', async (req, res) => {
   const { telegram_id } = req.params;
   try {
     const result = await pool.query(
-      'SELECT 1 FROM users WHERE telegram_id = $1',
+      'SELECT id FROM users WHERE telegram_id = $1',
       [telegram_id]
     );
-    res.json({ exists: result.rows.length > 0 });
+    if (result.rows.length > 0) {
+      res.json({ exists: true });
+    } else {
+      res.json({ exists: false });
+    }
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server xatosi' });
