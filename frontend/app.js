@@ -217,11 +217,10 @@ function getHomeContent() {
 
 // Profil sahifasi kontenti
 function getProfileContent() {
-    const { first_name = '', last_name = '', phone = '' } = currentUserData;
+    const { first_name = '', last_name = '', phone = '', username = '' } = currentUserData;
     const phoneParts = { code: '+998', number: '' };
     if (phone.startsWith('+998')) {
         phoneParts.code = '+998';
-        phoneParts.number = phone.slice(4);
     }
 
     return `
