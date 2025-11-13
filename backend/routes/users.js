@@ -5,28 +5,31 @@ const router = express.Router();
 
 // POST /api/users — foydalanuvchini yaratish/yangilash
 router.post('/', async (req, res) => {
-  const { telegram_id, first_name, last_name, phone } = req.body;
+  const { telegram_id, username, first_name, last_name, phone } = req.body;
 
-  if (!telegram_id) {
-    return res.status(400).json({ error: 'telegram_id majburiy' });
+  // first_name, last_name, phone majburiy
+  if (!telegram_id || !first_name || !last_name || !phone) {
+    return res.status(400).json({ error: 'Ism, familiya va telefon raqami majburiy!' });
   }
 
   try {
     const query = `
-      INSERT INTO users (telegram_id, first_name, last_name, phone)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO users (telegram_id, first_name, last_name, username, phone)
+      VALUES ($1, $2, $3, $4, $5)
       ON CONFLICT (telegram_id)
       DO UPDATE SET
         first_name = EXCLUDED.first_name,
         last_name = EXCLUDED.last_name,
+        username = EXCLUDED.username,
         phone = EXCLUDED.phone
       RETURNING *;
     `;
     const values = [
       telegram_id,
-      first_name || null,
-      last_name || null,
-      phone || null
+      first_name,
+      last_name,
+      username || null,
+      phone
     ];
     const result = await pool.query(query, values);
 
@@ -42,7 +45,7 @@ router.get('/:telegram_id', async (req, res) => {
   const { telegram_id } = req.params;
   try {
     const result = await pool.query(
-      'SELECT telegram_id, first_name, last_name, phone FROM users WHERE telegram_id = $1',
+      'SELECT telegram_id, first_name, last_name, phone, username FROM users WHERE telegram_id = $1',
       [telegram_id]
     );
     if (result.rows.length > 0) {
@@ -68,6 +71,30 @@ router.get('/check/:telegram_id', async (req, res) => {
       res.json({ exists: true });
     } else {
       res.json({ exists: false });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server xatosi' });
+  }
+});
+
+router.put('/:telegram_id', async (req, res) => {
+  const { telegram_id } = req.params;
+  const { first_name, last_name, phone } = req.body;
+
+  if (!first_name || !last_name || !phone) {
+    return res.status(400).json({ error: 'Ism, familiya va raqam majburiy!' });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE users SET first_name = $1, last_name = $2, phone = $3 WHERE telegram_id = $4 RETURNING telegram_id, first_name, last_name, phone, username`,
+      [first_name, last_name, phone, telegram_id]
+    );
+    if (result.rows.length > 0) {
+      res.json(result.rows[0]);
+    } else {
+      res.status(404).json({ error: 'Foydalanuvchi topilmadi' });
     }
   } catch (err) {
     console.error(err);
