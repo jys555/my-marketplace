@@ -219,17 +219,9 @@ function getHomeContent() {
 function getProfileContent() {
     const { first_name = '', last_name = '', phone = '' } = currentUserData;
     const phoneParts = { code: '+998', number: '' };
-    if (phone) {
-        if (phone.startsWith('+7')) {
-            phoneParts.code = '+7';
-            phoneParts.number = phone.substring(2);
-        } else if (phone.startsWith('+1')) {
-            phoneParts.code = '+1';
-            phoneParts.number = phone.substring(2);
-        } else {
-            phoneParts.code = '+998';
-            phoneParts.number = phone.startsWith('+998') ? phone.substring(4) : phone;
-        }
+    if (phone.startsWith('+998')) {
+        phoneParts.code = '+998';
+        phoneParts.number = phone.slice(4);
     }
 
     return `
@@ -257,6 +249,10 @@ function getProfileContent() {
                         </select>
                         <input type="tel" id="phone" value="${phoneParts.number}" placeholder="${t('phone_placeholder')}" disabled>
                     </div>
+                </div>
+                <div class="form-group">
+                    <label>Telegram username</label>
+                    <input type="text" value="${username ? '@' + username : '-'}" disabled>
                 </div>
                 <button type="button" id="edit-profile-btn">${t('edit_button')}</button>
             </form>
@@ -436,8 +432,6 @@ function openModal() {
       <div class="phone-input">
         <select id="regCountryCode">
           <option value="+998">🇺🇿 +998</option>
-          <option value="+7">🇷🇺 +7</option>
-          <option value="+1">🇺🇸 +1</option>
         </select>
         <input type="tel" id="regPhone" placeholder="${t('phone_placeholder')}" required>
       </div>
