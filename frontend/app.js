@@ -1,4 +1,3 @@
-// ... existing code ...
 // Backend URL (Railway)
 const backendUrl = 'https://my-marketplace-production.up.railway.app';
 
@@ -38,7 +37,7 @@ const translations = {
     profile_info: "Shaxsiy ma'lumotlar",
     profile_language: "Ilova tili",
     edit_button: "Tahrirlash",
-    please_fill_fields: "Iltimos, ism va telefon raqamini to'ldiring.",
+    please_fill_fields: "Iltimos, ism va 9 xonali telefon raqamini to'ldiring.",
     profile_saved: "✅ Profilingiz muvaffaqiyatli saqlandi!",
     error_saving: "Saqlashda xatolik",
     page_not_ready: "{pageName} sahifasi hali tayyor emas.",
@@ -71,7 +70,7 @@ const translations = {
     profile_info: "Личные данные",
     profile_language: "Язык приложения",
     edit_button: "Редактировать",
-    please_fill_fields: "Пожалуйста, введите имя и номер телефона.",
+    please_fill_fields: "Пожалуйста, введите имя и 9-значный номер телефона.",
     profile_saved: "✅ Ваш профиль успешно сохранен!",
     error_saving: "Ошибка сохранения",
     page_not_ready: "Страница {pageName} еще не готова.",
@@ -102,7 +101,6 @@ function t(key, params = {}) {
   return text;
 }
 
-// Dastlabki tekshirish
 document.addEventListener('DOMContentLoaded', () => {
   if (!user) {
     document.getElementById('loading').innerText = t('error_telegram');
@@ -111,7 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Server orqali ro'yxatdan o'tganligini tekshirish
 async function checkRegistration() {
   try {
     const res = await fetch(`${backendUrl}/api/users/check/${user.id}`);
@@ -119,11 +116,30 @@ async function checkRegistration() {
     const data = await res.json();
     isRegistered = data.exists;
     if (isRegistered) {
-        // Agar user ro'yxatdan o'tgan bo'lsa, uning ma'lumotlarini olamiz
         const userRes = await fetch(`${backendUrl}/api/users/${user.id}`);
         currentUserData = await userRes.json();
+
+        // Foydalanuvchi Telegramda username'ni o'zgartirganini tekshirish
+        if (user.username && currentUserData.username !== user.username) {
+            // Serverdagi ma'lumotni yangilash
+            const updateRes = await fetch(`${backendUrl}/api/users`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    telegram_id: user.id,
+                    username: user.username,
+                    // Mavjud ma'lumotlarni o'zgarishsiz qoldirish uchun qayta yuboramiz
+                    first_name: currentUserData.first_name,
+                    last_name: currentUserData.last_name,
+                    phone: currentUserData.phone
+                })
+            });
+            if (updateRes.ok) {
+                currentUserData = await updateRes.json(); // Yangilangan ma'lumotni olish
+            }
+        }
     }
-    rerenderCurrentPage(); // Bosh sahifani yoki joriy sahifani yangilash
+    rerenderCurrentPage();
   } catch (err) {
     console.error("Xatolik:", err);
     document.getElementById('loading').innerText = t('error_server');
@@ -132,7 +148,7 @@ async function checkRegistration() {
 
 function rerenderCurrentPage() {
     const activeBtn = document.querySelector('.navbar button.active');
-    let page = 'home'; // default
+    let page = 'home';
     if (activeBtn) {
         const pageName = activeBtn.getAttribute('onclick').match(/showPage\('(\w+)'\)/);
         if (pageName && pageName[1]) {
@@ -142,10 +158,7 @@ function rerenderCurrentPage() {
     showPage(page);
 }
 
-
-// Sahifalarni ko'rsatish
 function showPage(pageName) {
-  // Ro'yxatdan o'tish kerak bo'lgan sahifalar
   const protectedPages = ['profile', 'favorites', 'cart'];
   if (protectedPages.includes(pageName) && !isRegistered) {
     requireRegistration(() => showPage(pageName));
@@ -171,12 +184,11 @@ function showPage(pageName) {
   }
   main.innerHTML = content;
 
-  // Event listenerlarni qayta bog'lash
   if (pageName === 'home') {
     initCarousel();
     loadProducts();
     document.getElementById('location')?.addEventListener('click', () => {
-      WebApp.openTelegramLink('https://t.me/uzrailway_bot'); // Misol uchun
+      WebApp.openTelegramLink('https://t.me/uzrailway_bot');
     });
   } else if (pageName === 'profile') {
       document.getElementById('edit-profile-btn')?.addEventListener('click', toggleProfileEdit);
@@ -195,7 +207,6 @@ function updateNavbar(pageName) {
     activeBtn?.classList.add('active');
 }
 
-// Asosiy sahifa kontenti
 function getHomeContent() {
   const displayName = isRegistered ? (currentUserData.first_name || user.first_name) : t('guest');
   return `
@@ -215,13 +226,9 @@ function getHomeContent() {
   `;
 }
 
-// Profil sahifasi kontenti
 function getProfileContent() {
-    const { first_name = '', last_name = '', phone = '', username = '' } = currentUserData;
-    const phoneParts = { code: '+998', number: '' };
-    if (phone.startsWith('+998')) {
-        phoneParts.code = '+998';
-    }
+    const { first_name = '', last_name = '', phone = '', username } = currentUserData;
+    const number = phone.startsWith('+998') ? phone.slice(4) : phone;
 
     return `
     <div class="profile-page">
@@ -241,17 +248,13 @@ function getProfileContent() {
                 <div class="form-group">
                     <label for="phone">${t('phone_placeholder')}</label>
                     <div class="phone-input">
-                        <select id="countryCode" disabled>
-                            <option value="+998" ${phoneParts.code === '+998' ? 'selected' : ''}>🇺🇿 +998</option>
-                            <option value="+7" ${phoneParts.code === '+7' ? 'selected' : ''}>🇷🇺 +7</option>
-                            <option value="+1" ${phoneParts.code === '+1' ? 'selected' : ''}>🇺🇸 +1</option>
-                        </select>
-                        <input type="tel" id="phone" value="${phoneParts.number}" placeholder="${t('phone_placeholder')}" disabled>
+                        <span class="country-code">🇺🇿 +998</span>
+                        <input type="tel" id="phone" value="${number}" placeholder="${t('phone_placeholder')}" disabled>
                     </div>
                 </div>
                 <div class="form-group">
                     <label>Telegram username</label>
-                    <input type="text" value="${username ? '@' + username : '-'}" disabled>
+                    <input type="text" id="username-display" value="${username ? '@' + username : '-'}" disabled>
                 </div>
                 <button type="button" id="edit-profile-btn">${t('edit_button')}</button>
             </form>
@@ -274,12 +277,14 @@ function toggleProfileEdit(event) {
     const button = event.target;
 
     if (isEditing) {
-        // Saqlash logikasi
         saveProfile();
     } else {
-        // Tahrirlash rejimiga o'tish
         form.classList.remove('disabled');
-        form.querySelectorAll('input, select').forEach(el => el.disabled = false);
+        form.querySelectorAll('input, select').forEach(el => {
+            if (el.id !== 'username-display') { // username maydonini ochmaslik
+                el.disabled = false;
+            }
+        });
         button.textContent = t('save_button');
     }
 }
@@ -290,25 +295,24 @@ async function saveProfile() {
 
     const firstName = document.getElementById('firstName').value.trim();
     const lastName = document.getElementById('lastName').value.trim();
-    const countryCode = document.getElementById('countryCode').value;
-    const phone = document.getElementById('phone').value.trim();
-    const fullPhone = countryCode + phone.replace(/\s/g, '');
-
-    if (!firstName || !fullPhone) {
+    const phone = document.getElementById('phone').value.trim().replace(/\s/g, '');
+    
+    if (!firstName || phone.length !== 9) {
         WebApp.showAlert(t('please_fill_fields'));
         return;
     }
 
+    const fullPhone = '+998' + phone;
+
     try {
         const response = await fetch(`${backendUrl}/api/users`, {
-            method: 'POST',
+            method: 'POST', // Backend PUT/PATCHni qo'llab-quvvatlasa, shuni ishlatgan ma'qul
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 telegram_id: user.id,
                 first_name: firstName,
                 last_name: lastName,
-                phone: fullPhone,
-                username: user.username || null
+                phone: fullPhone
             })
         });
 
@@ -317,7 +321,6 @@ async function saveProfile() {
             isRegistered = true;
             WebApp.showAlert(t('profile_saved'));
             
-            // Tahrirlash rejimini o'chirish
             form.classList.add('disabled');
             form.querySelectorAll('input, select').forEach(el => el.disabled = true);
             button.textContent = t('edit_button');
@@ -330,10 +333,7 @@ async function saveProfile() {
     }
 }
 
-
-// Karusel
 function initCarousel() {
-// ... existing code ...
   let startX = 0;
   let currentSlide = 0;
   const slides = document.querySelectorAll('.slide');
@@ -345,26 +345,24 @@ function initCarousel() {
     });
   };
   
-  // Avtomatik o'tish
   const autoSlide = setInterval(() => {
     currentSlide = (currentSlide + 1) % slides.length;
     updateCarousel();
   }, 4000);
 
-  // Surish (touch)
   const carousel = document.getElementById('carousel');
   if (!carousel) return;
 
   carousel.addEventListener('touchstart', e => {
     startX = e.touches[0].clientX;
-    clearInterval(autoSlide); // Surish boshlanganda avto-o'tishni to'xtatish
+    clearInterval(autoSlide);
   });
   carousel.addEventListener('touchend', e => {
     const endX = e.changedTouches[0].clientX;
     const diff = startX - endX;
-    if (diff > 50) { // O'ngga surish
+    if (diff > 50) {
       currentSlide = (currentSlide + 1) % slides.length;
-    } else if (diff < -50) { // Chapga surish
+    } else if (diff < -50) {
       currentSlide = (currentSlide - 1 + slides.length) % slides.length;
     }
     updateCarousel();
@@ -373,7 +371,6 @@ function initCarousel() {
   updateCarousel();
 }
 
-// Tovarlar ro'yxati
 async function loadProducts() {
   const productsContainer = document.getElementById('products');
   if (!productsContainer) return;
@@ -408,9 +405,7 @@ async function loadProducts() {
   }
 }
 
-// Harakatdan oldin ro'yxatdan o'tishni talab qilish
 function requireRegistration(callback) {
-// ... existing code ...
   if (isRegistered) {
     callback();
   } else {
@@ -419,7 +414,6 @@ function requireRegistration(callback) {
   }
 }
 
-// Modal oynalar
 function openModal() {
   const modal = document.getElementById('registerModal');
   modal.classList.remove('hidden');
@@ -429,9 +423,7 @@ function openModal() {
       <input type="text" id="regFirstName" placeholder="${t('first_name_placeholder')}" value="${user.first_name || ''}" required>
       <input type="text" id="regLastName" placeholder="${t('last_name_placeholder')}" value="${user.last_name || ''}">
       <div class="phone-input">
-        <select id="regCountryCode">
-          <option value="+998">🇺🇿 +998</option>
-        </select>
+        <span class="country-code">🇺🇿 +998</span>
         <input type="tel" id="regPhone" placeholder="${t('phone_placeholder')}" required>
       </div>
       <button onclick="registerUser()">${t('save_button')}</button>
@@ -439,22 +431,22 @@ function openModal() {
     </div>
   `;
 }
+
 function closeModal() {
   document.getElementById('registerModal').classList.add('hidden');
 }
 
-// Ro'yxatdan o'tish
 async function registerUser() {
   const firstName = document.getElementById('regFirstName').value.trim();
   const lastName = document.getElementById('regLastName').value.trim();
-  const countryCode = document.getElementById('regCountryCode').value;
-  const phone = document.getElementById('regPhone').value.trim();
-  const fullPhone = countryCode + phone.replace(/\s/g, '');
+  const phone = document.getElementById('regPhone').value.trim().replace(/\s/g, '');
 
-  if (!firstName || !fullPhone) {
+  if (!firstName || phone.length !== 9) {
     WebApp.showAlert(t('please_fill_fields'));
     return;
   }
+
+  const fullPhone = '+998' + phone;
 
   try {
     const response = await fetch(`${backendUrl}/api/users`, {
@@ -478,7 +470,7 @@ async function registerUser() {
         window.pendingAction();
         delete window.pendingAction;
       }
-      rerenderCurrentPage(); // Sahifani yangilash
+      rerenderCurrentPage();
     } else {
       throw new Error(t('error_saving'));
     }
@@ -487,18 +479,16 @@ async function registerUser() {
   }
 }
 
-// `viewProduct` va `toggleLike` funksiyalari
 function viewProduct(id) {
   WebApp.showAlert(t('product_details_not_ready', { id }));
 }
+
 function toggleLike(id, element) {
     element.classList.toggle('liked');
     element.textContent = element.classList.contains('liked') ? '❤️' : '♡';
-    // WebApp.showAlert(t('added_to_favorites', { id }));
 }
 
 function addToCart(id) {
-    // Savatga qo'shish logikasi...
     WebApp.MainButton.setText(t('confirm_order'));
     WebApp.MainButton.show();
     WebApp.onEvent('mainButtonClicked', () => {
