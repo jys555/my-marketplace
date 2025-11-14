@@ -6,6 +6,16 @@ const helmet = require('helmet');
 const app = express();
 
 app.use(helmet());
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    defaultSrc: ["'self'", 'https:', 'http:'],
+    scriptSrc: ["'self'", 'https://telegram.org', 'https:'],
+    imgSrc: ["'self'", 'data:', 'https:'],
+    styleSrc: ["'self'", "'unsafe-inline'", 'https:'],
+    connectSrc: ["'self'", 'https:'],
+    frameAncestors: ["'self'", 'https://*.telegram.org', 'https://web.telegram.org', 'https://t.me']
+  }
+}));
 app.use(cors({
   origin: [
     'https://web.telegram.org',
@@ -15,7 +25,7 @@ app.use(cors({
   ],
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: '512kb' }));
 
 // === PostgreSQL ulanish (db.js dan import qiling) ===
 const pool = require('./db');
@@ -23,12 +33,14 @@ const pool = require('./db');
 // === Routes ===
 const userRoutes = require('./routes/users');
 const productRoutes = require('./routes/products');
+const orderRoutes = require('./routes/orders');
 
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/orders', orderRoutes);
 
 // === Migratsiya endpointi (bir marta ishlatish uchun) ===
-app.get('/migrate-products', async (req, res) => {
+app.get('/migrate-products', isAdmin, async (req, res) => {
   try {
     await pool.query(`
       ALTER TABLE products
@@ -80,6 +92,38 @@ app.listen(PORT, () => {
           image_url TEXT NOT NULL,
           created_at TIMESTAMP DEFAULT NOW()
         );
+      `);
+
+      // 3. orders jadvali
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS orders (
+          id SERIAL PRIMARY KEY,
+          order_number VARCHAR(20) UNIQUE NOT NULL,
+          user_id BIGINT REFERENCES users(telegram_id),
+          status VARCHAR(50) DEFAULT 'yig''ilmoqda',
+          payment_method VARCHAR(50),
+          delivery_method VARCHAR(50),
+          total_amount DECIMAL(10, 2) NOT NULL,
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          updated_at TIMESTAMPTZ DEFAULT NOW()
+        );
+      `);
+
+      // 4. order_items jadvali
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS order_items (
+          id SERIAL PRIMARY KEY,
+          order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+          product_id INTEGER REFERENCES products(id),
+          quantity INTEGER NOT NULL,
+          price DECIMAL(10, 2) NOT NULL
+        );
+      `);
+
+      // 5. indekslar
+      await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
       `);
 
       console.log('✅ Jadval(lar) tayyor.');

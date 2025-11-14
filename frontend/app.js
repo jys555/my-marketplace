@@ -41,7 +41,28 @@ const translations = {
     profile_saved: "✅ Profilingiz muvaffaqiyatli saqlandi!",
     error_saving: "Saqlashda xatolik",
     page_not_ready: "{pageName} sahifasi hali tayyor emas.",
-    confirm_order: "Buyurtmani tasdiqlash"
+    confirm_order: "Buyurtmani tasdiqlash",
+    my_orders: "Buyurtmalarim",
+    current_orders: "Hozirgi",
+    all_orders: "Barchasi",
+    order_number: "Buyurtma №",
+    order_status: "Holati",
+    order_items_count: "Mahsulotlar soni",
+    order_total: "Umumiy summa",
+    order_details_not_ready: "Buyurtma #{order_number} tafsilotlari hali tayyor emas.",
+    no_orders_yet: "Sizda hali buyurtmalar yo'q.",
+    cart_title: "🛒 Savatcha",
+    cart_empty: "Savatchangiz bo'sh.",
+    total_price: "Umumiy narx",
+    item: "ta",
+    payment_method: "To'lov usuli",
+    cash: "Naqd pul",
+    delivery_method: "Yetkazib berish usuli",
+    pickup: "Olib ketish",
+    delivery: "Pochta orqali",
+    order_success: "✅ Buyurtmangiz qabul qilindi! Raqami: {order_number}",
+    order_failed: "❌ Buyurtma yaratishda xatolik yuz berdi.",
+    added_to_cart: "{name} savatchaga qo'shildi"
   },
   ru: {
     loading: "Загрузка данных...",
@@ -74,11 +95,34 @@ const translations = {
     profile_saved: "✅ Ваш профиль успешно сохранен!",
     error_saving: "Ошибка сохранения",
     page_not_ready: "Страница {pageName} еще не готова.",
-    confirm_order: "Подтвердить заказ"
+    confirm_order: "Подтвердить заказ",
+    my_orders: "Мои заказы",
+    current_orders: "Текущие",
+    all_orders: "Все",
+    order_number: "Заказ №",
+    order_status: "Статус",
+    order_items_count: "Кол-во товаров",
+    order_total: "Итоговая сумма",
+    order_details_not_ready: "Детали заказа №{order_number} еще не готовы.",
+    no_orders_yet: "У вас еще нет заказов.",
+    cart_title: "🛒 Корзина",
+    cart_empty: "Ваша корзина пуста.",
+    total_price: "Итоговая цена",
+    item: "шт.",
+    payment_method: "Способ оплаты",
+    cash: "Наличными",
+    delivery_method: "Способ доставки",
+    pickup: "Самовывоз",
+    delivery: "Доставка почтой",
+    order_success: "✅ Ваш заказ принят! Номер: {order_number}",
+    order_failed: "❌ Произошла ошибка при создании заказа.",
+    added_to_cart: "{name} добавлен в корзину"
   }
 };
 
 let currentLang = getLanguage();
+let allProducts = []; // Barcha mahsulotlarni saqlash uchun
+let cart = {}; // Savatcha: { product_id: quantity }
 
 function getLanguage() {
   return localStorage.getItem('userLang') || 'uz';
@@ -105,6 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!user) {
     document.getElementById('loading').innerText = t('error_telegram');
   } else {
+    WebApp.onEvent('mainButtonClicked', handleMainButtonClick);
     checkRegistration();
   }
 });
@@ -179,6 +224,9 @@ function showPage(pageName) {
     case 'profile':
       content = getProfileContent();
       break;
+    case 'cart':
+      content = getCartContent();
+      break;
     default:
       content = `<h2>${t('page_not_ready', { pageName })}</h2>`;
   }
@@ -194,6 +242,7 @@ function showPage(pageName) {
       document.getElementById('edit-profile-btn')?.addEventListener('click', toggleProfileEdit);
       document.getElementById('lang-uz-btn')?.addEventListener('click', () => setLanguage('uz'));
       document.getElementById('lang-ru-btn')?.addEventListener('click', () => setLanguage('ru'));
+      loadOrders();
   }
 
   updateNavbar(pageName);
@@ -265,6 +314,17 @@ function getProfileContent() {
             <div class="lang-switcher">
                 <button id="lang-uz-btn" class="${currentLang === 'uz' ? 'active' : ''}">O'zbekcha</button>
                 <button id="lang-ru-btn" class="${currentLang === 'ru' ? 'active' : ''}">Русский</button>
+            </div>
+        </div>
+
+        <div class="profile-section">
+            <h3>${t('my_orders')}</h3>
+            <div class="tabs">
+                <button class="tab-button active" onclick="renderOrders('current')">${t('current_orders')}</button>
+                <button class="tab-button" onclick="renderOrders('all')">${t('all_orders')}</button>
+            </div>
+            <div id="orders-list">
+                <p>${t('loading')}</p>
             </div>
         </div>
     </div>
@@ -379,6 +439,7 @@ async function loadProducts() {
   try {
     const res = await fetch(`${backendUrl}/api/products?lang=${currentLang}`);
     const products = await res.json();
+    allProducts = products; // Mahsulotlarni saqlab qo'yish
     
     if (products.length === 0) {
         productsContainer.innerHTML = `<p>Hozircha mahsulotlar yo'q.</p>`;
@@ -489,10 +550,210 @@ function toggleLike(id, element) {
 }
 
 function addToCart(id) {
-    WebApp.MainButton.setText(t('confirm_order'));
-    WebApp.MainButton.show();
-    WebApp.onEvent('mainButtonClicked', () => {
-        WebApp.showAlert(`Buyurtma #${id} rasmiylashtirildi!`);
-        WebApp.MainButton.hide();
+    requireRegistration(() => {
+        if (cart[id]) {
+            cart[id]++;
+        } else {
+            cart[id] = 1;
+        }
+        const product = allProducts.find(p => p.id === id);
+        WebApp.showPopup({
+            title: "✅",
+            message: t('added_to_cart', { name: product.name }),
+            buttons: [{ type: 'ok' }]
+        });
+        updateMainButton();
     });
+}
+
+let userOrders = []; // Foydalanuvchi buyurtmalarini saqlash uchun
+
+async function loadOrders() {
+    const ordersListContainer = document.getElementById('orders-list');
+    if (!ordersListContainer) return;
+    ordersListContainer.innerHTML = `<p>${t('loading')}</p>`;
+
+    try {
+        const res = await fetch(`${backendUrl}/api/orders/${user.id}`);
+        if (!res.ok) throw new Error('Failed to fetch orders');
+        userOrders = await res.json();
+        renderOrders('current'); // Boshlang'ich tab
+    } catch (err) {
+        console.error(err);
+        ordersListContainer.innerHTML = `<p>${t('error_server')}</p>`;
+    }
+}
+
+function renderOrders(filter) {
+    const ordersListContainer = document.getElementById('orders-list');
+    if (!ordersListContainer) return;
+
+    document.querySelectorAll('.tabs .tab-button').forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`.tabs .tab-button[onclick="renderOrders('${filter}')"]`).classList.add('active');
+
+    const finishedStatuses = ['xaridorga berilgan', 'bekor qilingan'];
+    const ordersToRender = filter === 'current'
+        ? userOrders.filter(order => !finishedStatuses.includes(order.status))
+        : userOrders;
+
+    if (ordersToRender.length === 0) {
+        ordersListContainer.innerHTML = `<p>${t('no_orders_yet')}</p>`;
+        return;
+    }
+
+    ordersListContainer.innerHTML = ordersToRender.map(order => `
+        <div class="order-card" onclick="viewOrderDetails('${order.order_number}')">
+            <div class="order-header">
+                <span class="order-number">${t('order_number')} ${order.order_number}</span>
+                <span class="order-status status-${order.status.replace('\'', '')}">${order.status}</span>
+            </div>
+            <div class="order-body">
+                <span>${t('order_items_count')}: ${order.item_count}</span>
+                <span>${t('order_total')}: ${new Intl.NumberFormat('uz-UZ').format(order.total_amount)} so'm</span>
+            </div>
+            <div class="order-footer">
+                <span>${new Date(order.created_at).toLocaleString()}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function viewOrderDetails(orderNumber) {
+    WebApp.showAlert(t('order_details_not_ready', { order_number: orderNumber }));
+}
+
+function getCartContent() {
+    if (Object.keys(cart).length === 0) {
+        return `<h2>${t('cart_title')}</h2><p>${t('cart_empty')}</p>`;
+    }
+
+    let total = 0;
+    const cartItemsHtml = Object.entries(cart).map(([id, quantity]) => {
+        const product = allProducts.find(p => p.id == id);
+        if (!product) return '';
+        const price = parseFloat(product.sale_price || product.price);
+        total += price * quantity;
+        return `
+            <div class="cart-item">
+                <img src="${product.image || 'https://via.placeholder.com/80'}" alt="${product.name}">
+                <div class="item-details">
+                    <h4>${product.name}</h4>
+                    <p>${new Intl.NumberFormat('uz-UZ').format(price)} so'm</p>
+                </div>
+                <div class="item-quantity">
+                    <button onclick="updateCartItemQuantity(${id}, -1)">-</button>
+                    <span>${quantity}</span>
+                    <button onclick="updateCartItemQuantity(${id}, 1)">+</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    return `
+        <h2>${t('cart_title')}</h2>
+        <div id="cart-items">${cartItemsHtml}</div>
+        <div class="cart-summary">
+            <h3>${t('total_price')}: ${new Intl.NumberFormat('uz-UZ').format(total)} so'm</h3>
+            <div class="order-options">
+                <div class="form-group">
+                    <label for="paymentMethod">${t('payment_method')}</label>
+                    <select id="paymentMethod">
+                        <option value="cash">${t('cash')}</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="deliveryMethod">${t('delivery_method')}</label>
+                    <select id="deliveryMethod">
+                        <option value="pickup">${t('pickup')}</option>
+                        <option value="delivery">${t('delivery')}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function updateCartItemQuantity(id, change) {
+    if (cart[id]) {
+        cart[id] += change;
+        if (cart[id] <= 0) {
+            delete cart[id];
+        }
+    }
+    rerenderCurrentPage();
+    updateMainButton();
+}
+
+function updateMainButton() {
+    if (Object.keys(cart).length > 0) {
+        let total = 0;
+        let itemCount = 0;
+        Object.entries(cart).forEach(([id, quantity]) => {
+            const product = allProducts.find(p => p.id == id);
+            if (product) {
+                total += parseFloat(product.sale_price || product.price) * quantity;
+                itemCount += quantity;
+            }
+        });
+        WebApp.MainButton.setText(`${itemCount} ${t('item')} - ${new Intl.NumberFormat('uz-UZ').format(total)} so'm`);
+        WebApp.MainButton.setParams({
+            text_color: '#ffffff',
+            color: '#24a1de'
+        });
+        WebApp.MainButton.show();
+    } else {
+        WebApp.MainButton.hide();
+    }
+}
+
+function handleMainButtonClick() {
+    const activeBtn = document.querySelector('.navbar button.active');
+    if (activeBtn && activeBtn.getAttribute('onclick').includes('showPage(\'cart\')')) {
+        createOrder();
+    }
+}
+
+async function createOrder() {
+    const paymentMethod = document.getElementById('paymentMethod').value;
+    const deliveryMethod = document.getElementById('deliveryMethod').value;
+
+    const items = Object.entries(cart).map(([product_id, quantity]) => ({
+        product_id: parseInt(product_id),
+        quantity
+    }));
+
+    if (items.length === 0) return;
+
+    WebApp.MainButton.showProgress();
+
+    try {
+        const response = await fetch(`${backendUrl}/api/orders`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: user.id,
+                items: items,
+                payment_method: paymentMethod,
+                delivery_method: deliveryMethod
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
+
+        const newOrder = await response.json();
+        WebApp.showAlert(t('order_success', { order_number: newOrder.order_number }));
+
+        // Reset cart and UI
+        cart = {};
+        updateMainButton();
+        showPage('profile'); // Redirect to profile to see the new order
+
+    } catch (err) {
+        console.error("Order creation failed:", err);
+        WebApp.showAlert(t('order_failed'));
+    } finally {
+        WebApp.MainButton.hideProgress();
+    }
 }

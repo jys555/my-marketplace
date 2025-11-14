@@ -14,8 +14,14 @@ router.get('/', async (req, res) => {
     const result = await pool.query(`
       SELECT 
         id, 
-        CASE WHEN $1 = 'uz' THEN name_uz ELSE name_ru END AS name,
-        CASE WHEN $1 = 'uz' THEN description_uz ELSE description_ru END AS description,
+        COALESCE(
+          CASE WHEN $1 = 'uz' THEN NULLIF(name_uz,'') ELSE NULLIF(name_ru,'') END,
+          CASE WHEN $1 = 'uz' THEN name_ru ELSE name_uz END
+        ) AS name,
+        COALESCE(
+          CASE WHEN $1 = 'uz' THEN NULLIF(description_uz,'') ELSE NULLIF(description_ru,'') END,
+          CASE WHEN $1 = 'uz' THEN description_ru ELSE description_uz END
+        ) AS description,
         price, 
         sale_price, 
         image_url AS image,
@@ -24,6 +30,7 @@ router.get('/', async (req, res) => {
       ORDER BY created_at DESC
     `, [lang]);
 
+    console.log('Query result:', result.rows); // Log the query result
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -34,17 +41,20 @@ router.get('/', async (req, res) => {
 // GET /api/products/:id — bitta tovar (til bilan)
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
-  const lang = req.query.lang || 'uz';
-  if (!['uz', 'ru'].includes(lang)) {
-    return res.status(400).json({ error: 'Til faqat "uz" yoki "ru" bo\'lishi kerak' });
-  }
+  const lang = ['uz', 'ru'].includes(req.query.lang) ? req.query.lang : 'uz';
 
   try {
     const result = await pool.query(
       `SELECT 
         id,
-        CASE WHEN $2 = 'uz' THEN name_uz ELSE name_ru END AS name,
-        CASE WHEN $2 = 'uz' THEN description_uz ELSE description_ru END AS description,
+        COALESCE(
+          CASE WHEN $2 = 'uz' THEN NULLIF(name_uz,'') ELSE NULLIF(name_ru,'') END,
+          CASE WHEN $2 = 'uz' THEN name_ru ELSE name_uz END
+        ) AS name,
+        COALESCE(
+          CASE WHEN $2 = 'uz' THEN NULLIF(description_uz,'') ELSE NULLIF(description_ru,'') END,
+          CASE WHEN $2 = 'uz' THEN description_ru ELSE description_uz END
+        ) AS description,
         price, sale_price, image_url,
         COALESCE(sale_price, price) AS display_price
        FROM products 
