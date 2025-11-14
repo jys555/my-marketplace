@@ -16,16 +16,45 @@ app.use(helmet.contentSecurityPolicy({
     frameAncestors: ["'self'", 'https://*.telegram.org', 'https://web.telegram.org', 'https://t.me']
   }
 }));
+
+const whitelist = [
+  'https://web.telegram.org',
+  'https://t.me',
+  'http://localhost:3000',
+  'https://my-marketplace-frontend.vercel.app'
+];
+
 app.use(cors({
-  origin: [
-    'https://web.telegram.org',
-    'https://t.me',
-    'http://localhost:3000',
-    'https://my-marketplace-frontend.vercel.app'
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    // Allow all vercel app origins
+    if (/\.vercel\.app$/.test(origin)) {
+        return callback(null, true);
+    }
+    
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true
 }));
+
 app.use(express.json({ limit: '512kb' }));
+
+// === Admin Middleware ===
+const ADMIN_TELEGRAM_IDS = (process.env.ADMIN_TELEGRAM_IDS || '').split(',').map(id => parseInt(id.trim(), 10));
+
+const isAdmin = (req, res, next) => {
+    const telegramId = req.header('X-Telegram-ID'); // Yoki so'rovdan ID ni olishning boshqa usuli
+    if (telegramId && ADMIN_TELEGRAM_IDS.includes(parseInt(telegramId, 10))) {
+        return next();
+    }
+    res.status(403).json({ error: 'Forbidden: Admin access required' });
+};
 
 // === PostgreSQL ulanish (db.js dan import qiling) ===
 const pool = require('./db');
