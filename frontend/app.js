@@ -714,46 +714,55 @@ function handleMainButtonClick() {
 }
 
 async function createOrder() {
-    const paymentMethod = document.getElementById('paymentMethod').value;
-    const deliveryMethod = document.getElementById('deliveryMethod').value;
+    const paymentMethodEl = document.querySelector('input[name="payment-method"]:checked');
+    const deliveryMethodEl = document.querySelector('input[name="delivery-method"]:checked');
 
-    const items = Object.entries(cart).map(([product_id, quantity]) => ({
-        product_id: parseInt(product_id),
-        quantity
-    }));
+    if (!paymentMethodEl || !deliveryMethodEl) {
+        showAlert(t('choose_payment_delivery'));
+        return;
+    }
 
-    if (items.length === 0) return;
+    const orderData = {
+        user_id: tg.initDataUnsafe.user.id,
+        user_info: tg.initDataUnsafe.user, // <-- QO'SHILGAN QATOR
+        items: Object.values(cart).map(item => ({
+            product_id: item.product.id,
+            quantity: item.quantity
+        })),
+        payment_method: paymentMethodEl.value,
+        delivery_method: deliveryMethodEl.value
+    };
 
-    WebApp.MainButton.showProgress();
+    setLoading(true);
 
     try {
-        const response = await fetch(`${backendUrl}/api/orders`, {
+        const response = await fetch(`${API_URL}/orders`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                user_id: user.id,
-                items: items,
-                payment_method: paymentMethod,
-                delivery_method: deliveryMethod
-            })
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
         });
 
         if (!response.ok) {
-            throw new Error(await response.text());
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Order creation failed');
         }
 
         const newOrder = await response.json();
-        WebApp.showAlert(t('order_success', { order_number: newOrder.order_number }));
-
-        // Reset cart and UI
+        
         cart = {};
         updateMainButton();
-        showPage('profile'); // Redirect to profile to see the new order
+        
+        showAlert(`${t('order_created_success')} #${newOrder.order_number}`, 'success');
+        
+        // Foydalanuvchini profil sahifasiga o'tkazish
+        showPage('profile');
 
-    } catch (err) {
-        console.error("Order creation failed:", err);
-        WebApp.showAlert(t('order_failed'));
+    } catch (error) {
+        console.error('Error creating order:', error);
+        showAlert(error.message, 'error');
     } finally {
-        WebApp.MainButton.hideProgress();
+        setLoading(false);
     }
 }

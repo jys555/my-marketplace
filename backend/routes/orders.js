@@ -1,6 +1,7 @@
 // backend/routes/orders.js
 const express = require('express');
 const pool = require('../db');
+const { sendMessage } = require('../bot'); // bot.js dan sendMessage funksiyasini import qilish
 const router = express.Router();
 
 // Unikal buyurtma raqamini yaratish funksiyasi
@@ -32,7 +33,7 @@ router.get('/:telegram_id', async (req, res) => {
 
 // Yangi buyurtma yaratish
 router.post('/', async (req, res) => {
-    const { user_id, items, payment_method, delivery_method } = req.body;
+    const { user_id, user_info, items, payment_method, delivery_method } = req.body;
 
     if (!user_id || !items || items.length === 0) {
         return res.status(400).json({ error: "Kerakli ma'lumotlar to'liq emas." });
@@ -84,6 +85,45 @@ router.post('/', async (req, res) => {
         await Promise.all(itemQueries);
 
         await client.query('COMMIT');
+
+        // --- Xabarnoma yuborish ---
+        try {
+            const adminChatIds = (process.env.ADMIN_TELEGRAM_IDS || '').split(',').map(id => id.trim()).filter(id => id);
+            const userFullName = `${user_info.first_name || ''} ${user_info.last_name || ''}`.trim();
+            const userLink = user_info.username ? `(@${user_info.username})` : `(ID: ${user_id})`;
+
+            // Adminga xabar
+            const adminMessage = `
+📢 **Yangi buyurtma!**
+
+**Buyurtma raqami:** \`${newOrder.order_number}\`
+**Mijoz:** ${userFullName} ${userLink}
+**Summa:** ${totalAmount.toLocaleString('uz-UZ')} so'm
+**To'lov turi:** ${payment_method}
+**Yetkazib berish:** ${delivery_method}
+            `;
+            
+            for (const adminId of adminChatIds) {
+                await sendMessage(adminId, adminMessage, { parse_mode: 'Markdown' });
+            }
+
+            // Foydalanuvchiga xabar
+            const userMessage = `
+✅ **Buyurtmangiz qabul qilindi!**
+
+Rahmat, ${user_info.first_name || 'hurmatli mijoz'}!
+
+Sizning **${newOrder.order_number}** raqamli buyurtmangiz muvaffaqiyatli qabul qilindi va tez orada yig'ishni boshlaymiz.
+
+Buyurtma holatini profil sahifasidagi "Buyurtmalarim" bo'limidan kuzatib borishingiz mumkin.
+            `;
+            await sendMessage(user_id, userMessage, { parse_mode: 'Markdown' });
+
+        } catch (notificationError) {
+            console.error("Xabarnoma yuborishda xatolik:", notificationError);
+            // Bu xato asosiy javobga ta'sir qilmasligi kerak
+        }
+        
         res.status(201).json(newOrder);
 
     } catch (err) {
