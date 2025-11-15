@@ -111,68 +111,84 @@ app.post('/api/products', authenticate, isAdmin, async (req, res) => {
 });
 
 
-// === Serverni ishga tushirish va JADVALLARNI YARATISH ===
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`🚀 Server ishga tushdi. Port: ${PORT}`);
-  
-  const createTables = async () => {
-    try {
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS users (
-          id SERIAL PRIMARY KEY,
-          telegram_id BIGINT UNIQUE NOT NULL,
-          first_name VARCHAR(100),
-          last_name VARCHAR(100),
-          username VARCHAR(100),
-          phone VARCHAR(20),
-          created_at TIMESTAMP DEFAULT NOW()
-        );
-      `);
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS products (
-          id SERIAL PRIMARY KEY,
-          name_uz VARCHAR(255) NOT NULL,
-          name_ru VARCHAR(255) NOT NULL,
-          description_uz TEXT,
-          description_ru TEXT,
-          price DECIMAL(10, 2) NOT NULL,
-          sale_price DECIMAL(10, 2),
-          image_url TEXT NOT NULL,
-          created_at TIMESTAMP DEFAULT NOW()
-        );
-      `);
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS orders (
-          id SERIAL PRIMARY KEY,
-          order_number VARCHAR(20) UNIQUE NOT NULL,
-          user_id BIGINT REFERENCES users(telegram_id),
-          status VARCHAR(50) DEFAULT 'yig''ilmoqda',
-          payment_method VARCHAR(50),
-          delivery_method VARCHAR(50),
-          total_amount DECIMAL(10, 2) NOT NULL,
-          created_at TIMESTAMPTZ DEFAULT NOW(),
-          updated_at TIMESTAMPTZ DEFAULT NOW()
-        );
-      `);
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS order_items (
-          id SERIAL PRIMARY KEY,
-          order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
-          product_id INTEGER REFERENCES products(id),
-          quantity INTEGER NOT NULL,
-          price DECIMAL(10, 2) NOT NULL
-        );
-      `);
-      await pool.query(`
-        CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC);
-        CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
-      `);
-      console.log('✅ Jadval(lar) muvaffaqiyatli tekshirildi/yaratildi.');
-    } catch (err) {
-      console.error('❌ Jadval yaratishda xatolik:', err);
-    }
-  };
+// === JADVALLARNI YARATISH FUNKSIYASI ===
+const createTables = async () => {
+  try {
+    // Bu funksiya endi alohida.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        telegram_id BIGINT UNIQUE NOT NULL,
+        first_name VARCHAR(100),
+        last_name VARCHAR(100),
+        username VARCHAR(100),
+        phone VARCHAR(20),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS products (
+        id SERIAL PRIMARY KEY,
+        name_uz VARCHAR(255) NOT NULL,
+        name_ru VARCHAR(255) NOT NULL,
+        description_uz TEXT,
+        description_ru TEXT,
+        price DECIMAL(10, 2) NOT NULL,
+        sale_price DECIMAL(10, 2),
+        image_url TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS orders (
+        id SERIAL PRIMARY KEY,
+        order_number VARCHAR(20) UNIQUE NOT NULL,
+        user_id BIGINT REFERENCES users(telegram_id),
+        status VARCHAR(50) DEFAULT 'yig''ilmoqda',
+        payment_method VARCHAR(50),
+        delivery_method VARCHAR(50),
+        total_amount DECIMAL(10, 2) NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS order_items (
+        id SERIAL PRIMARY KEY,
+        order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+        product_id INTEGER REFERENCES products(id),
+        quantity INTEGER NOT NULL,
+        price DECIMAL(10, 2) NOT NULL
+      );
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
+    `);
+    console.log('✅ Jadval(lar) muvaffaqiyatli tekshirildi/yaratildi.');
+  } catch (err) {
+    console.error('❌ Jadval yaratishda xatolik:', err);
+    // Xatolik bo'lsa, serverni to'xtatishimiz kerak, aks holda u notog'ri ishlashi mumkin
+    process.exit(1);
+  }
+};
 
-  createTables();
-});
+// === SERVERNI ISHGA TUSHIRISH ===
+const startServer = async () => {
+  try {
+    // 1. Avval jadvallarni yaratamiz
+    await createTables();
+    
+    // 2. Jadvallar tayyor bo'lgach, serverni ishga tushiramiz
+    const PORT = process.env.PORT || 8080;
+    app.listen(PORT, () => {
+      console.log(`🚀 Server ishga tushdi. Port: ${PORT}`);
+    });
+  } catch (err) {
+    console.error("❌ Serverni ishga tushirishda jiddiy xatolik:", err);
+    process.exit(1);
+  }
+};
+
+// Serverni ishga tushirish
+startServer();
