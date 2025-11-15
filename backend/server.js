@@ -70,7 +70,7 @@ const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 
 // --- Health Check Route for Railway ---
-// Bu Railway uchun eng muhim yo'lak!
+
 app.get('/', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Backend is alive!' });
 });
