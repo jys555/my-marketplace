@@ -19,20 +19,17 @@ app.use(helmet.contentSecurityPolicy({
   }
 }));
 
-// CORS uchun ruxsat etilgan manbalar ro'yxati (TUZATILDI)
+// CORS uchun ruxsat etilgan manbalar ro'yxati
 const whitelist = [
   'https://web.telegram.org',
   'https://t.me',
   'http://localhost:3000',
-  'https://my-marketplace-frontend.vercel.app' // SIZNING FRONTEND MANZILINGIZ QAYTARILDI
+  'https://my-marketplace-frontend.vercel.app'
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // `origin` yo'q bo'lsa (masalan, server-to-server, Postman so'rovlari) ruxsat berish
     if (!origin) return callback(null, true);
-
-    // Agar so'rov manbai `whitelist`da yoki Vercel domeni bo'lsa, ruxsat berish
     if (whitelist.indexOf(origin) !== -1 || /\\.vercel\\.app$/.test(origin)) {
       callback(null, true);
     } else {
@@ -58,9 +55,11 @@ const authenticate = (req, res, next) => {
 const isAdmin = (req, res, next) => {
     const adminId = process.env.ADMIN_TELEGRAM_ID;
     if (!adminId) {
+        console.error('CRITICAL: ADMIN_TELEGRAM_ID is not configured on the server.');
         return res.status(500).json({ error: 'Admin ID not configured on server.' });
     }
     if (req.telegramId !== adminId) {
+        console.warn(`Forbidden access attempt by Telegram ID: ${req.telegramId}`);
         return res.status(403).json({ error: 'Forbidden: Admin access required.' });
     }
     next();
@@ -74,42 +73,42 @@ const userRoutes = require('./routes/users');
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 
-// --- Public Routes ---
+// --- Public Routes ---\
+// Mahsulotlarni ko'rish uchun autentifikatsiya kerak emas
 app.use('/api/products', productRoutes); 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Backend is running!' });
 });
 
-// --- User-specific Routes ---
+// --- User-specific Routes (Autentifikatsiya talab qilinadi) ---
 app.use('/api/users', authenticate, userRoutes);
 app.use('/api/orders', authenticate, orderRoutes);
 
-// --- Admin-only Routes ---
-// Bu yerda admin uchun mo'ljallangan barcha route'larni bitta joyga jamlaymiz
-const adminRouter = express.Router();
-// Kelajakda admin route'larini alohida fayllarga bo'lish mumkin
-adminRouter.get('/auth/check-admin', (req, res) => {
+// --- Admin-only Routes (Admin huquqi talab qilinadi) ---
+
+// 1. Admin statusini tekshirish uchun maxsus route (TO'G'RILANDI)
+app.get('/api/auth/check-admin', authenticate, isAdmin, (req, res) => {
+    // Agar `isAdmin` middleware'dan o'tsa, demak foydalanuvchi admin
     res.status(200).json({ isAdmin: true });
 });
-adminRouter.get('/migrate-products', async (req, res) => {
+
+// 2. Mahsulot qo'shish, o'zgartirish, o'chirish uchun route'lar
+// Bu route'lar endi `productRoutes` ichida bo'lishi va ularga alohida `isAdmin` qo'yilishi kerak.
+// Hozircha, mahsulot qo'shishni to'g'ridan-to'g'ri shu yerga qo'shamiz.
+app.post('/api/products', authenticate, isAdmin, async (req, res) => {
+    const { name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url } = req.body;
     try {
-        await pool.query(`
-          ALTER TABLE products
-          ADD COLUMN IF NOT EXISTS name_uz VARCHAR(255),
-          ADD COLUMN IF NOT EXISTS name_ru VARCHAR(255),
-          ADD COLUMN IF NOT EXISTS description_uz TEXT,
-          ADD COLUMN IF NOT EXISTS description_ru TEXT;
-        `);
-        res.json({ message: '✅ products jadvali ko\'p tilli qilindi' });
+        const newProduct = await pool.query(
+            `INSERT INTO products (name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+            [name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url]
+        );
+        res.status(201).json(newProduct.rows[0]);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Migratsiya xatosi' });
+        console.error('Error adding product:', err);
+        res.status(500).json({ error: 'Server error while adding product.' });
     }
 });
-// Boshqa admin route'lari (mahsulot qo'shish/o'chirish/tahrirlash) productRoutes ichida bo'lishi mumkin,
-// lekin ularni ham shu yerga yig'ish mumkin. Hozircha `productRoutes` ichida qoldiramiz.
-
-app.use('/api/admin', authenticate, isAdmin, adminRouter);
 
 
 // === Serverni ishga tushirish va JADVALLARNI YARATISH ===
