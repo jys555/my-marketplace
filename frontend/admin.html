@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Admin Panel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; background-color: #f4f4f9; color: #333; }
     h2 { color: #005a9c; }
@@ -67,6 +68,44 @@
 
   <script>
     const backendUrl = 'https://my-marketplace-production.up.railway.app';
+    const tg = window.Telegram.WebApp;
+
+    // Admin tekshiruvi
+    tg.ready();
+    const userId = tg.initDataUnsafe?.user?.id?.toString();
+
+    async function checkAdminAccess() {
+      if (!userId) {
+        document.body.innerHTML = '<h1>🚫 Ruxsat yo\'q</h1><p>Iltimos, ilovani Telegram ichida oching.</p>';
+        tg.close();
+        return;
+      }
+
+      try {
+        const res = await fetch(`${backendUrl}/api/auth/check-admin`, {
+          headers: {
+            'X-Telegram-ID': userId
+          }
+        });
+
+        if (!res.ok) {
+          // Agar status 403 (Forbidden) bo'lsa, bu admin emasligini bildiradi.
+          // Boshqa xatoliklar server muammosini bildiradi.
+          throw new Error('Admin status verification failed.');
+        }
+        
+        // Agar so'rov muvaffaqiyatli o'tsa (status 200), demak foydalanuvchi admin.
+        console.log("✅ Admin access granted.");
+        
+      } catch (error) {
+        console.error(error);
+        document.body.innerHTML = '<h1>🚫 Ruxsat yo\'q</h1><p>Bu sahifaga faqat adminlar kira oladi.</p>';
+        // Xavfsizlik uchun, xato yuz berganda oynani yopish
+        setTimeout(() => tg.close(), 3000);
+      }
+    }
+
+    checkAdminAccess();
 
     document.getElementById('productForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -93,7 +132,10 @@
       try {
         const res = await fetch(`${backendUrl}/api/products`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Telegram-ID': userId 
+          },
           body: JSON.stringify(product)
         });
         

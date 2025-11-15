@@ -78,28 +78,4 @@ router.get('/check/:telegram_id', async (req, res) => {
   }
 });
 
-router.put('/:telegram_id', async (req, res) => {
-  const { telegram_id } = req.params;
-  const { first_name, last_name, phone } = req.body;
-
-  if (!first_name || !last_name || !phone) {
-    return res.status(400).json({ error: 'Ism, familiya va raqam majburiy!' });
-  }
-
-  try {
-    const result = await pool.query(
-      `UPDATE users SET first_name = $1, last_name = $2, phone = $3 WHERE telegram_id = $4 RETURNING telegram_id, first_name, last_name, phone, username`,
-      [first_name, last_name, phone, telegram_id]
-    );
-    if (result.rows.length > 0) {
-      res.json(result.rows[0]);
-    } else {
-      res.status(404).json({ error: 'Foydalanuvchi topilmadi' });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server xatosi' });
-  }
-});
-
 module.exports = router;

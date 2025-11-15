@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Amazing Store</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,36 +13,19 @@
   <!-- Asosiy sahifa (barcha sahifalar shu yerda o'zgaradi) -->
   <div id="main" class="hidden"></div>
   
-  <!-- Ro'yxatdan o'tish modal -->
-  <div id="registerModal" class="modal hidden">
-    <div class="modal-content">
-      <h3>Profilingizni to'ldiring</h3>
-      <input type="text" id="firstName" placeholder="Ism" required>
-      <input type="text" id="lastName" placeholder="Familiya">
-      
-      <div class="phone-input">
-        <select id="countryCode">
-          <option value="+998">🇺🇿 +998</option>
-          <option value="+7">🇷🇺 +7</option>
-          <option value="+1">🇺🇸 +1</option>
-        </select>
-        <input type="tel" id="phone" placeholder="90 123 45 67" required>
-      </div>
-
-      <button onclick="registerUser()">Saqlash</button>
-      <button onclick="closeModal()">Bekor qilish</button>
-    </div>
-  </div>
+  <!-- Ro'yxatdan o'tish modal (tarkibi JS orqali to'ldiriladi) -->
+  <div id="registerModal" class="modal hidden"></div>
 
   <!-- Doimiy navigatsiya paneli -->
   <nav id="navbar" class="navbar hidden">
-    <button onclick="showPage('home')" class="active">🏠</button>
-    <button onclick="showPage('catalog')">🛍️</button>
-    <button onclick="requireRegistration(() => showPage('favorites'))">❤️</button>
-    <button onclick="requireRegistration(() => showPage('cart'))">🛒</button>
-    <button onclick="showPage('profile')">👤</button>
+    <button data-page="home" class="active">🏠</button>
+    <button data-page="catalog">🛍️</button>
+    <button data-page="favorites">❤️</button>
+    <button data-page="cart">🛒</button>
+    <button data-page="profile">👤</button>
   </nav>
 
-  <script src="app.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="main.js" type="module"></script>
 </body>
 </html>
