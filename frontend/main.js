@@ -6,11 +6,13 @@ const WebApp = window.Telegram.WebApp;
 let pendingAction = null; // Ro'yxatdan o'tgandan keyin bajariladigan amal
 
 document.addEventListener('DOMContentLoaded', () => {
-    const telegramUser = WebApp.initDataUnsafe?.user;
-    if (!telegramUser) {
+    if (!WebApp.initData) {
         ui.showLoading(ui.t('error_telegram'));
+        console.error("Telegram.WebApp.initData is not available.");
         return;
     }
+    // initData-ni state-ga saqlaymiz, toki api.js uni ishlata olsin
+    state.setInitData(WebApp.initData);
     WebApp.ready();
     initializeApp();
 });
@@ -18,30 +20,44 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initializeApp() {
     ui.showLoading();
     try {
-        const registrationStatus = await api.checkUserRegistration();
-        if (registrationStatus.exists) {
-            const userData = await api.getUserData();
-            // Telegramdagi username o'zgargan bo'lsa, yangilash
-            const telegramUsername = WebApp.initDataUnsafe?.user?.username;
-            if (telegramUsername && userData.username !== telegramUsername) {
-                const updatedUser = await api.updateUser({ ...userData, username: telegramUsername });
-                state.setUser(updatedUser);
-            } else {
-                state.setUser(userData);
-            }
-        }
+        // 1. Backend bilan to'liq initData orqali xavfsiz autentifikatsiya
+        const authResponse = await api.authenticateWithBackend();
+        state.setUser(authResponse.user);
+        
+        // 2. Boshlang'ich ma'lumotlarni yuklash (mahsulotlar, buyurtmalar va hk)
         await loadInitialData();
+
+        // 3. To'g'ri sahifaga o'tish
         navigateTo(state.getCurrentPage());
+
     } catch (err) {
         console.error("Initialization error:", err);
-        ui.showLoading(ui.t('error_server'));
+        // Agar autentifikatsiya foydalanuvchi ro'yxatdan o'tmaganligi sababli
+        // xatolik bersa, ro'yxatdan o'tishni so'raymiz.
+        if (err.status === 404 || err.message.includes('not registered')) {
+             pendingAction = () => initializeApp(); // Ro'yxatdan o'tgandan keyin qayta ishga tushirish
+             ui.openRegisterModal();
+             attachModalEventListeners();
+        } else {
+            // Boshqa xatoliklar uchun (masalan, yaroqsiz xesh, server ishlamayapti)
+            ui.showLoading(ui.t('error_server'));
+            WebApp.showAlert(err.message || ui.t('error_server'));
+        }
     }
 }
 
+
 async function loadInitialData() {
     try {
-        const products = await api.getProducts(state.getLang());
+        // O'ZGARTIRILDI: Promise.all bilan bir vaqtda bir nechta so'rov yuborish
+        const [products, banners] = await Promise.all([
+            api.getProducts(),
+            api.getBanners() 
+        ]);
+
         state.setProducts(products);
+        state.setBanners(banners); // QO'SHILDI: Olingan bannerlarni state'ga saqlash
+
         if (state.isRegistered()) {
             const orders = await api.getOrders();
             state.setOrders(orders);
@@ -123,7 +139,7 @@ function attachModalEventListeners() {
     document.getElementById('register-cancel-btn')?.addEventListener('click', ui.closeRegisterModal);
 }
 
-// --- Event Handlers ---
+// --- Event Handlers --
 
 async function handleLanguageChange(lang) {
     state.setLang(lang);
@@ -254,6 +270,8 @@ async function handleRegisterUser() {
     }
 
     try {
+        // initData endi o'zgartirilgan api.js dagi X-Telegram-Data sarlavhasi
+        // orqali avtomatik tarzda yuboriladi
         const newUser = await api.registerUser({
             first_name: firstName,
             last_name: lastName,
@@ -263,13 +281,16 @@ async function handleRegisterUser() {
         ui.closeRegisterModal();
         WebApp.showAlert(ui.t('profile_saved'));
 
-        await loadInitialData(); // Load user-specific data like orders
+        // Ro'yxatdan o'tgandan so'ng, foydalanuvchiga xos ma'lumotlarni yuklaymiz
+        await loadInitialData(); 
 
+        // Agar kutayotgan amal bo'lsa, uni hozir bajaramiz
         if (pendingAction) {
             pendingAction();
             pendingAction = null;
         } else {
-            navigateTo(state.getCurrentPage()); // Refresh current page
+            // Aks holda, shunchaki joriy sahifani yangilaymiz
+            navigateTo(state.getCurrentPage()); 
         }
     } catch (err) {
         WebApp.showAlert(`${ui.t('error_saving')}: ${err.message}`);

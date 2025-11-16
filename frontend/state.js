@@ -7,6 +7,7 @@ let state = {
     favorites: JSON.parse(localStorage.getItem('favorites')) || [], // [productId]
     orders: [],
     currentPage: 'home',
+    banners: [], // QO'SHILDI: Bannerlar uchun yangi massiv
 };
 
 // --- Getters (Holatni olish) ---
@@ -18,6 +19,7 @@ export const getCart = () => state.cart;
 export const getFavorites = () => state.favorites;
 export const getOrders = () => state.orders;
 export const getCurrentPage = () => state.currentPage;
+export const getBanners = () => state.banners; 
 export const getProductById = (id) => state.products.find(p => p.id === id);
 
 // --- Setters (Holatni o'zgartirish) ---
@@ -36,6 +38,10 @@ export function setUser(userData) {
 
 export function setProducts(products) {
     state.products = products;
+}
+
+export function setBanners(banners) { // QO'SHILDI: Bannerlarni o'rnatish uchun setter
+    state.banners = banners;
 }
 
 export function setOrders(orders) {

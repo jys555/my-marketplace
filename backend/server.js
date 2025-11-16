@@ -3,7 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 require('dotenv').config();
-const pool = require('./db'); // O'zgartirilgan db.js ni import qilamiz
+const pool = require('./db');
+const crypto = require('crypto'); // Xavfsiz tekshiruv uchun qo'shildi
 
 const app = express();
 
@@ -41,24 +42,46 @@ app.use(cors({
 
 app.use(express.json({ limit: '512kb' }));
 
-// === Authentication and Authorization Middlewares ===
-const authenticate = (req, res, next) => {
-    const telegramId = req.headers['x-telegram-id'];
-    if (!telegramId) {
-        return res.status(401).json({ error: 'Unauthorized: X-Telegram-ID header is missing.' });
+// QO'SHILDI: Yangi, xavfsiz 'validateTelegramAuth' funksiyasi
+const validateTelegramAuth = (req, res, next) => {
+    const initData = req.body.initData || req.headers['x-telegram-data'];
+
+    if (!initData) {
+        return res.status(401).json({ error: 'Authentication data not provided.' });
     }
-    req.telegramId = telegramId;
-    next();
+
+    const urlParams = new URLSearchParams(initData);
+    const hash = urlParams.get('hash');
+    urlParams.delete('hash');
+
+    const dataCheckString = Array.from(urlParams.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, value]) => `${key}=${value}`)
+        .join('\n');
+
+    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(process.env.TELEGRAM_BOT_TOKEN).digest();
+    const calculatedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+
+    if (calculatedHash === hash) {
+        const user = JSON.parse(urlParams.get('user'));
+        req.telegramUser = user; // Foydalanuvchi ma'lumotlarini so'rovga xavfsiz tarzda qo'shamiz
+        next();
+    } else {
+        return res.status(403).json({ error: 'Invalid authentication data.' });
+    }
 };
 
+
 const isAdmin = (req, res, next) => {
+    // O'ZGARTIRILDI: ADMIN_TELEGRAM_IDS o'rniga asl kodagi ADMIN_TELEGRAM_ID ishlatildi
     const adminId = process.env.ADMIN_TELEGRAM_ID;
     if (!adminId) {
         console.error('CRITICAL: ADMIN_TELEGRAM_ID is not configured on the server.');
         return res.status(500).json({ error: 'Admin ID not configured on server.' });
     }
-    if (req.telegramId !== adminId) {
-        console.warn(`Forbidden access attempt by Telegram ID: ${req.telegramId}`);
+    // O'ZGARTIRILDI: Xavfli req.telegramId o'rniga xavfsiz req.telegramUser.id ishlatildi
+    if (req.telegramUser.id.toString() !== adminId) {
+        console.warn(`Forbidden access attempt by Telegram ID: ${req.telegramUser.id}`);
         return res.status(403).json({ error: 'Forbidden: Admin access required.' });
     }
     next();
@@ -77,19 +100,40 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Backend is running!' });
 });
 
+/* QO'SHILDI: Bannerlar ro'yxatini qaytaruvchi yangi ochiq endpoint */
+app.get('/api/banners', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT id, image_url, link_url, title FROM banners WHERE is_active = true ORDER BY sort_order ASC'
+        );
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching banners:', err);
+        res.status(500).json({ error: 'Server error while fetching banners.' });
+    }
+});
+
+// QO'SHILDI: Frontend uchun autentifikatsiyani tekshirish yo'nalishi
+app.post('/api/auth/validate', validateTelegramAuth, (req, res) => {
+    res.json({ message: 'Authentication successful', user: req.telegramUser });
+});
+
 // --- Public Routes ---
 app.use('/api/products', productRoutes); 
 
 // --- User-specific Routes ---
-app.use('/api/users', authenticate, userRoutes);
-app.use('/api/orders', authenticate, orderRoutes);
+// O'ZGARTIRILDI: 'authenticate' o'rniga 'validateTelegramAuth' ishlatildi
+app.use('/api/users', validateTelegramAuth, userRoutes);
+app.use('/api/orders', validateTelegramAuth, orderRoutes);
 
 // --- Admin-only Routes ---
-app.get('/api/auth/check-admin', authenticate, isAdmin, (req, res) => {
+// O'ZGARTIRILDI: 'authenticate' o'rniga 'validateTelegramAuth' ishlatildi
+app.get('/api/auth/check-admin', validateTelegramAuth, isAdmin, (req, res) => {
     res.status(200).json({ isAdmin: true });
 });
 
-app.post('/api/products', authenticate, isAdmin, async (req, res) => {
+// O'ZGARTIRILDI: 'authenticate' o'rniga 'validateTelegramAuth' ishlatildi
+app.post('/api/products', validateTelegramAuth, isAdmin, async (req, res) => {
     const { name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url } = req.body;
     try {
         const newProduct = await pool.query(
@@ -105,6 +149,7 @@ app.post('/api/products', authenticate, isAdmin, async (req, res) => {
 });
 
 // === Database and Server Initialization ===
+// BU QISM O'ZGARTIRILDI: Banners jadvalini yaratish logikasi qo'shildi
 const createTables = async () => {
   const client = await pool.connect();
   try {
@@ -128,9 +173,31 @@ const createTables = async () => {
         id SERIAL PRIMARY KEY, order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
         product_id INTEGER REFERENCES products(id), quantity INTEGER NOT NULL, price DECIMAL(10, 2) NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS banners (
+                id SERIAL PRIMARY KEY,
+                image_url VARCHAR(255) NOT NULL,
+                link_url VARCHAR(255),
+                title VARCHAR(100),
+                is_active BOOLEAN DEFAULT true,
+                sort_order INT DEFAULT 0,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+
       CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
     `);
+
+    /* QO'SHILDI: Jadval bo'sh bo'lsa, boshlang'ich bannerlarni qo'shish */
+    const res = await client.query('SELECT COUNT(*) FROM banners');
+    if (res.rows[0].count === '0') {
+        await client.query(`
+            INSERT INTO banners (image_url, title, sort_order, is_active) VALUES
+            ('https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?q=80&w=2070&auto=format&fit=crop', 'Yangi kolleksiya keldi!', 1, true),
+            ('https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1999&auto=format&fit=crop', 'Mavsumiy chegirmalarga ulguring!', 2, true),
+            ('https://images.unsplash.com/photo-1567588336364-a6b73995471b?q=80&w=2070&auto=format=fit=crop', 'Yetkazib berish mutlaqo bepul!', 3, true)
+        `);
+    }
+
     await client.query('COMMIT');
     console.log('✅ Jadvallar muvaffaqiyatli tekshirildi/yaratildi.');
   } catch (err) {
@@ -142,6 +209,7 @@ const createTables = async () => {
   }
 };
 
+// BU QISM O'ZGARTIRILMADI
 const startServer = async () => {
   try {
     // 1. DB ga ulanishni tekshiramiz

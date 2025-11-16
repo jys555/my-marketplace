@@ -1,4 +1,4 @@
-import { getLang, getUser, isRegistered as isUserRegistered, getProducts, getCart, getProductById, isFavorite, getOrders } from './state.js';
+import { getLang, getUser, isRegistered as isUserRegistered, getProducts, getCart, getProductById, isFavorite, getOrders, getBanners } from './state.js';
 
 // Til sozlamalari va tarjimalar
 const translations = {
@@ -175,6 +175,21 @@ export function renderPage(pageName, attachEventListeners) {
 function getHomeContent() {
     const user = getUser();
     const displayName = isUserRegistered() ? (user.first_name || window.Telegram.WebApp.initDataUnsafe?.user?.first_name) : t('guest');
+
+    // QO'SHILDI: Bannerlarni state'dan olish
+    const banners = getBanners();
+
+    // O'ZGARTIRILDI: Bannerlar mavjud bo'lsa, dinamik karusel yaratish
+    const carouselHtml = banners && banners.length > 0 ? `
+      <div class="carousel" id="carousel">
+        ${banners.map((banner, index) => `
+          <a href="${banner.link_url || '#'}" class="slide ${index === 0 ? 'active' : ''}">
+            <img src="${banner.image_url}" alt="${banner.title || 'Banner'}">
+          </a>
+        `).join('')}
+      </div>
+    ` : '';
+
     return `
       <header class="header">
         <div class="logo">🛒 Amazing Store</div>
@@ -182,11 +197,7 @@ function getHomeContent() {
         <input type="text" placeholder="${t('search_placeholder')}" ${isUserRegistered() ? '' : 'disabled'}>
         <button id="location-btn">${t('pickup_location')}</button>
       </header>
-      <div class="carousel" id="carousel">
-        <img src="https://via.placeholder.com/375x150/4a90e2/ffffff?text=Banner+1" class="slide active">
-        <img src="https://via.placeholder.com/375x150/50c878/ffffff?text=Banner+2" class="slide">
-        <img src="https://via.placeholder.com/375x150/ff6f61/ffffff?text=Banner+3" class="slide">
-      </div>
+      ${carouselHtml}
       <h3>${t('popular_products')}</h3>
       <div class="products-grid" id="products"></div>
     `;
@@ -202,18 +213,30 @@ export function renderProducts() {
         return;
     }
 
-    productsContainer.innerHTML = products.map(p => `
-      <div class="product-card" data-id="${p.id}">
-        <img src="${p.image || 'https://via.placeholder.com/150'}" alt="${p.name}">
-        <div class="like-btn ${isFavorite(p.id) ? 'liked' : ''}" data-id="${p.id}">${isFavorite(p.id) ? '❤️' : '♡'}</div>
-        <h4>${p.name}</h4>
-        <p>
-          <span class="price">${p.display_price} so'm</span>
-          ${p.sale_price ? `<span class="old-price">${p.price} so'm</span>` : ''}
-        </p>
-        <button class="add-to-cart-btn" data-id="${p.id}">${t('nav_cart')}</button>
-      </div>
-    `).join('');
+    productsContainer.innerHTML = products.map(p => {
+        const hasSale = p.sale_price && p.price > p.sale_price;
+        const salePercentage = hasSale ? Math.round(((p.price - p.sale_price) / p.price) * 100) : 0;
+
+        return `
+          <div class="product-card" data-id="${p.id}">
+            <div class="product-card-image-wrapper">
+              <img src="${p.image || 'https://via.placeholder.com/150'}" alt="${p.name}">
+              <div class="like-btn ${isFavorite(p.id) ? 'liked' : ''}" data-id="${p.id}">${isFavorite(p.id) ? '❤️' : '♡'}</div>
+              ${hasSale ? `<div class="sale-badge">-${salePercentage}%</div>` : ''}
+            </div>
+            <div class="product-card-info">
+              <h4>${p.name}</h4>
+              <div class="product-card-footer">
+                <p class="price-container">
+                  <span class="price">${p.display_price} so'm</span>
+                  ${hasSale ? `<span class="old-price">${p.price.toLocaleString()} so'm</span>` : ''}
+                </p>
+                <button class="add-to-cart-btn" data-id="${p.id}">🛒</button>
+              </div>
+            </div>
+          </div>
+        `;
+    }).join('');
 }
 
 function getProfileContent() {
@@ -364,14 +387,29 @@ export function initCarousel() {
     if (!carousel) return;
     let currentSlide = 0;
     const slides = carousel.querySelectorAll('.slide');
-    if (slides.length === 0) return;
 
-    const update = () => slides.forEach((s, i) => s.style.transform = `translateX(${(i - currentSlide) * 100}%)`);
+    if (slides.length === 0) {
+        carousel.style.display = 'none'; // Karusel blokini yashirish
+        return;
+    }
+
+    const update = () => {
+        slides.forEach((slide, index) => {
+            slide.classList.remove('active');
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            }
+            // Transform usuli o'rniga opacity bilan almashtirish silliqroq bo'lishi mumkin
+            slide.style.opacity = index === currentSlide ? '1' : '0';
+        });
+    };
+
     const autoSlide = setInterval(() => {
         currentSlide = (currentSlide + 1) % slides.length;
         update();
     }, 4000);
-    update();
+
+    update(); // Boshlang'ich holatni o'rnatish
 }
 
 export function openRegisterModal() {
