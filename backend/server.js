@@ -2,14 +2,25 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const crypto = require('crypto');
+const TelegramBot = require('node-telegram-bot-api'); // QO'SHILDI
+
 require('dotenv').config();
 const pool = require('./db');
-const crypto = require('crypto'); // Xavfsiz tekshiruv uchun qo'shildi
+
+// === Bot va Serverni sozlash ===
+const token = process.env.TELEGRAM_BOT_TOKEN;
+if (!token) {
+    console.error('CRITICAL: TELEGRAM_BOT_TOKEN topilmadi. Dastur to\'xtatildi.');
+    process.exit(1);
+}
+const bot = new TelegramBot(token); // Polling o'chirildi
 
 const app = express();
 
 // === Security Middlewares ===
 app.use(helmet());
+// ... (mavjud helmet sozlamalari o'zgarishsiz qoladi)
 app.use(helmet.contentSecurityPolicy({
   directives: {
     defaultSrc: ["'self'", 'https:', 'http:'],
@@ -40,10 +51,30 @@ app.use(cors({
   credentials: true
 }));
 
+// O'ZGARTIRILDI: Endi webhook uchun 'raw' body kerak
 app.use(express.json({ limit: '512kb' }));
 
-// QO'SHILDI: Yangi, xavfsiz 'validateTelegramAuth' funksiyasi
+
+// === Webhook uchun Endpoint ===
+// Bu manzilga faqat Telegram so'rov yuborishi kerak
+const secretPath = `/api/telegram/webhook/${process.env.TELEGRAM_WEBHOOK_SECRET}`;
+
+app.post(secretPath, (req, res) => {
+    bot.processUpdate(req.body);
+    res.sendStatus(200); // Telegramga so'rov qabul qilinganini bildiramiz
+});
+
+// === Bot uchun oddiy mantiq (kelajakda kengaytiriladi) ===
+bot.on('message', (msg) => {
+    const chatId = msg.chat.id;
+    // Hozircha oddiy "echo" bot
+    bot.sendMessage(chatId, `Men ishlayapman! Sizning xabaringiz: "${msg.text}"`);
+});
+
+
+// === Autentifikatsiya Middleware ===
 const validateTelegramAuth = (req, res, next) => {
+// ... (bu funksiya o'zgarishsiz qoladi)
     const initData = req.body.initData || req.headers['x-telegram-data'];
 
     if (!initData) {
@@ -64,22 +95,20 @@ const validateTelegramAuth = (req, res, next) => {
 
     if (calculatedHash === hash) {
         const user = JSON.parse(urlParams.get('user'));
-        req.telegramUser = user; // Foydalanuvchi ma'lumotlarini so'rovga xavfsiz tarzda qo'shamiz
+        req.telegramUser = user;
         next();
     } else {
         return res.status(403).json({ error: 'Invalid authentication data.' });
     }
 };
 
-
 const isAdmin = (req, res, next) => {
-    // O'ZGARTIRILDI: ADMIN_TELEGRAM_IDS o'rniga asl kodagi ADMIN_TELEGRAM_ID ishlatildi
+// ... (bu funksiya o'zgarishsiz qoladi)
     const adminId = process.env.ADMIN_TELEGRAM_ID;
     if (!adminId) {
         console.error('CRITICAL: ADMIN_TELEGRAM_ID is not configured on the server.');
         return res.status(500).json({ error: 'Admin ID not configured on server.' });
     }
-    // O'ZGARTIRILDI: Xavfli req.telegramId o'rniga xavfsiz req.telegramUser.id ishlatildi
     if (req.telegramUser.id.toString() !== adminId) {
         console.warn(`Forbidden access attempt by Telegram ID: ${req.telegramUser.id}`);
         return res.status(403).json({ error: 'Forbidden: Admin access required.' });
@@ -88,11 +117,11 @@ const isAdmin = (req, res, next) => {
 };
 
 // === Routes ===
+// ... (barcha mavjud routes o'zgarishsiz qoladi)
 const userRoutes = require('./routes/users');
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 
-// --- Health Check Route for Railway ---
 app.get('/', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Backend is alive!' });
 });
@@ -100,7 +129,6 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Backend is running!' });
 });
 
-/* QO'SHILDI: Bannerlar ro'yxatini qaytaruvchi yangi ochiq endpoint */
 app.get('/api/banners', async (req, res) => {
     try {
         const result = await pool.query(
@@ -113,26 +141,18 @@ app.get('/api/banners', async (req, res) => {
     }
 });
 
-// QO'SHILDI: Frontend uchun autentifikatsiyani tekshirish yo'nalishi
 app.post('/api/auth/validate', validateTelegramAuth, (req, res) => {
     res.json({ message: 'Authentication successful', user: req.telegramUser });
 });
 
-// --- Public Routes ---
-app.use('/api/products', productRoutes); 
-
-// --- User-specific Routes ---
-// O'ZGARTIRILDI: 'authenticate' o'rniga 'validateTelegramAuth' ishlatildi
+app.use('/api/products', productRoutes);
 app.use('/api/users', validateTelegramAuth, userRoutes);
 app.use('/api/orders', validateTelegramAuth, orderRoutes);
 
-// --- Admin-only Routes ---
-// O'ZGARTIRILDI: 'authenticate' o'rniga 'validateTelegramAuth' ishlatildi
 app.get('/api/auth/check-admin', validateTelegramAuth, isAdmin, (req, res) => {
     res.status(200).json({ isAdmin: true });
 });
 
-// O'ZGARTIRILDI: 'authenticate' o'rniga 'validateTelegramAuth' ishlatildi
 app.post('/api/products', validateTelegramAuth, isAdmin, async (req, res) => {
     const { name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url } = req.body;
     try {
@@ -148,9 +168,10 @@ app.post('/api/products', validateTelegramAuth, isAdmin, async (req, res) => {
     }
 });
 
-// === Database and Server Initialization ===
-// BU QISM O'ZGARTIRILDI: Banners jadvalini yaratish logikasi qo'shildi
+
+// === Database Initialization ===
 const createTables = async () => {
+// ... (bu funksiya o'zgarishsiz qoladi)
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -187,7 +208,6 @@ const createTables = async () => {
       CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
     `);
 
-    /* QO'SHILDI: Jadval bo'sh bo'lsa, boshlang'ich bannerlarni qo'shish */
     const res = await client.query('SELECT COUNT(*) FROM banners');
     if (res.rows[0].count === '0') {
         await client.query(`
@@ -203,13 +223,13 @@ const createTables = async () => {
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('❌ Jadval yaratishda xatolik:', err);
-    throw err; // Xatolikni yuqoriga uzatamiz
+    throw err;
   } finally {
     client.release();
   }
 };
 
-// BU QISM O'ZGARTIRILMADI
+// === Serverni ishga tushirish (WEBHOOK BILAN) ===
 const startServer = async () => {
   try {
     // 1. DB ga ulanishni tekshiramiz
@@ -219,8 +239,17 @@ const startServer = async () => {
 
     // 2. Jadvallarni yaratamiz
     await createTables();
+
+    // 3. Webhookni o'rnatamiz
+    const SERVER_URL = process.env.SERVER_URL;
+    if (!SERVER_URL) {
+        throw new Error("SERVER_URL muhit o'zgaruvchisi o'rnatilmagan. Railway'da sozlang.");
+    }
+    const fullWebhookUrl = `${SERVER_URL}${secretPath}`;
+    await bot.setWebHook(fullWebhookUrl);
+    console.log(`✅ Telegram webhook muvaffaqiyatli o'rnatildi: ${fullWebhookUrl}`);
     
-    // 3. Serverni ishga tushiramiz
+    // 4. Serverni ishga tushiramiz
     const PORT = process.env.PORT || 8080;
     app.listen(PORT, () => {
       console.log(`🚀 Server ishga tushdi. Port: ${PORT}`);
