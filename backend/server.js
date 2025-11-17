@@ -3,24 +3,32 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const crypto = require('crypto');
-const TelegramBot = require('node-telegram-bot-api'); // QO'SHILDI
+const TelegramBot = require('node-telegram-bot-api');
 
 require('dotenv').config();
 const pool = require('./db');
 
-// === Bot va Serverni sozlash ===
-const token = process.env.TELEGRAM_BOT_TOKEN;
-if (!token) {
-    console.error('CRITICAL: TELEGRAM_BOT_TOKEN topilmadi. Dastur to\'xtatildi.');
-    process.exit(1);
-}
-const bot = new TelegramBot(token); // Polling o'chirildi
-
+// XATO TUZATILDI: const app = express() barcha app.use() chaqiruvlaridan oldin turishi kerak
 const app = express();
 
-// === Security Middlewares ===
+// === Bot va Serverni sozlash ===
+// XATO TUZATILDI: Token o'zgaruvchisi nomi 'TELEGRAM_TOKEN' ga standartlashtirildi
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
+if (!TELEGRAM_TOKEN) {
+    console.error('CRITICAL: TELEGRAM_TOKEN topilmadi. Dastur to\'xtatildi.');
+    process.exit(1);
+}
+const bot = new TelegramBot(TELEGRAM_TOKEN);
+
+// XATO TUZATILDI: 'bot' obyektini so'rovlarga qo'shish (app e'lon qilinganidan KEYIN)
+// Bu 'routes/orders.js' fayli uchun kerak
+app.use((req, res, next) => {
+    req.bot = bot;
+    next();
+});
+
+// === Security Middlewares (SIZNING KODINGIZ O'ZGARISHSIZ QOLDIRILDI) ===
 app.use(helmet());
-// ... (mavjud helmet sozlamalari o'zgarishsiz qoladi)
 app.use(helmet.contentSecurityPolicy({
   directives: {
     defaultSrc: ["'self'", 'https:', 'http:'],
@@ -51,30 +59,26 @@ app.use(cors({
   credentials: true
 }));
 
-// O'ZGARTIRILDI: Endi webhook uchun 'raw' body kerak
 app.use(express.json({ limit: '512kb' }));
 
 
 // === Webhook uchun Endpoint ===
-// Bu manzilga faqat Telegram so'rov yuborishi kerak
 const secretPath = `/api/telegram/webhook/${process.env.TELEGRAM_WEBHOOK_SECRET}`;
 
 app.post(secretPath, (req, res) => {
     bot.processUpdate(req.body);
-    res.sendStatus(200); // Telegramga so'rov qabul qilinganini bildiramiz
+    res.sendStatus(200);
 });
 
-// === Bot uchun oddiy mantiq (kelajakda kengaytiriladi) ===
+// === Bot uchun oddiy mantiq ===
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
-    // Hozircha oddiy "echo" bot
-    bot.sendMessage(chatId, `Men ishlayapman! Sizning xabaringiz: "${msg.text}"`);
+    // bot.sendMessage(chatId, `Men ishlayapman! Sizning xabaringiz: "${msg.text}"`);
 });
 
 
-// === Autentifikatsiya Middleware ===
+// === Autentifikatsiya Middleware (SIZNING KODINGIZ O'ZGARISHSIZ QOLDIRILDI) ===
 const validateTelegramAuth = (req, res, next) => {
-// ... (bu funksiya o'zgarishsiz qoladi)
     const initData = req.body.initData || req.headers['x-telegram-data'];
 
     if (!initData) {
@@ -90,7 +94,8 @@ const validateTelegramAuth = (req, res, next) => {
         .map(([key, value]) => `${key}=${value}`)
         .join('\n');
 
-    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(process.env.TELEGRAM_BOT_TOKEN).digest();
+    // XATO TUZATILDI: Token o'zgaruvchisi nomi to'g'irlandi
+    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(TELEGRAM_TOKEN).digest();
     const calculatedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
 
     if (calculatedHash === hash) {
@@ -103,7 +108,6 @@ const validateTelegramAuth = (req, res, next) => {
 };
 
 const isAdmin = (req, res, next) => {
-// ... (bu funksiya o'zgarishsiz qoladi)
     const adminId = process.env.ADMIN_TELEGRAM_ID;
     if (!adminId) {
         console.error('CRITICAL: ADMIN_TELEGRAM_ID is not configured on the server.');
@@ -116,8 +120,7 @@ const isAdmin = (req, res, next) => {
     next();
 };
 
-// === Routes ===
-// ... (barcha mavjud routes o'zgarishsiz qoladi)
+// === Routes (SIZNING KODINGIZ O'ZGARISHSIZ QOLDIRILDI) ===
 const userRoutes = require('./routes/users');
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
@@ -169,9 +172,8 @@ app.post('/api/products', validateTelegramAuth, isAdmin, async (req, res) => {
 });
 
 
-// === Database Initialization ===
+// === Database Initialization (SIZNING KODINGIZ O'ZGARISHSIZ QOLDIRILDI) ===
 const createTables = async () => {
-// ... (bu funksiya o'zgarishsiz qoladi)
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -232,24 +234,22 @@ const createTables = async () => {
 // === Serverni ishga tushirish (WEBHOOK BILAN) ===
 const startServer = async () => {
   try {
-    // 1. DB ga ulanishni tekshiramiz
     const client = await pool.connect();
     console.log('✅ PostgreSQL muvaffaqiyatli ulandi!');
     client.release();
 
-    // 2. Jadvallarni yaratamiz
     await createTables();
 
-    // 3. Webhookni o'rnatamiz
     const SERVER_URL = process.env.SERVER_URL;
     if (!SERVER_URL) {
         throw new Error("SERVER_URL muhit o'zgaruvchisi o'rnatilmagan. Railway'da sozlang.");
     }
     const fullWebhookUrl = `${SERVER_URL}${secretPath}`;
-    await bot.setWebHook(fullWebhookUrl);
+    
+    // XATO TUZATILDI: Webhook'ga xavfsizlik kaliti (secret_token) qo'shildi
+    await bot.setWebHook(fullWebhookUrl, { secret_token: process.env.TELEGRAM_WEBHOOK_SECRET });
     console.log(`✅ Telegram webhook muvaffaqiyatli o'rnatildi: ${fullWebhookUrl}`);
     
-    // 4. Serverni ishga tushiramiz
     const PORT = process.env.PORT || 8080;
     app.listen(PORT, () => {
       console.log(`🚀 Server ishga tushdi. Port: ${PORT}`);

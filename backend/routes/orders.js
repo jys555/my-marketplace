@@ -1,7 +1,6 @@
 // backend/routes/orders.js
 const express = require('express');
 const pool = require('../db');
-const { sendMessage } = require('../bot'); // bot.js dan sendMessage funksiyasini import qilish
 const router = express.Router();
 
 // Unikal buyurtma raqamini yaratish funksiyasi
@@ -86,8 +85,11 @@ router.post('/', async (req, res) => {
 
         await client.query('COMMIT');
 
-        // --- Xabarnoma yuborish ---
+        // --- Xabarnoma yuborish (Yagona to'g'ri usul) ---
         try {
+            // XATO TUZATILDI: 'bot' obyekti 'require' orqali emas, 'req' (so'rov) orqali olinadi.
+            const bot = req.bot; 
+
             const adminChatIds = (process.env.ADMIN_TELEGRAM_IDS || '').split(',').map(id => id.trim()).filter(id => id);
             const userFullName = `${user_info.first_name || ''} ${user_info.last_name || ''}`.trim();
             const userLink = user_info.username ? `(@${user_info.username})` : `(ID: ${user_id})`;
@@ -96,7 +98,7 @@ router.post('/', async (req, res) => {
             const adminMessage = `
 📢 **Yangi buyurtma!**
 
-**Buyurtma raqami:** \`${newOrder.order_number}\`
+**Buyurtma raqami:** \\`${newOrder.order_number}\\`
 **Mijoz:** ${userFullName} ${userLink}
 **Summa:** ${totalAmount.toLocaleString('uz-UZ')} so'm
 **To'lov turi:** ${payment_method}
@@ -104,7 +106,8 @@ router.post('/', async (req, res) => {
             `;
             
             for (const adminId of adminChatIds) {
-                await sendMessage(adminId, adminMessage, { parse_mode: 'Markdown' });
+                // XATO TUZATILDI: 'sendMessage' o'rniga 'bot.sendMessage' ishlatiladi
+                await bot.sendMessage(adminId, adminMessage, { parse_mode: 'Markdown' });
             }
 
             // Foydalanuvchiga xabar
@@ -117,11 +120,11 @@ Sizning **${newOrder.order_number}** raqamli buyurtmangiz muvaffaqiyatli qabul q
 
 Buyurtma holatini profil sahifasidagi "Buyurtmalarim" bo'limidan kuzatib borishingiz mumkin.
             `;
-            await sendMessage(user_id, userMessage, { parse_mode: 'Markdown' });
+            // XATO TUZATILDI: 'sendMessage' o'rniga 'bot.sendMessage' ishlatiladi
+            await bot.sendMessage(user_id, userMessage, { parse_mode: 'Markdown' });
 
         } catch (notificationError) {
             console.error("Xabarnoma yuborishda xatolik:", notificationError);
-            // Bu xato asosiy javobga ta'sir qilmasligi kerak
         }
         
         res.status(201).json(newOrder);
