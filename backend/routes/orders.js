@@ -98,7 +98,7 @@ router.post('/', async (req, res) => {
             const adminMessage = `
 📢 **Yangi buyurtma!**
 
-**Buyurtma raqami:** \\`${newOrder.order_number}\\`
+**Order Number:** \`${newOrder.order_number}\`
 **Mijoz:** ${userFullName} ${userLink}
 **Summa:** ${totalAmount.toLocaleString('uz-UZ')} so'm
 **To'lov turi:** ${payment_method}
