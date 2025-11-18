@@ -7,7 +7,8 @@ let state = {
     favorites: JSON.parse(localStorage.getItem('favorites')) || [], // [productId]
     orders: [],
     currentPage: 'home',
-    banners: [], // QO'SHILDI: Bannerlar uchun yangi massiv
+    banners: [],
+    initData: null, // ADDED: To store Telegram's initData
 };
 
 // --- Getters (Holatni olish) ---
@@ -21,8 +22,15 @@ export const getOrders = () => state.orders;
 export const getCurrentPage = () => state.currentPage;
 export const getBanners = () => state.banners; 
 export const getProductById = (id) => state.products.find(p => p.id === id);
+export const getInitData = () => state.initData; // ADDED: Getter for initData
+
 
 // --- Setters (Holatni o'zgartirish) ---
+
+export function setInitData(data) { // ADDED: The missing function
+    state.initData = data;
+}
+
 export function setLang(lang) {
     if (['uz', 'ru'].includes(lang)) {
         state.lang = lang;

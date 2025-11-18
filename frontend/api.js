@@ -1,4 +1,5 @@
-// O'ZGARTIRILDI: backendUrl olib tashlandi, chunki biz nisbiy yo'llardan foydalanamiz.
+import { getInitData } from './state.js'; // ADDED: Import getInitData
+
 const API_BASE_URL = '/api';
 
 // O'ZGARTIRILDI: apiFetch funksiyasi to'liq yangilandi.
@@ -10,14 +11,12 @@ const API_BASE_URL = '/api';
  * @returns {Promise<any>} - Server javobi
  */
 async function apiFetch(endpoint, options = {}) {
-    // initData'ni global state'dan olamiz (bu main.js'da o'rnatiladi)
-    const { initData } = getState(); 
+    const initData = getInitData(); // CHANGED: Get initData from state
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers,
     };
 
-    // O'ZGARTIRILDI: Xavfli 'X-Telegram-ID' o'rniga xavfsiz 'X-Telegram-Data' ishlatamiz.
     if (initData) {
         headers['X-Telegram-Data'] = initData;
     }
@@ -58,26 +57,26 @@ async function authenticateWithBackend(initData) {
 
 // O'ZGARTIRILDI: Funksiyalar loyihaning umumiy tuzilishiga moslashtirildi.
 
-async function registerUser(user) {
+export async function registerUser(user) {
     return apiFetch('/users/register', {
         method: 'POST',
         body: JSON.stringify(user),
     });
 }
 
-async function getUser(userId) {
+export async function getUser(userId) {
     return apiFetch(`/users/${userId}`);
 }
 
-async function getProducts() {
+export async function getProducts() {
     return apiFetch('/products');
 }
 
-async function getBanners() {
+export async function getBanners() {
     return apiFetch('/banners');
 }
 
-async function createOrder(order) {
+export async function createOrder(order) {
     return apiFetch('/orders', {
         method: 'POST',
         body: JSON.stringify(order),
@@ -85,22 +84,36 @@ async function createOrder(order) {
 }
 
 // --- Admin funksiyalari ---
-async function createProduct(product) {
+export async function createProduct(product) {
     return apiFetch('/admin/products', {
         method: 'POST',
         body: JSON.stringify(product),
     });
 }
 
-async function updateProduct(productId, product) {
+export async function updateProduct(productId, product) {
     return apiFetch(`/admin/products/${productId}`, {
         method: 'PUT',
         body: JSON.stringify(product),
     });
 }
 
-async function deleteProduct(productId) {
+export async function deleteProduct(productId) {
     return apiFetch(`/admin/products/${productId}`, {
         method: 'DELETE',
     });
+}
+
+// ADDED: A new function to handle the initial validation with the backend
+export async function authenticateWithBackend() {
+    try {
+        const data = await apiFetch('/auth/validate', {
+            method: 'POST',
+        });
+        console.log('Authentication successful:', data);
+        return data; 
+    } catch (error) {
+        console.error('Authentication failed:', error);
+        throw error;
+    }
 }
