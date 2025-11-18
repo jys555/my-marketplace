@@ -13,7 +13,7 @@ const app = express();
 
 // === Bot va Serverni sozlash ===
 // XATO TUZATILDI: Token o'zgaruvchisi nomi 'TELEGRAM_TOKEN' ga standartlashtirildi
-const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
+const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 if (!TELEGRAM_TOKEN) {
     console.error('CRITICAL: TELEGRAM_TOKEN topilmadi. Dastur to\'xtatildi.');
     process.exit(1);
