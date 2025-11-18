@@ -38,23 +38,6 @@ async function apiFetch(endpoint, options = {}) {
     return {}; // Bo'sh javob uchun bo'sh ob'ekt qaytaramiz.
 }
 
-// QO'SHILDI: Backend bilan dastlabki autentifikatsiya uchun yangi funksiya.
-async function authenticateWithBackend(initData) {
-    try {
-        // Biz server.js'ga qo'shgan yangi endpoint'ga so'rov yuboramiz.
-        const data = await apiFetch('/auth/validate', {
-            method: 'POST',
-            // Bu yerda initData'ni ham sarlavhada, ham tanada yuborishimiz mumkin.
-            // Sarlavha orqali yuborish standartroq.
-        });
-        console.log('Authentication successful:', data);
-        return data.user; // Serverdan tasdiqlangan foydalanuvchi ma'lumotini olamiz.
-    } catch (error) {
-        console.error('Authentication failed:', error);
-        throw error;
-    }
-}
-
 // O'ZGARTIRILDI: Funksiyalar loyihaning umumiy tuzilishiga moslashtirildi.
 
 export async function registerUser(user) {
