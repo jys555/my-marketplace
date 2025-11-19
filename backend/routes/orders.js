@@ -10,14 +10,26 @@ function generateOrderNumber() {
     return `AMZ-${timestamp.slice(-6)}-${randomPart}`;
 }
 
-// Foydalanuvchining barcha buyurtmalarini olish
-router.get('/:telegram_id', async (req, res) => {
-    const { telegram_id } = req.params;
+// O'ZGARTIRILDI: Foydalanuvchining barcha buyurtmalarini olish
+// Marshrut endi shunchaki '/' va telegram_id `authenticate` middleware'dan olinadi
+router.get('/', async (req, res) => {
+    // telegram_id endi req.params'dan emas, req.telegramId'dan olinadi
+    const telegram_id = req.telegramId; 
+
+    // Har ehtimolga qarshi, agar authenticate middleware ishlamay qolsa
+    if (!telegram_id) {
+        return res.status(401).json({ error: 'Foydalanuvchi aniqlanmadi.' });
+    }
+
     try {
         const result = await pool.query(
             `SELECT 
                 o.id, o.order_number, o.status, o.total_amount, o.created_at,
-                (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) as item_count
+                (SELECT json_agg(json_build_object('name', p.name_uz, 'image', p.image_url)) 
+                   FROM order_items oi 
+                   JOIN products p ON oi.product_id = p.id 
+                  WHERE oi.order_id = o.id 
+                  LIMIT 1) as first_item_details
              FROM orders o
              WHERE o.user_id = $1 
              ORDER BY o.created_at DESC`,
