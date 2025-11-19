@@ -1,14 +1,17 @@
+// frontend/state.js
+const initialUser = JSON.parse(localStorage.getItem('user'));
+
 let state = {
     lang: localStorage.getItem('userLang') || 'uz',
-    user: null,
-    isRegistered: false,
+    user: initialUser, // O'ZGARTIRILDI
+    isRegistered: !!initialUser, // O'ZGARTIRILDI
     products: [],
-    cart: JSON.parse(localStorage.getItem('cart')) || {}, // { productId: quantity }
-    favorites: JSON.parse(localStorage.getItem('favorites')) || [], // [productId]
+    cart: JSON.parse(localStorage.getItem('cart')) || {},
+    favorites: JSON.parse(localStorage.getItem('favorites')) || [],
     orders: [],
     currentPage: 'home',
     banners: [],
-    initData: null, // ADDED: To store Telegram's initData
+    initData: null,
 };
 
 // --- Getters (Holatni olish) ---
@@ -27,7 +30,7 @@ export const getInitData = () => state.initData; // ADDED: Getter for initData
 
 // --- Setters (Holatni o'zgartirish) ---
 
-export function setInitData(data) { // ADDED: The missing function
+export function setInitData(data) { 
     state.initData = data;
 }
 
@@ -39,9 +42,15 @@ export function setLang(lang) {
     }
 }
 
+// O'ZGARTIRILDI: Foydalanuvchini localStorage'ga saqlash
 export function setUser(userData) {
     state.user = userData;
     state.isRegistered = !!userData;
+    if (userData) {
+        localStorage.setItem('user', JSON.stringify(userData));
+    } else {
+        localStorage.removeItem('user');
+    }
 }
 
 export function setProducts(products) {
