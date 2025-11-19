@@ -76,51 +76,8 @@ bot.on('message', (msg) => {
     // bot.sendMessage(chatId, `Men ishlayapman! Sizning xabaringiz: "${msg.text}"`);
 });
 
-
-// === Autentifikatsiya Middleware (SIZNING KODINGIZ O'ZGARISHSIZ QOLDIRILDI) ===
-const validateTelegramAuth = (req, res, next) => {
-    const initData = req.body.initData || req.headers['x-telegram-data'];
-
-    if (!initData) {
-        return res.status(401).json({ error: 'Authentication data not provided.' });
-    }
-
-    const urlParams = new URLSearchParams(initData);
-    const hash = urlParams.get('hash');
-    urlParams.delete('hash');
-
-    const dataCheckString = Array.from(urlParams.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, value]) => `${key}=${value}`)
-        .join('\n');
-
-    // XATO TUZATILDI: Token o'zgaruvchisi nomi to'g'irlandi
-    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(TELEGRAM_TOKEN).digest();
-    const calculatedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
-
-    if (calculatedHash === hash) {
-        const user = JSON.parse(urlParams.get('user'));
-        req.telegramUser = user;
-        next();
-    } else {
-        return res.status(403).json({ error: 'Invalid authentication data.' });
-    }
-};
-
-const isAdmin = (req, res, next) => {
-    const adminId = process.env.ADMIN_TELEGRAM_ID;
-    if (!adminId) {
-        console.error('CRITICAL: ADMIN_TELEGRAM_ID is not configured on the server.');
-        return res.status(500).json({ error: 'Admin ID not configured on server.' });
-    }
-    if (req.telegramUser.id.toString() !== adminId) {
-        console.warn(`Forbidden access attempt by Telegram ID: ${req.telegramUser.id}`);
-        return res.status(403).json({ error: 'Forbidden: Admin access required.' });
-    }
-    next();
-};
-
-// === Routes (SIZNING KODINGIZ O'ZGARISHSIZ QOLDIRILDI) ===
+// === Routes ===
+const { authenticate, isAdmin } = require('./middleware/auth'); // isAdmin ham shu yerdan import qilinadi
 const userRoutes = require('./routes/users');
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
@@ -144,36 +101,16 @@ app.get('/api/banners', async (req, res) => {
     }
 });
 
-// O'ZGARTIRILDI: Autentifikatsiya mantiqi to'g'rilandi. Endi u foydalanuvchi bazada borligini ham tekshiradi.
-app.post('/api/auth/validate', validateTelegramAuth, async (req, res) => {
-    try {
-        const telegramId = req.telegramUser.id;
-        // Foydalanuvchi bizning ma'lumotlar bazamizda mavjudligini tekshiramiz
-        const result = await pool.query('SELECT * FROM users WHERE telegram_id = $1', [telegramId]);
-
-        if (result.rows.length > 0) {
-            // Foydalanuvchi mavjud, uning ma'lumotlarini qaytaramiz
-            res.json({ message: 'Authentication successful', user: result.rows[0] });
-        } else {
-            // Foydalanuvchi Telegram tomonidan tasdiqlangan, lekin bizning bazada yo'q.
-            // Frontenga ro'yxatdan o'tish kerakligi haqida signal beramiz.
-            res.status(404).json({ error: 'User not registered' });
-        }
-    } catch (dbError) {
-        console.error('Database error during auth validation:', dbError);
-        res.status(500).json({ error: 'Internal server error during validation.' });
-    }
-});
 
 app.use('/api/products', productRoutes);
-app.use('/api/users', validateTelegramAuth, userRoutes);
-app.use('/api/orders', validateTelegramAuth, orderRoutes);
+app.use('/api/users', authenticate, userRoutes);
+app.use('/api/orders', authenticate, orderRoutes);
 
-app.get('/api/auth/check-admin', validateTelegramAuth, isAdmin, (req, res) => {
+app.get('/api/auth/check-admin', authenticate, isAdmin, (req, res) => {
     res.status(200).json({ isAdmin: true });
 });
 
-app.post('/api/products', validateTelegramAuth, isAdmin, async (req, res) => {
+app.post('/api/products', authenticate, isAdmin, async (req, res) => {
     const { name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url } = req.body;
     try {
         const newProduct = await pool.query(
