@@ -1,17 +1,19 @@
-import { getInitData } from './state.js'; // ADDED: Import getInitData
+import { getInitData } from './state.js';
 
 const API_BASE_URL = '/api';
 
-// O'ZGARTIRILDI: apiFetch funksiyasi to'liq yangilandi.
-/**
- * Backendga so'rov yuborish uchun markazlashtirilgan funksiya.
- * Avtomatik ravishda xavfsiz 'X-Telegram-Data' sarlavhasini qo'shadi.
- * @param {string} endpoint - API endpointi (masalan, '/users')
- * @param {object} options - Fetch uchun sozlamalar (method, body, etc.)
- * @returns {Promise<any>} - Server javobi
- */
+// XUSUSIY XATOLIK KLASSI
+// Bu bizga status kodini ham saqlab qolish imkonini beradi
+class ApiError extends Error {
+    constructor(message, status) {
+        super(message);
+        this.name = 'ApiError';
+        this.status = status;
+    }
+}
+
 async function apiFetch(endpoint, options = {}) {
-    const initData = getInitData(); // CHANGED: Get initData from state
+    const initData = getInitData();
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -26,40 +28,54 @@ async function apiFetch(endpoint, options = {}) {
         headers,
     });
 
+    // O'ZGARTIRILDI: Xatoliklarni qayta ishlash mantiqi to'liq yangilandi
     if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: `An unknown error occurred (${response.status})` }));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+            // Javob tanasini o'qishga harakat qilamiz
+            const errorData = await response.json();
+            // Backend yuborgan "error" yoki "message" maydonini qidiramiz
+            errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (e) {
+            // Agar javob tanasi bo'sh yoki JSON formatida bo'lmasa, standart xabardan foydalanamiz
+            console.error("Could not parse error response JSON:", e);
+        }
+        // Xatolikni status kodi bilan birga tashlaymiz
+        throw new ApiError(errorMessage, response.status);
     }
-    // Ba'zi so'rovlar (masalan, DELETE) bo'sh javob qaytarishi mumkin.
+
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.indexOf("application/json") !== -1) {
         return response.json();
     }
-    return {}; // Bo'sh javob uchun bo'sh ob'ekt qaytaramiz.
+    return {};
 }
 
-// O'ZGARTIRILDI: Funksiyalar loyihaning umumiy tuzilishiga moslashtirildi.
+
+// --- Mavjud funksiyalaringiz o'zgarishsiz qoladi ---
 
 export async function registerUser(user) {
-    return apiFetch('/users/register', {
+    // server.js da telegram_id middleware orqali olinadi, shuning uchun
+    // bu yerdan yuborish shart emas.
+    return apiFetch('/users', { // Marshrut /users/register dan /users ga o'zgartirildi
         method: 'POST',
         body: JSON.stringify(user),
     });
 }
 
-export async function getUser(userId) {
+export function getUser(userId) {
     return apiFetch(`/users/${userId}`);
 }
 
-export async function getProducts() {
+export function getProducts() {
     return apiFetch('/products');
 }
 
-export async function getBanners() {
+export function getBanners() {
     return apiFetch('/banners');
 }
 
-export async function createOrder(order) {
+export function createOrder(order) {
     return apiFetch('/orders', {
         method: 'POST',
         body: JSON.stringify(order),
@@ -67,36 +83,36 @@ export async function createOrder(order) {
 }
 
 // --- Admin funksiyalari ---
-export async function createProduct(product) {
+export function createProduct(product) {
     return apiFetch('/admin/products', {
         method: 'POST',
         body: JSON.stringify(product),
     });
 }
 
-export async function updateProduct(productId, product) {
+export function updateProduct(productId, product) {
     return apiFetch(`/admin/products/${productId}`, {
         method: 'PUT',
         body: JSON.stringify(product),
     });
 }
 
-export async function deleteProduct(productId) {
+export function deleteProduct(productId) {
     return apiFetch(`/admin/products/${productId}`, {
         method: 'DELETE',
     });
 }
 
-// ADDED: A new function to handle the initial validation with the backend
 export async function authenticateWithBackend() {
     try {
         const data = await apiFetch('/auth/validate', {
             method: 'POST',
         });
         console.log('Authentication successful:', data);
-        return data; 
+        return data;
     } catch (error) {
-        console.error('Authentication failed:', error);
+        console.error('Authentication failed in authenticateWithBackend:', error.message, 'Status:', error.status);
+        // Xatolikni o'zgartirmasdan yuqoriga uzatamiz
         throw error;
     }
 }
