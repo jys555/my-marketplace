@@ -144,8 +144,25 @@ app.get('/api/banners', async (req, res) => {
     }
 });
 
-app.post('/api/auth/validate', validateTelegramAuth, (req, res) => {
-    res.json({ message: 'Authentication successful', user: req.telegramUser });
+// O'ZGARTIRILDI: Autentifikatsiya mantiqi to'g'rilandi. Endi u foydalanuvchi bazada borligini ham tekshiradi.
+app.post('/api/auth/validate', validateTelegramAuth, async (req, res) => {
+    try {
+        const telegramId = req.telegramUser.id;
+        // Foydalanuvchi bizning ma'lumotlar bazamizda mavjudligini tekshiramiz
+        const result = await pool.query('SELECT * FROM users WHERE telegram_id = $1', [telegramId]);
+
+        if (result.rows.length > 0) {
+            // Foydalanuvchi mavjud, uning ma'lumotlarini qaytaramiz
+            res.json({ message: 'Authentication successful', user: result.rows[0] });
+        } else {
+            // Foydalanuvchi Telegram tomonidan tasdiqlangan, lekin bizning bazada yo'q.
+            // Frontenga ro'yxatdan o'tish kerakligi haqida signal beramiz.
+            res.status(404).json({ error: 'User not registered' });
+        }
+    } catch (dbError) {
+        console.error('Database error during auth validation:', dbError);
+        res.status(500).json({ error: 'Internal server error during validation.' });
+    }
 });
 
 app.use('/api/products', productRoutes);
