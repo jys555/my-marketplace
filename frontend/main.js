@@ -20,31 +20,25 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initializeApp() {
     ui.showLoading();
     try {
-        // 1. Backend bilan to'liq initData orqali xavfsiz autentifikatsiya
-        const authResponse = await api.authenticateWithBackend();
-        state.setUser(authResponse.user);
+        // O'ZGARTIRILDI: Avtomatik autentifikatsiya o'chirildi
+        // Endi ilova mehmon rejimida ishga tushadi.
         
-        // 2. Boshlang'ich ma'lumotlarni yuklash (mahsulotlar, buyurtmalar va hk)
+        // 1. Boshlang'ich ma'lumotlarni yuklash (mahsulotlar, bannerlar)
         await loadInitialData();
 
-        // 3. To'g'ri sahifaga o'tish
-        navigateTo(state.getCurrentPage());
+        // 2. Asosiy sahifani ko'rsatish
+        navigateTo('home'); // Bosh sahifadan boshlaymiz
 
     } catch (err) {
         console.error("Initialization error:", err);
-        // Agar autentifikatsiya foydalanuvchi ro'yxatdan o'tmaganligi sababli
-        // xatolik bersa, ro'yxatdan o'tishni so'raymiz.
-        if (err.status === 404 || err.message.includes('not registered')) {
-             pendingAction = () => initializeApp(); // Ro'yxatdan o'tgandan keyin qayta ishga tushirish
-             ui.openRegisterModal();
-             attachModalEventListeners();
-        } else {
-            // Boshqa xatoliklar uchun (masalan, yaroqsiz xesh, server ishlamayapti)
-            ui.showLoading(ui.t('error_server'));
-            WebApp.showAlert(err.message || ui.t('error_server'));
-        }
+        // Xatolik yuz bersa, uni ko'rsatamiz
+        ui.showLoading(ui.t('error_server'));
+        WebApp.showAlert(err.message || ui.t('error_server'));
+    } finally {
+        ui.hideLoading(); // Yuklanish ekranini yashirish
     }
 }
+
 
 
 async function loadInitialData() {

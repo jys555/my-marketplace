@@ -2,16 +2,19 @@
 const express = require('express');
 const pool = require('../db');
 const router = express.Router();
+const { authenticate } = require('../middleware/auth'); // Middleware import qilindi
+
 
 // POST /api/users — foydalanuvchini yaratish/yangilash
-router.post('/', async (req, res) => {
-  const { telegram_id, username, first_name, last_name, phone } = req.body;
+// O'ZGARTIRILDI: 'authenticate' middleware qo'shildi va req.body'dan telegram_id olindi
+router.post('/', authenticate, async (req, res) => {
+  const { first_name, last_name, phone, username } = req.body;
+  const telegram_id = req.telegramId; // telegramId endi middleware'dan olinadi
 
   // first_name, last_name, phone majburiy
-  if (!telegram_id || !first_name || !last_name || !phone) {
+  if (!first_name || !last_name || !phone) {
     return res.status(400).json({ error: 'Ism, familiya va telefon raqami majburiy!' });
   }
-
   try {
     const query = `
       INSERT INTO users (telegram_id, first_name, last_name, username, phone)
