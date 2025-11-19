@@ -75,6 +75,10 @@ export function getBanners() {
     return apiFetch('/banners');
 }
 
+export function getOrders() {
+    return apiFetch('/orders');
+}
+
 export function createOrder(order) {
     return apiFetch('/orders', {
         method: 'POST',

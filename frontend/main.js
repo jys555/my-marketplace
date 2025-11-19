@@ -50,17 +50,25 @@ async function loadInitialData() {
         ]);
 
         state.setProducts(products);
-        state.setBanners(banners); // QO'SHILDI: Olingan bannerlarni state'ga saqlash
+        state.setBanners(banners);
 
+        // O'ZGARTIRILDI: Foydalanuvchi ro'yxatdan o'tgan bo'lsa, buyurtmalarni yuklaymiz
         if (state.isRegistered()) {
-            const orders = await api.getOrders();
-            state.setOrders(orders);
+            try {
+                const orders = await api.getOrders();
+                state.setOrders(orders);
+            } catch (orderError) {
+                // Agar buyurtmalarni yuklashda xato bo'lsa, uni konsolga chiqaramiz,
+                // lekin ilova ishlashda davom etadi.
+                console.error("Could not load user orders:", orderError);
+            }
         }
     } catch (err) {
         console.error("Data loading error:", err);
         WebApp.showAlert(ui.t('products_not_loaded'));
     }
 }
+
 
 function navigateTo(pageName) {
     const protectedPages = ['profile', 'favorites', 'cart'];
