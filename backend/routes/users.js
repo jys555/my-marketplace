@@ -49,8 +49,8 @@ router.post('/', async (req, res) => {
   const { first_name, last_name, phone, username } = req.body;
   const telegram_id = req.telegramId;
 
-  if (!first_name || !last_name || !phone) {
-    return res.status(400).json({ error: 'Ism, familiya va telefon raqami majburiy!' });
+  if (!first_name || !phone) {
+    return res.status(400).json({ error: 'Ism va telefon raqami majburiy!' });
   }
   try {
     const query = `
@@ -64,7 +64,7 @@ router.post('/', async (req, res) => {
         phone = EXCLUDED.phone
       RETURNING telegram_id, first_name, last_name, phone, username, cart, favorites, is_admin;
     `;
-    const values = [ telegram_id, first_name, last_name, username || null, phone ];
+    const values = [ telegram_id, first_name, last_name || null, username || null, phone ];
     const result = await pool.query(query, values);
     res.status(201).json(result.rows[0]);
   } catch (err) {
