@@ -139,10 +139,7 @@ const createTables = async () => {
         last_name VARCHAR(100),
         username VARCHAR(100),
         phone VARCHAR(20),
-        created_at TIMESTAMP DEFAULT NOW(),
-        is_admin BOOLEAN DEFAULT false,
-        cart JSONB DEFAULT '[]',
-        favorites JSONB DEFAULT '[]'
+        created_at TIMESTAMP DEFAULT NOW()
       );
       CREATE TABLE IF NOT EXISTS products (
         id SERIAL PRIMARY KEY, name_uz VARCHAR(255) NOT NULL, name_ru VARCHAR(255) NOT NULL,
@@ -171,6 +168,12 @@ const createTables = async () => {
       CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
     `);
+
+    // MIGRATSIYA: `users` jadvaliga ustunlar mavjudligini tekshirish va qo'shish
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS cart JSONB DEFAULT '[]';`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS favorites JSONB DEFAULT '[]';`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;`);
+
 
     const res = await client.query('SELECT COUNT(*) FROM banners');
     if (res.rows[0].count === '0') {
