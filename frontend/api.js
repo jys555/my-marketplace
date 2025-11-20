@@ -67,6 +67,13 @@ export function getUser(userId) {
     return apiFetch(`/users/${userId}`);
 }
 
+export function updateUser(userId, userData) {
+    return apiFetch(`/users/${userId}`, {
+        method: 'PUT',
+        body: JSON.stringify(userData),
+    });
+}
+
 export function getProducts() {
     return apiFetch('/products');
 }

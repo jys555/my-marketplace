@@ -133,8 +133,16 @@ const createTables = async () => {
     await client.query('BEGIN');
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY, telegram_id BIGINT UNIQUE NOT NULL, first_name VARCHAR(100),
-        last_name VARCHAR(100), username VARCHAR(100), phone VARCHAR(20), created_at TIMESTAMP DEFAULT NOW()
+        id SERIAL PRIMARY KEY,
+        telegram_id BIGINT UNIQUE NOT NULL,
+        first_name VARCHAR(100),
+        last_name VARCHAR(100),
+        username VARCHAR(100),
+        phone VARCHAR(20),
+        created_at TIMESTAMP DEFAULT NOW(),
+        is_admin BOOLEAN DEFAULT false,
+        cart JSONB DEFAULT '[]',
+        favorites JSONB DEFAULT '[]'
       );
       CREATE TABLE IF NOT EXISTS products (
         id SERIAL PRIMARY KEY, name_uz VARCHAR(255) NOT NULL, name_ru VARCHAR(255) NOT NULL,

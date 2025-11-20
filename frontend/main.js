@@ -152,6 +152,7 @@ async function handleLanguageChange(lang) {
 async function handleProfileEditToggle(event) {
     const isEditing = !document.getElementById('profile-form').classList.contains('disabled');
     if (isEditing) {
+        const user = state.getUser();
         const firstName = document.getElementById('firstName').value.trim();
         const lastName = document.getElementById('lastName').value.trim();
         const phone = document.getElementById('phone').value.trim().replace(/\s/g, '');
@@ -161,11 +162,11 @@ async function handleProfileEditToggle(event) {
             return;
         }
         try {
-            const updatedUser = await api.updateUser({
-                ...state.getUser(),
+            // O'ZGARTIRILDI: To'g'ri api chaqiruvi
+            const updatedUser = await api.updateUser(user.telegram_id, {
                 first_name: firstName,
                 last_name: lastName,
-                phone: '+998' + phone,
+                phone: '+998' + phone, // Backend 'phone_number' kutadi
             });
             state.setUser(updatedUser);
             WebApp.showAlert(ui.t('profile_saved'));
