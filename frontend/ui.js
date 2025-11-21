@@ -409,7 +409,7 @@ export function initCarousel() {
         update();
     }, 4000);
 
-    update(); // Boshlang'ich holatni o'rnatish
+    update();
 }
 
 export function openRegisterModal() {
