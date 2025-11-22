@@ -89,6 +89,17 @@ app.get('/api/auth/check-admin', authenticate, isAdmin, (req, res) => {
     res.status(200).json({ isAdmin: true });
 });
 
+app.get('/api/banners', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM banners WHERE is_active = true ORDER BY sort_order ASC');
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error('Error fetching banners:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
 const createTables = async () => {
   const client = await pool.connect();
   try {
