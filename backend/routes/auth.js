@@ -1,5 +1,5 @@
 const express = require('express');
-const db = require('../db');
+const pool = require('../db');
 const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
@@ -8,7 +8,7 @@ const router = express.Router();
 router.post('/validate', authenticate, async (req, res) => {
     try {
         // The user is authenticated by the middleware, we just need to fetch their data
-        const { rows } = await db.query('SELECT id, telegram_id, username, first_name, last_name, phone, language_code, is_admin FROM users WHERE telegram_id = $1', [req.telegramUser.id]);
+        const { rows } = await pool.query('SELECT id, telegram_id, username, first_name, last_name, phone, language_code, is_admin FROM users WHERE telegram_id = $1', [req.telegramUser.id]);
         if (rows.length > 0) {
             res.status(200).json(rows[0]);
         } else {

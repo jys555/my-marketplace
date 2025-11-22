@@ -1,5 +1,5 @@
 const express = require('express');
-const db = require('../db');
+const pool = require('../db');
 const { authenticate, isAdmin } = require('../middleware/auth');
 
 const router = express.Router();
@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
 
     try {
         // is_active=TRUE sharti qo'shildi va nom/tavsif uchun COALESCE ishlatildi
-        const { rows } = await db.query(`
+        const { rows } = await pool.query(`
             SELECT 
                 p.id, 
                 COALESCE(NULLIF(p.name_${lang}, ''), p.name_uz) as name,
@@ -40,7 +40,7 @@ router.post('/', authenticate, isAdmin, async (req, res) => {
     }
 
     try {
-        const { rows } = await db.query(
+        const { rows } = await pool.query(
             `INSERT INTO products (name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url)
              VALUES ($1, $2, $3, $4, $5, $6, $7)
              RETURNING *`,

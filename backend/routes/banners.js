@@ -1,12 +1,12 @@
 const express = require('express');
-const db = require('../db');
+const pool = require('../db');
 
 const router = express.Router();
 
 // GET /api/banners - Fetch all active banners
 router.get('/', async (req, res) => {
     try {
-        const { rows } = await db.query(
+        const { rows } = await pool.query(
             'SELECT id, title, image_url, link_url, is_active, sort_order FROM banners WHERE is_active = TRUE ORDER BY sort_order ASC'
         );
         res.json(rows);

@@ -1,5 +1,5 @@
 const express = require('express');
-const db = require('../db');
+const pool = require('../db');
 const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
@@ -16,7 +16,7 @@ router.post('/', authenticate, async (req, res) => {
 
     try {
         // ON CONFLICT bilan bitta so'rovda ham yaratish, ham yangilash
-        const { rows } = await db.query(
+        const { rows } = await pool.query(
             `INSERT INTO users (telegram_id, username, first_name, last_name, phone, language_code) 
              VALUES ($1, $2, $3, $4, $5, $6) 
              ON CONFLICT (telegram_id) 
@@ -47,7 +47,7 @@ router.put('/profile', authenticate, async (req, res) => {
     }
 
     try {
-        const { rows } = await db.query(
+         const { rows } = await pool.query(
             `UPDATE users SET first_name = $1, last_name = $2, phone = $3, updated_at = NOW() 
              WHERE telegram_id = $4 
              RETURNING id, telegram_id, username, first_name, last_name, phone, language_code, is_admin`,

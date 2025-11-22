@@ -1,5 +1,5 @@
 const express = require('express');
-const db = require('../db');
+const pool = require('../db');
 const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
@@ -14,7 +14,7 @@ router.get('/', authenticate, async (req, res) => {
         }
         const userId = userRows[0].id;
 
-        const { rows: orders } = await db.query(`
+        const { rows: orders } = await pool.query(`
             SELECT
                 o.id,
                 o.status,
@@ -42,7 +42,7 @@ router.post('/', authenticate, async (req, res) => {
         return res.status(400).json({ error: 'Order must contain an array of items' });
     }
 
-    const client = await db.getClient();
+    const client = await pool.getClient();
 
     try {
         await client.query('BEGIN');
