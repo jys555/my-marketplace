@@ -23,8 +23,7 @@ router.post('/', authenticate, async (req, res) => {
              DO UPDATE SET 
                 first_name = EXCLUDED.first_name, 
                 last_name = EXCLUDED.last_name, 
-                phone = EXCLUDED.phone,
-                updated_at = NOW()
+                phone = EXCLUDED.phone
              RETURNING id, telegram_id, username, first_name, last_name, phone, is_admin`,
             [telegram_id, username, first_name, last_name, phone]
         );
@@ -47,7 +46,7 @@ router.put('/profile', authenticate, async (req, res) => {
 
     try {
          const { rows } = await pool.query(
-            `UPDATE users SET first_name = $1, last_name = $2, phone = $3, updated_at = NOW() 
+            `UPDATE users SET first_name = $1, last_name = $2, phone = $3
              WHERE telegram_id = $4 
              RETURNING id, telegram_id, username, first_name, last_name, phone, is_admin`,
             [first_name, last_name, phone, telegram_id]

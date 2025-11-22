@@ -1,6 +1,7 @@
 const crypto = require('crypto');
+const pool = require('../db'); // Ma'lumotlar bazasini import qilish
 
-function authenticate(req, res, next) {
+async function authenticate(req, res, next) { // Funksiyani asinxron qilish
     const authHeader = req.headers['x-telegram-data'];
 
     if (!authHeader) {
@@ -33,6 +34,14 @@ function authenticate(req, res, next) {
         const user = JSON.parse(params.get('user'));
         req.telegramUser = user;
 
+        // Foydalanuvchining ichki ID'sini topish
+        if (user && user.id) {
+            const { rows: userRows } = await pool.query('SELECT id FROM users WHERE telegram_id = $1', [user.id]);
+            if (userRows.length > 0) {
+                req.userId = userRows[0].id; // Ichki DB user ID'sini so'rovga qo'shish
+            }
+        }
+
         next();
     } catch (error) {
         console.error('Authentication error:', error);
@@ -41,6 +50,7 @@ function authenticate(req, res, next) {
 }
 
 const isAdmin = (req, res, next) => {
+    // Bu funksiya o'zgarishsiz qoladi
     const adminId = process.env.ADMIN_TELEGRAM_ID;
     if (!adminId) {
         console.error('CRITICAL: ADMIN_TELEGRAM_ID is not configured on the server.');
