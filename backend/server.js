@@ -110,22 +110,6 @@ app.get('/api/auth/check-admin', authenticate, isAdmin, (req, res) => {
     res.status(200).json({ isAdmin: true });
 });
 
-app.post('/api/products', authenticate, isAdmin, async (req, res) => {
-    const { name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url } = req.body;
-    try {
-        const newProduct = await pool.query(
-            `INSERT INTO products (name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-            [name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url]
-        );
-        res.status(201).json(newProduct.rows[0]);
-    } catch (err) {
-        console.error('Error adding product:', err);
-        res.status(500).json({ error: 'Server error while adding product.' });
-    }
-});
-
-
 // === Database Initialization (SIZNING KODINGIZ O'ZGARISHSIZ QOLDIRILDI) ===
 const createTables = async () => {
   const client = await pool.connect();

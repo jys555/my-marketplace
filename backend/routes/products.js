@@ -2,6 +2,7 @@
 const express = require('express');
 const pool = require('../db');
 const router = express.Router();
+const { authenticate, isAdmin } = require('../middleware/auth');
 
 // GET /api/products — barcha tovarlarni olish (til bilan)
 router.get('/', async (req, res) => {
@@ -72,7 +73,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/products — yangi tovar qo'shish (admin uchun)
-router.post('/', async (req, res) => {
+router.post('/', authenticate, isAdmin, async (req, res) => {
   const { name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url } = req.body;
 
   // Majburiy maydonlarni tekshirish
