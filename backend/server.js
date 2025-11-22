@@ -1,6 +1,5 @@
 const express = require('express');
 const path = require('path');
-const db = require('./db');
 
 // Marshrutlarni import qilish
 const authRoutes = require('./routes/auth');
@@ -22,17 +21,6 @@ app.use('/api/banners', bannerRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
-
-// Jadvallarni yaratish uchun maxsus marshrut (ishlab chiqish uchun)
-app.get('/api/create-tables', async (req, res) => {
-    try {
-        await db.createTables();
-        res.status(200).send('Tables created successfully');
-    } catch (error) {
-        console.error('Error creating tables:', error);
-        res.status(500).send('Error creating tables');
-    }
-});
 
 // Frontend marshrutizatsiyasi uchun barcha so'rovlarni ushlab qolish
 app.get('*', (req, res) => {

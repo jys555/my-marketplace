@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/', authenticate, async (req, res) => {
     try {
         // Foydalanuvchi ID'sini telegram_id orqali topamiz
-        const { rows: userRows } = await db.query('SELECT id FROM users WHERE telegram_id = $1', [req.telegramUser.id]);
+        const { rows: userRowconst { rows: userRows } = await pool.query('SELECT id FROM users WHERE telegram_id = $1', [req.telegramUser.id]);
         if (userRows.length === 0) {
             return res.status(404).json({ error: 'User not found' });
         }
