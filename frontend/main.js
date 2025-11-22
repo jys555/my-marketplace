@@ -20,13 +20,24 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initializeApp() {
     ui.showLoading();
     try {
-        // O'ZGARTIRILDI: Avtomatik autentifikatsiya o'chirildi
-        // Endi ilova mehmon rejimida ishga tushadi.
-        
-        // 1. Boshlang'ich ma'lumotlarni yuklash (mahsulotlar, bannerlar)
+        // Avval serverdan foydalanuvchi ma'lumotlarini yangilashga harakat qilamiz
+        try {
+            const userData = await api.authenticateWithBackend();
+            state.setUser(userData.user); 
+        } catch (authError) {
+            // Agar xato 401 (Unauthorized) yoki 404 (Not Found) bo'lsa, bu normal holat
+            // (foydalanuvchi hali ro'yxatdan o'tmagan). Boshqa xatolarni konsolga chiqaramiz.
+            if (authError.status !== 401 && authError.status !== 404) {
+                console.warn("Could not authenticate with backend, proceeding as guest:", authError.message);
+            }
+            // state.js avtomatik tarzda localStorage'dan foydalanuvchini yuklaydi,
+            // shuning uchun bu yerda qo'shimcha ish qilish shart emas.
+        }
+
+        // Boshlang'ich ma'lumotlarni yuklash (mahsulotlar, bannerlar)
         await loadInitialData();
 
-        // 2. Asosiy sahifani ko'rsatish
+        // Asosiy sahifani ko'rsatish
         navigateTo('home'); // Bosh sahifadan boshlaymiz
 
     } catch (err) {
