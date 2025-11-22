@@ -106,6 +106,14 @@ app.use('/api/products', productRoutes);
 app.use('/api/users', authenticate, userRoutes);
 app.use('/api/orders', authenticate, orderRoutes);
 
+// QO'SHILDI: Frontend uchun autentifikatsiyani tekshirish va foydalanuvchi ma'lumotlarini olish uchun manzil
+app.post('/api/auth/validate', authenticate, (req, res) => {
+    // `authenticate` middleware'i foydalanuvchini `req.user` ga yuklaydi.
+    // Agar bu yerga yetib kelsak, demak foydalanuvchi tasdiqlangan.
+    // Shunchaki foydalanuvchi ma'lumotlarini qaytaramiz.
+    res.status(200).json({ user: req.user });
+});
+
 app.get('/api/auth/check-admin', authenticate, isAdmin, (req, res) => {
     res.status(200).json({ isAdmin: true });
 });
