@@ -8,26 +8,25 @@ const router = express.Router();
 // This single endpoint handles user creation.
 router.post('/', authenticate, async (req, res) => {
     const { first_name, last_name, phone } = req.body;
-    const { id: telegram_id, username, language_code } = req.telegramUser;
+    const { id: telegram_id, username } = req.telegramUser;
 
     if (!first_name || !phone) {
-        return res.status(400).json({ error: 'First name and phone are required' });
+// ... existing code ...
     }
 
     try {
         // ON CONFLICT bilan bitta so'rovda ham yaratish, ham yangilash
         const { rows } = await pool.query(
-            `INSERT INTO users (telegram_id, username, first_name, last_name, phone, language_code) 
-             VALUES ($1, $2, $3, $4, $5, $6) 
+            `INSERT INTO users (telegram_id, username, first_name, last_name, phone) 
+             VALUES ($1, $2, $3, $4, $5) 
              ON CONFLICT (telegram_id) 
              DO UPDATE SET 
                 first_name = EXCLUDED.first_name, 
                 last_name = EXCLUDED.last_name, 
                 phone = EXCLUDED.phone,
-                language_code = EXCLUDED.language_code,
                 updated_at = NOW()
-             RETURNING id, telegram_id, username, first_name, last_name, phone, language_code, is_admin`,
-            [telegram_id, username, first_name, last_name, phone, language_code]
+             RETURNING id, telegram_id, username, first_name, last_name, phone, is_admin`,
+            [telegram_id, username, first_name, last_name, phone]
         );
         res.status(201).json(rows[0]);
     } catch (error) {
@@ -50,7 +49,7 @@ router.put('/profile', authenticate, async (req, res) => {
          const { rows } = await pool.query(
             `UPDATE users SET first_name = $1, last_name = $2, phone = $3, updated_at = NOW() 
              WHERE telegram_id = $4 
-             RETURNING id, telegram_id, username, first_name, last_name, phone, language_code, is_admin`,
+             RETURNING id, telegram_id, username, first_name, last_name, phone, is_admin`,
             [first_name, last_name, phone, telegram_id]
         );
         if (rows.length > 0) {

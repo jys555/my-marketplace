@@ -164,7 +164,7 @@ async function handleProfileEditToggle(event) {
             return;
         }
         try {
-            const updatedUser = await api.updateUser(user.telegram_id, {
+            const updatedUser = await api.updateUser({
                 first_name: firstName,
                 last_name: lastName,
                 phone: '+998' + phone,

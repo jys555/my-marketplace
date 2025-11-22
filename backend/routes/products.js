@@ -21,7 +21,6 @@ router.get('/', async (req, res) => {
                 p.image_url AS image,
                 COALESCE(p.sale_price, p.price) AS display_price
             FROM products p
-            WHERE p.is_active = TRUE
             ORDER BY p.sort_order ASC, p.created_at DESC
         `, []);
         res.json(rows);
