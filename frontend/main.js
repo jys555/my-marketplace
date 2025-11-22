@@ -3,7 +3,7 @@ import * as state from './state.js';
 import * as ui from './ui.js';
 
 const WebApp = window.Telegram.WebApp;
-let pendingAction = null; // Ro'yxatdan o'tgandan keyin bajariladigan amal
+let pendingAction = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!WebApp.initData) {
@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("Telegram.WebApp.initData is not available.");
         return;
     }
-    // initData-ni state-ga saqlaymiz, toki api.js uni ishlata olsin
     state.setInitData(WebApp.initData);
     WebApp.ready();
     initializeApp();
@@ -20,57 +19,54 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initializeApp() {
     ui.showLoading();
     try {
-        // Avval serverdan foydalanuvchi ma'lumotlarini yangilashga harakat qilamiz
-        try {
-            const userData = await api.authenticateWithBackend();
-            state.setUser(userData.user); 
-        } catch (authError) {
-            // Agar xato 401 (Unauthorized) yoki 404 (Not Found) bo'lsa, bu normal holat
-            // (foydalanuvchi hali ro'yxatdan o'tmagan). Boshqa xatolarni konsolga chiqaramiz.
-            if (authError.status !== 401 && authError.status !== 404) {
-                console.warn("Could not authenticate with backend, proceeding as guest:", authError.message);
-            }
-            // state.js avtomatik tarzda localStorage'dan foydalanuvchini yuklaydi,
-            // shuning uchun bu yerda qo'shimcha ish qilish shart emas.
+        // Serverdan foydalanuvchi ma'lumotlarini olishga harakat qilamiz
+        const userData = await api.authenticateWithBackend();
+        // Agar muvaffaqiyatli bo'lsa (200 OK), serverdan kelgan ma'lumotni state'ga o'rnatamiz
+        state.setUser(userData); 
+    } catch (error) {
+        if (error.status === 404) {
+            // 404 xato - foydalanuvchi bazada topilmadi. Bu normal holat (yangi foydalanuvchi).
+            console.log("User not found on backend. Proceeding as guest.");
+            // State va localStorage'ni tozalaymiz
+            state.setUser(null); 
+        } else {
+            // Boshqa kutilmagan xatolar (500, 401, 403 va hokazo)
+            console.error("An unexpected error occurred during authentication:", error.message, "Status:", error.status);
+            WebApp.showAlert(ui.t('error_server'));
+            // Xavfsizlik uchun ilovani mehmon rejimida davom ettiramiz
+            state.setUser(null);
         }
+    }
 
-        // Boshlang'ich ma'lumotlarni yuklash (mahsulotlar, bannerlar)
+    // Autentifikatsiya natijasidan qat'iy nazar, umumiy ma'lumotlarni yuklaymiz
+    try {
         await loadInitialData();
-
-        // Asosiy sahifani ko'rsatish
-        navigateTo('home'); // Bosh sahifadan boshlaymiz
-
+        navigateTo('home');
     } catch (err) {
         console.error("Initialization error:", err);
-        // Xatolik yuz bersa, uni ko'rsatamiz
         ui.showLoading(ui.t('error_server'));
         WebApp.showAlert(err.message || ui.t('error_server'));
     } finally {
-        ui.hideLoading(); // Yuklanish ekranini yashirish
+        ui.hideLoading();
     }
 }
 
 
-
 async function loadInitialData() {
     try {
-        // O'ZGARTIRILDI: Promise.all bilan bir vaqtda bir nechta so'rov yuborish
         const [products, banners] = await Promise.all([
             api.getProducts(),
-            api.getBanners() 
+            api.getBanners()
         ]);
 
         state.setProducts(products);
         state.setBanners(banners);
 
-        // O'ZGARTIRILDI: Foydalanuvchi ro'yxatdan o'tgan bo'lsa, buyurtmalarni yuklaymiz
         if (state.isRegistered()) {
             try {
                 const orders = await api.getOrders();
                 state.setOrders(orders);
             } catch (orderError) {
-                // Agar buyurtmalarni yuklashda xato bo'lsa, uni konsolga chiqaramiz,
-                // lekin ilova ishlashda davom etadi.
                 console.error("Could not load user orders:", orderError);
             }
         }
@@ -79,7 +75,6 @@ async function loadInitialData() {
         WebApp.showAlert(ui.t('products_not_loaded'));
     }
 }
-
 
 function navigateTo(pageName) {
     const protectedPages = ['profile', 'favorites', 'cart'];
@@ -94,7 +89,6 @@ function navigateTo(pageName) {
 }
 
 function attachPageEventListeners(pageName) {
-    // Umumiy event listener'lar
     document.querySelectorAll('.navbar button').forEach(btn => {
         btn.addEventListener('click', () => navigateTo(btn.dataset.page));
     });
@@ -117,11 +111,10 @@ function attachPageEventListeners(pageName) {
         btn.addEventListener('click', handleAddToCart);
     });
 
-    // Sahifaga xos event listener'lar
     switch (pageName) {
         case 'home':
             ui.initCarousel();
-            ui.renderProducts(); // Mahsulotlarni chizish
+            ui.renderProducts();
             document.getElementById('location-btn')?.addEventListener('click', () => {
                 WebApp.openTelegramLink('https://t.me/uzrailway_bot');
             });
@@ -133,7 +126,7 @@ function attachPageEventListeners(pageName) {
             document.querySelectorAll('.tabs .tab-button').forEach(tab => {
                 tab.addEventListener('click', handleOrderTabClick);
             });
-            ui.renderOrders(); // By default, 'current' orders
+            ui.renderOrders();
             break;
         case 'cart':
             document.querySelectorAll('.quantity-btn').forEach(btn => {
@@ -142,7 +135,7 @@ function attachPageEventListeners(pageName) {
             document.getElementById('confirm-order-btn')?.addEventListener('click', handleConfirmOrder);
             break;
         case 'favorites':
-            ui.renderProducts(); // Favorites page also uses product grid
+            ui.renderProducts();
             break;
     }
 }
@@ -152,11 +145,9 @@ function attachModalEventListeners() {
     document.getElementById('register-cancel-btn')?.addEventListener('click', ui.closeRegisterModal);
 }
 
-// --- Event Handlers --
-
 async function handleLanguageChange(lang) {
     state.setLang(lang);
-    await loadInitialData(); // Til o'zgarganda ma'lumotlarni qayta yuklash
+    await loadInitialData();
     navigateTo(state.getCurrentPage());
 }
 
@@ -166,18 +157,17 @@ async function handleProfileEditToggle(event) {
         const user = state.getUser();
         const firstName = document.getElementById('firstName').value.trim();
         const lastName = document.getElementById('lastName').value.trim();
-        const phone = document.getElementById('phone').value.trim().replace(/\s/g, '');
+        const phone = document.getElementById('phone').value.trim().replace(/\\s/g, '');
 
         if (!firstName || phone.length !== 9) {
             WebApp.showAlert(ui.t('please_fill_fields'));
             return;
         }
         try {
-            // O'ZGARTIRILDI: To'g'ri api chaqiruvi
             const updatedUser = await api.updateUser(user.telegram_id, {
                 first_name: firstName,
                 last_name: lastName,
-                phone: '+998' + phone, // Backend 'phone_number' kutadi
+                phone: '+998' + phone,
             });
             state.setUser(updatedUser);
             WebApp.showAlert(ui.t('profile_saved'));
@@ -204,7 +194,6 @@ function handleAddToCart(event) {
         state.addToCart(productId);
         const product = state.getProductById(productId);
         WebApp.showPopup({ title: "✅", message: ui.t('added_to_cart', { name: product.name }) });
-        // Update cart icon badge if needed
     };
 
     if (state.isRegistered()) {
@@ -229,7 +218,7 @@ function handleToggleFavorite(event) {
             message: added ? ui.t('added_to_favorites', { id: productId }) : ui.t('removed_from_favorites', { id: productId })
         });
         if (state.getCurrentPage() === 'favorites') {
-            navigateTo('favorites'); // Refresh favorites page
+            navigateTo('favorites');
         }
     };
 
@@ -248,7 +237,7 @@ function handleUpdateCartItem(event) {
     const currentQuantity = state.getCart()[productId] || 0;
     const newQuantity = currentQuantity + change;
     state.updateCartItemQuantity(productId, newQuantity);
-    navigateTo('cart'); // Refresh cart page
+    navigateTo('cart');
 }
 
 async function handleConfirmOrder() {
@@ -265,7 +254,7 @@ async function handleConfirmOrder() {
         const newOrder = await api.createOrder(orderData);
         WebApp.showAlert(ui.t('order_success', { order_number: newOrder.id }));
         state.clearCart();
-        const orders = await api.getOrders(); // Refresh orders
+        const orders = await api.getOrders();
         state.setOrders(orders);
         navigateTo('profile');
     } catch (err) {
@@ -276,7 +265,7 @@ async function handleConfirmOrder() {
 async function handleRegisterUser() {
     const firstName = document.getElementById('regFirstName').value.trim();
     const lastName = document.getElementById('regLastName').value.trim();
-    const phone = document.getElementById('regPhone').value.trim().replace(/\s/g, '');
+    const phone = document.getElementById('regPhone').value.trim().replace(/\\s/g, '');
 
     if (!firstName || phone.length !== 9) {
         WebApp.showAlert(ui.t('please_fill_fields'));
@@ -284,8 +273,6 @@ async function handleRegisterUser() {
     }
 
     try {
-        // initData endi o'zgartirilgan api.js dagi X-Telegram-Data sarlavhasi
-        // orqali avtomatik tarzda yuboriladi
         const newUser = await api.registerUser({
             first_name: firstName,
             last_name: lastName,
@@ -295,15 +282,12 @@ async function handleRegisterUser() {
         ui.closeRegisterModal();
         WebApp.showAlert(ui.t('profile_saved'));
 
-        // Ro'yxatdan o'tgandan so'ng, foydalanuvchiga xos ma'lumotlarni yuklaymiz
         await loadInitialData(); 
 
-        // Agar kutayotgan amal bo'lsa, uni hozir bajaramiz
         if (pendingAction) {
             pendingAction();
             pendingAction = null;
         } else {
-            // Aks holda, shunchaki joriy sahifani yangilaymiz
             navigateTo(state.getCurrentPage()); 
         }
     } catch (err) {

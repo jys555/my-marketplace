@@ -1,33 +1,26 @@
-// backend/server.js
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const crypto = require('crypto');
 const TelegramBot = require('node-telegram-bot-api');
 
 require('dotenv').config();
 const pool = require('./db');
+const { authenticate, isAdmin } = require('./middleware/auth');
 
-// XATO TUZATILDI: const app = express() barcha app.use() chaqiruvlaridan oldin turishi kerak
 const app = express();
 
-// === Bot va Serverni sozlash ===
-// XATO TUZATILDI: Token o'zgaruvchisi nomi 'TELEGRAM_TOKEN' ga standartlashtirildi
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 if (!TELEGRAM_TOKEN) {
-    console.error('CRITICAL: TELEGRAM_TOKEN topilmadi. Dastur to\'xtatildi.');
+    console.error('CRITICAL: TELEGRAM_TOKEN not found. Exiting.');
     process.exit(1);
 }
 const bot = new TelegramBot(TELEGRAM_TOKEN);
 
-// XATO TUZATILDI: 'bot' obyektini so'rovlarga qo'shish (app e'lon qilinganidan KEYIN)
-// Bu 'routes/orders.js' fayli uchun kerak
 app.use((req, res, next) => {
     req.bot = bot;
     next();
 });
 
-// === Security Middlewares (SIZNING KODINGIZ O'ZGARISHSIZ QOLDIRILDI) ===
 app.use(helmet());
 app.use(helmet.contentSecurityPolicy({
   directives: {
@@ -50,7 +43,7 @@ const whitelist = [
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    if (whitelist.indexOf(origin) !== -1 || /\.vercel\.app$/.test(origin)) {
+    if (whitelist.indexOf(origin) !== -1 || /\\.vercel\\.app$/.test(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -61,23 +54,6 @@ app.use(cors({
 
 app.use(express.json({ limit: '512kb' }));
 
-
-// === Webhook uchun Endpoint ===
-const secretPath = `/api/telegram/webhook/${process.env.TELEGRAM_WEBHOOK_SECRET}`;
-
-app.post(secretPath, (req, res) => {
-    bot.processUpdate(req.body);
-    res.sendStatus(200);
-});
-
-// === Bot uchun oddiy mantiq ===
-bot.on('message', (msg) => {
-    const chatId = msg.chat.id;
-    // bot.sendMessage(chatId, `Men ishlayapman! Sizning xabaringiz: "${msg.text}"`);
-});
-
-// === Routes ===
-const { authenticate, isAdmin } = require('./middleware/auth'); // isAdmin ham shu yerdan import qilinadi
 const userRoutes = require('./routes/users');
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
@@ -85,40 +61,34 @@ const orderRoutes = require('./routes/orders');
 app.get('/', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Backend is alive!' });
 });
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'Backend is running!' });
-});
 
-app.get('/api/banners', async (req, res) => {
+// YAGILANGAN MARSHRUT
+app.post('/api/auth/validate', authenticate, async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT id, image_url, link_url, title FROM banners WHERE is_active = true ORDER BY sort_order ASC'
-        );
-        res.json(result.rows);
-    } catch (err) {
-        console.error('Error fetching banners:', err);
-        res.status(500).json({ error: 'Server error while fetching banners.' });
+        const { id } = req.telegramUser;
+        const result = await pool.query('SELECT * FROM users WHERE telegram_id = $1', [id]);
+
+        if (result.rows.length > 0) {
+            // Foydalanuvchi topildi, to'liq ma'lumotlarni qaytaramiz
+            res.status(200).json(result.rows[0]);
+        } else {
+            // Foydalanuvchi bazada yo'q, 404 qaytaramiz
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        console.error('Error during user validation:', error);
+        res.status(500).json({ message: 'Internal server error' });
     }
 });
-
 
 app.use('/api/products', productRoutes);
 app.use('/api/users', authenticate, userRoutes);
 app.use('/api/orders', authenticate, orderRoutes);
 
-// QO'SHILDI: Frontend uchun autentifikatsiyani tekshirish va foydalanuvchi ma'lumotlarini olish uchun manzil
-app.post('/api/auth/validate', authenticate, (req, res) => {
-    // `authenticate` middleware'i foydalanuvchini `req.user` ga yuklaydi.
-    // Agar bu yerga yetib kelsak, demak foydalanuvchi tasdiqlangan.
-    // Shunchaki foydalanuvchi ma'lumotlarini qaytaramiz.
-    res.status(200).json({ user: req.user });
-});
-
 app.get('/api/auth/check-admin', authenticate, isAdmin, (req, res) => {
     res.status(200).json({ isAdmin: true });
 });
 
-// === Database Initialization (SIZNING KODINGIZ O'ZGARISHSIZ QOLDIRILDI) ===
 const createTables = async () => {
   const client = await pool.connect();
   try {
@@ -131,7 +101,10 @@ const createTables = async () => {
         last_name VARCHAR(100),
         username VARCHAR(100),
         phone VARCHAR(20),
-        created_at TIMESTAMP DEFAULT NOW()
+        created_at TIMESTAMP DEFAULT NOW(),
+        cart JSONB DEFAULT '[]',
+        favorites JSONB DEFAULT '[]',
+        is_admin BOOLEAN DEFAULT false
       );
       CREATE TABLE IF NOT EXISTS products (
         id SERIAL PRIMARY KEY, name_uz VARCHAR(255) NOT NULL, name_ru VARCHAR(255) NOT NULL,
@@ -148,71 +121,44 @@ const createTables = async () => {
         product_id INTEGER REFERENCES products(id), quantity INTEGER NOT NULL, price DECIMAL(10, 2) NOT NULL
       );
       CREATE TABLE IF NOT EXISTS banners (
-                id SERIAL PRIMARY KEY,
-                image_url VARCHAR(255) NOT NULL,
-                link_url VARCHAR(255),
-                title VARCHAR(100),
-                is_active BOOLEAN DEFAULT true,
-                sort_order INT DEFAULT 0,
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-            );
+        id SERIAL PRIMARY KEY,
+        image_url VARCHAR(255) NOT NULL,
+        link_url VARCHAR(255),
+        title VARCHAR(100),
+        is_active BOOLEAN DEFAULT true,
+        sort_order INT DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
 
       CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
     `);
 
-    // MIGRATSIYA: `users` jadvaliga ustunlar mavjudligini tekshirish va qo'shish
-    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS cart JSONB DEFAULT '[]';`);
-    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS favorites JSONB DEFAULT '[]';`);
-    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;`);
-
-
-    const res = await client.query('SELECT COUNT(*) FROM banners');
-    if (res.rows[0].count === '0') {
-        await client.query(`
-            INSERT INTO banners (image_url, title, sort_order, is_active) VALUES
-            ('https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?q=80&w=2070&auto=format&fit=crop', 'Yangi kolleksiya keldi!', 1, true),
-            ('https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1999&auto=format&fit=crop', 'Mavsumiy chegirmalarga ulguring!', 2, true),
-            ('https://images.unsplash.com/photo-1567588336364-a6b73995471b?q=80&w=2070&auto=format=fit=crop', 'Yetkazib berish mutlaqo bepul!', 3, true)
-        `);
-    }
-
     await client.query('COMMIT');
-    console.log('✅ Jadvallar muvaffaqiyatli tekshirildi/yaratildi.');
+    console.log('✅ Tables successfully checked/created.');
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('❌ Jadval yaratishda xatolik:', err);
+    console.error('❌ Error creating tables:', err);
     throw err;
   } finally {
     client.release();
   }
 };
 
-// === Serverni ishga tushirish (WEBHOOK BILAN) ===
 const startServer = async () => {
   try {
     const client = await pool.connect();
-    console.log('✅ PostgreSQL muvaffaqiyatli ulandi!');
+    console.log('✅ PostgreSQL connected successfully!');
     client.release();
 
     await createTables();
 
-    const SERVER_URL = process.env.SERVER_URL;
-    if (!SERVER_URL) {
-        throw new Error("SERVER_URL muhit o'zgaruvchisi o'rnatilmagan. Railway'da sozlang.");
-    }
-    const fullWebhookUrl = `${SERVER_URL}${secretPath}`;
-    
-    // XATO TUZATILDI: Webhook'ga xavfsizlik kaliti (secret_token) qo'shildi
-    await bot.setWebHook(fullWebhookUrl, { secret_token: process.env.TELEGRAM_WEBHOOK_SECRET });
-    console.log(`✅ Telegram webhook muvaffaqiyatli o'rnatildi: ${fullWebhookUrl}`);
-    
     const PORT = process.env.PORT || 8080;
     app.listen(PORT, () => {
-      console.log(`🚀 Server ishga tushdi. Port: ${PORT}`);
+      console.log(`🚀 Server started. Port: ${PORT}`);
     });
   } catch (err) {
-    console.error("❌ Serverni ishga tushirishda jiddiy xatolik:", err.message);
+    console.error("❌ Critical error starting server:", err.message);
     process.exit(1);
   }
 };

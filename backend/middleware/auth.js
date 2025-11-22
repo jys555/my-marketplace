@@ -7,7 +7,6 @@ function authenticate(req, res, next) {
         return res.status(401).json({ message: 'Authentication data not provided' });
     }
 
-    // .env faylidagi o'zgaruvchi nomini to'g'rilaymiz
     const botToken = process.env.TELEGRAM_BOT_TOKEN; 
     if (!botToken) {
         console.error("TELEGRAM_BOT_TOKEN is not configured in environment variables.");
@@ -22,7 +21,7 @@ function authenticate(req, res, next) {
         const dataCheckString = Array.from(params.entries())
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([key, value]) => `${key}=${value}`)
-            .join('\n'); // '\\n' emas, '\n' bo'lishi kerak
+            .join('\n');
 
         const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
         const calculatedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
@@ -32,8 +31,7 @@ function authenticate(req, res, next) {
         }
         
         const user = JSON.parse(params.get('user'));
-        req.telegramId = user.id;   // Eski kod bilan moslik uchun
-        req.telegramUser = user; // Yangi isAdmin funksiyasi uchun
+        req.telegramUser = user;
 
         next();
     } catch (error) {
@@ -42,14 +40,12 @@ function authenticate(req, res, next) {
     }
 }
 
-// YANGI FUNKSIYA: isAdmin
 const isAdmin = (req, res, next) => {
     const adminId = process.env.ADMIN_TELEGRAM_ID;
     if (!adminId) {
         console.error('CRITICAL: ADMIN_TELEGRAM_ID is not configured on the server.');
         return res.status(500).json({ error: 'Admin ID not configured on server.' });
     }
-    // req.telegramUser endi 'authenticate' middleware tomonidan yaratiladi
     if (!req.telegramUser || req.telegramUser.id.toString() !== adminId) {
         console.warn(`Forbidden access attempt by Telegram ID: ${req.telegramUser ? req.telegramUser.id : 'Unknown'}`);
         return res.status(403).json({ error: 'Forbidden: Admin access required.' });
@@ -57,5 +53,4 @@ const isAdmin = (req, res, next) => {
     next();
 };
 
-
-module.exports = { authenticate, isAdmin }; // isAdmin'ni ham export qilamiz
+module.exports = { authenticate, isAdmin };
