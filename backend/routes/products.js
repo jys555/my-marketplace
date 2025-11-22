@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
     const lang = ['uz', 'ru'].includes(req.query.lang) ? req.query.lang : 'uz';
 
     try {
-        // is_active=TRUE sharti qo'shildi va nom/tavsif uchun COALESCE ishlatildi
+        // is_active=TRUE sharti va sort_order olib tashlandi
         const { rows } = await pool.query(`
             SELECT 
                 p.id, 
@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
                 p.image_url AS image,
                 COALESCE(p.sale_price, p.price) AS display_price
             FROM products p
-            ORDER BY p.sort_order ASC, p.created_at DESC
+            ORDER BY p.created_at DESC
         `, []);
         res.json(rows);
     } catch (error) {
