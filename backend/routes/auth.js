@@ -4,16 +4,25 @@ const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
-// POST /api/auth/validate - Validate user token and return user data
+// POST /api/auth/validate - Validate user and return user data or guest status
 router.post('/validate', authenticate, async (req, res) => {
     try {
-        // The user is authenticated by the middleware, we just need to fetch their data
         const { rows } = await pool.query('SELECT id, telegram_id, username, first_name, last_name, phone, language_code, is_admin FROM users WHERE telegram_id = $1', [req.telegramUser.id]);
+        
         if (rows.length > 0) {
-            res.status(200).json(rows[0]);
+            // User found in DB, return full user profile
+            res.status(200).json({ ...rows[0], is_guest: false });
         } else {
-            // This case should ideally not happen if authenticate middleware is used correctly
-            res.status(404).json({ error: 'User not found in database despite valid Telegram data.' });
+            // User not found in DB, return guest profile based on Telegram data
+            const guestUser = {
+                telegram_id: req.telegramUser.id,
+                username: req.telegramUser.username,
+                first_name: req.telegramUser.first_name,
+                last_name: req.telegramUser.last_name,
+                language_code: req.telegramUser.language_code,
+                is_guest: true
+            };
+            res.status(200).json(guestUser);
         }
     } catch (error) {
         console.error('Error validating user:', error);
