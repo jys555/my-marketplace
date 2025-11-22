@@ -7,10 +7,12 @@ const router = express.Router();
 // GET /api/orders - Get authenticated user's orders
 router.get('/', authenticate, async (req, res) => {
     try {
-        // Foydalanuvchi ID'sini telegram_id orqali topamiz
-        const { rows: userRowconst { rows: userRows } = await pool.query('SELECT id FROM users WHERE telegram_id = $1', [req.telegramUser.id]);
+        // Foydalanuvchi ID'sini telegram_id orqali topamiz (XATO TUZATILDI)
+        const { rows: userRows } = await pool.query('SELECT id FROM users WHERE telegram_id = $1', [req.telegramUser.id]);
         if (userRows.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
+            // This can happen if a user is authenticated via Telegram but not yet in our DB
+            // according to the "guest" logic. In this case, they have no orders.
+            return res.json([]);
         }
         const userId = userRows[0].id;
 
@@ -42,16 +44,17 @@ router.post('/', authenticate, async (req, res) => {
         return res.status(400).json({ error: 'Order must contain an array of items' });
     }
 
-    const client = await pool.getClient();
+    let client; // Define client here to be accessible in finally block
 
     try {
+        client = await pool.connect(); // Use pool.connect() for transactions
         await client.query('BEGIN');
 
         // Foydalanuvchi ID'sini req.telegramUser'dan xavfsiz tarzda olamiz
         const { rows: userRows } = await client.query('SELECT id FROM users WHERE telegram_id = $1', [req.telegramUser.id]);
         if (userRows.length === 0) {
-            // Bu holat deyarli yuz bermasligi kerak, chunki 'authenticate' middleware bor
-            throw new Error('Authenticated user not found in database.');
+            // User must be registered to place an order.
+            return res.status(403).json({ error: 'User must be registered to create an order.' });
         }
         const userId = userRows[0].id;
 
@@ -96,18 +99,18 @@ router.post('/', authenticate, async (req, res) => {
 
         await client.query('COMMIT');
 
-        // Telegram xabarnomasi yuborish mantig'i bu yerda bo'lmasligi kerak.
-        // Uni alohida servis yoki message queue orqali qilish to'g'riroq.
-        // Hozircha bu mantiqni olib turamiz.
-
         res.status(201).json({ id: orderId, status: 'new', total_price: totalPrice });
 
     } catch (error) {
-        await client.query('ROLLBACK');
+        if (client) {
+            await client.query('ROLLBACK');
+        }
         console.error('Error creating order:', error);
         res.status(500).json({ error: 'Failed to create order', details: error.message });
     } finally {
-        client.release();
+        if (client) {
+            client.release();
+        }
     }
 });
 
