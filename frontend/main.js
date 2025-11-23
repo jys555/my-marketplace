@@ -185,50 +185,24 @@ async function handleProfileEditToggle(event) {
     }
 }
 
-function handleOrderTabClick(event) {
-    const tab = event.target.dataset.tab;
-    document.querySelectorAll('.tabs .tab-button').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
-    ui.renderOrders(tab);
-}
-
-function handleAddToCart(event) {
+async function handleAddToCart(event) {
     event.stopPropagation();
     const productId = parseInt(event.target.dataset.id);
-    const action = () => {
+    const action = async () => {
         state.addToCart(productId);
-        const product = state.getProductById(productId);
-        WebApp.showPopup({ title: "✅", message: ui.t('added_to_cart', { name: product.name }) });
-    };
-
-    if (state.isRegistered()) {
-        action();
-    } else {
-        pendingAction = action;
-        ui.openRegisterModal();
-        attachModalEventListeners();
-    }
-}
-
-function handleToggleFavorite(event) {
-    event.stopPropagation();
-    const btn = event.target;
-    const productId = parseInt(btn.dataset.id);
-    const action = () => {
-        const added = state.toggleFavorite(productId);
-        btn.classList.toggle('liked', added);
-        btn.textContent = added ? '❤️' : '♡';
-        WebApp.showPopup({
-            title: added ? '❤️' : '🤍',
-            message: added ? ui.t('added_to_favorites', { id: productId }) : ui.t('removed_from_favorites', { id: productId })
-        });
-        if (state.getCurrentPage() === 'favorites') {
-            navigateTo('favorites');
+        try {
+            await api.updateCart(state.getCart());
+            const product = state.getProductById(productId);
+            WebApp.showPopup({ title: "✅", message: ui.t('added_to_cart', { name: product.name }) });
+        } catch (err) {
+            WebApp.showAlert(`${ui.t('error_saving')}: ${err.message}`);
+            // Revert state change on failure
+            state.updateCartItemQuantity(productId, (state.getCart()[productId] || 1) - 1);
         }
     };
 
     if (state.isRegistered()) {
-        action();
+        await action();
     } else {
         pendingAction = action;
         ui.openRegisterModal();
@@ -236,13 +210,57 @@ function handleToggleFavorite(event) {
     }
 }
 
-function handleUpdateCartItem(event) {
+async function handleToggleFavorite(event) {
+    event.stopPropagation();
+    const btn = event.target;
+    const productId = parseInt(btn.dataset.id);
+    const action = async () => {
+        const added = state.toggleFavorite(productId);
+        btn.classList.toggle('liked', added);
+        btn.textContent = added ? '❤️' : '♡';
+
+        try {
+            await api.updateFavorites(state.getFavorites());
+            WebApp.showPopup({
+                title: added ? '❤️' : '🤍',
+                message: added ? ui.t('added_to_favorites', { id: productId }) : ui.t('removed_from_favorites', { id: productId })
+            });
+            if (state.getCurrentPage() === 'favorites') {
+                navigateTo('favorites');
+            }
+        } catch (err) {
+            WebApp.showAlert(`${ui.t('error_saving')}: ${err.message}`);
+            // Revert state change on failure
+            state.toggleFavorite(productId);
+            btn.classList.toggle('liked', !added);
+            btn.textContent = !added ? '❤️' : '♡';
+        }
+    };
+
+    if (state.isRegistered()) {
+        await action();
+    } else {
+        pendingAction = action;
+        ui.openRegisterModal();
+        attachModalEventListeners();
+    }
+}
+
+async function handleUpdateCartItem(event) {
     const productId = parseInt(event.target.dataset.id);
     const change = parseInt(event.target.dataset.change);
     const currentQuantity = state.getCart()[productId] || 0;
     const newQuantity = currentQuantity + change;
     state.updateCartItemQuantity(productId, newQuantity);
-    navigateTo('cart');
+    try {
+        await api.updateCart(state.getCart());
+        navigateTo('cart');
+    } catch (err) {
+        WebApp.showAlert(`${ui.t('error_saving')}: ${err.message}`);
+        // Revert state change
+        state.updateCartItemQuantity(productId, currentQuantity);
+        navigateTo('cart');
+    }
 }
 
 async function handleConfirmOrder() {
@@ -259,6 +277,7 @@ async function handleConfirmOrder() {
         const newOrder = await api.createOrder(orderData);
         WebApp.showAlert(ui.t('order_success', { order_number: newOrder.id }));
         state.clearCart();
+        await api.updateCart(state.getCart()); // Clear cart on server
         const orders = await api.getOrders();
         state.setOrders(orders);
         navigateTo('profile');

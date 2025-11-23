@@ -1,5 +1,4 @@
-import { getLang, getUser, isRegistered as isUserRegistered, getProducts, getCart, getProductById, isFavorite, getOrders, getBanners, getGuestTelegramUser } from './state.js'; // getGuestTelegramUser import qilindi
-
+import { getLang, getUser, isRegistered as isUserRegistered, getProducts, getCart, getProductById, isFavorite, getOrders, getBanners, getGuestTelegramUser, getFavorites } from './state.js'; // getGuestTelegramUser import qilindi
 // Til sozlamalari va tarjimalar
 const translations = {
     uz: {

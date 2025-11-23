@@ -9,14 +9,16 @@ router.post('/validate', authenticate, async (req, res) => {
         // User is authenticated via middleware, and telegramUser is on req.
         // Now, check if this user exists in our database.
         const { id: telegram_id } = req.telegramUser;
-        const userResult = await pool.query('SELECT id, first_name, last_name, phone, username FROM users WHERE telegram_id = $1', [telegram_id]);
+        const userResult = await pool.query('SELECT id, first_name, last_name, phone, username, cart, favorites FROM users WHERE telegram_id = $1', [telegram_id]);
 
         if (userResult.rows.length > 0) {
             // User exists, send back their data
-            res.json({ status: 'existing_user', user: userResult.rows[0] });
+            const user = userResult.rows[0];
+            // Ensure cart and favorites are not null
+            user.cart = user.cart || {};
+            user.favorites = user.favorites || [];
+            res.json({ status: 'existing_user', user: user });
         } else {
-            // User does not exist in our DB, they are a "guest"
-            // The frontend can use the telegramUser data to pre-fill fields if desired
             res.json({ status: 'guest', telegramUser: req.telegramUser });
         }
     } catch (error) {
@@ -32,9 +34,13 @@ router.get('/profile', authenticate, async (req, res) => {
         return res.status(404).json({ error: 'User profile not found. Please create a profile.' });
     }
     try {
-        const user = await pool.query('SELECT first_name, last_name, phone, username FROM users WHERE id = $1', [req.userId]);
+        const user = await pool.query('SELECT first_name, last_name, phone, username, cart, favorites FROM users WHERE id = $1', [req.userId]);
         if (user.rows.length > 0) {
-            res.json(user.rows[0]);
+            const userProfile = user.rows[0];
+            // Ensure cart and favorites are not null
+            userProfile.cart = userProfile.cart || {};
+            userProfile.favorites = userProfile.favorites || [];
+            res.json(userProfile);
         } else {
             // This case should not be hit if req.userId is correctly set for existing users.
             res.status(404).json({ error: 'User not found' });
@@ -60,23 +66,65 @@ router.put('/profile', authenticate, async (req, res) => {
         if (req.userId) {
             // Update existing user
             const updatedUser = await pool.query(
-                'UPDATE users SET first_name = $1, last_name = $2, phone = $3 WHERE id = $4 RETURNING id, first_name, last_name, phone, username',
+                'UPDATE users SET first_name = $1, last_name = $2, phone = $3 WHERE id = $4 RETURNING id, first_name, last_name, phone, username, cart, favorites',
                 [first_name, last_name, phone, req.userId]
             );
-            res.json(updatedUser.rows[0]);
+            const user = updatedUser.rows[0];
+            user.cart = user.cart || {};
+            user.favorites = user.favorites || [];
+            res.json(user);
         } else {
             // Create new user
             const newUser = await pool.query(
-                'INSERT INTO users (telegram_id, first_name, last_name, phone, username) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, phone, username',
+                'INSERT INTO users (telegram_id, first_name, last_name, phone, username) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, phone, username, cart, favorites',
                 [telegram_id, first_name, last_name, phone, username || null]
             );
-            res.status(201).json(newUser.rows[0]);
+            const user = newUser.rows[0];
+            user.cart = user.cart || {};
+            user.favorites = user.favorites || [];
+            res.status(201).json(user);
         }
     } catch (error) {
         console.error('Error saving user profile:', error);
         if (error.code === '23505') {
             return res.status(409).json({ error: 'This user already exists.' });
         }
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// New route to update cart
+router.put('/cart', authenticate, async (req, res) => {
+    if (!req.userId) {
+        return res.status(403).json({ error: 'User not registered' });
+    }
+    const { cart } = req.body;
+    if (typeof cart !== 'object' || cart === null) {
+        return res.status(400).json({ error: 'Invalid cart data' });
+    }
+    try {
+        await pool.query('UPDATE users SET cart = $1 WHERE id = $2', [cart, req.userId]);
+        res.status(200).json({ message: 'Cart updated successfully' });
+    } catch (error) {
+        console.error('Error updating cart:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// New route to update favorites
+router.put('/favorites', authenticate, async (req, res) => {
+    if (!req.userId) {
+        return res.status(403).json({ error: 'User not registered' });
+    }
+    const { favorites } = req.body;
+    if (!Array.isArray(favorites)) {
+        return res.status(400).json({ error: 'Invalid favorites data' });
+    }
+    try {
+        await pool.query('UPDATE users SET favorites = $1 WHERE id = $2', [favorites, req.userId]);
+        res.status(200).json({ message: 'Favorites updated successfully' });
+    } catch (error) {
+        console.error('Error updating favorites:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });

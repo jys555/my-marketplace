@@ -59,6 +59,20 @@ export function updateUser(userData) {
     });
 }
 
+export function updateCart(cart) {
+    return apiFetch('/users/cart', {
+        method: 'PUT',
+        body: JSON.stringify({ cart }),
+    });
+}
+
+export function updateFavorites(favorites) {
+    return apiFetch('/users/favorites', {
+        method: 'PUT',
+        body: JSON.stringify({ favorites }),
+    });
+}
+
 // O'ZGARTIRILDI: Funksiya nomi va yo'li backendga moslashtirildi.
 export async function validateUser() {
     try {

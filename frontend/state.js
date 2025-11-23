@@ -7,8 +7,8 @@ let state = {
     guestTelegramUser: null, // qo'shildi
     isRegistered: !!initialUser, // O'ZGARTIRILDI
     products: [],
-    cart: JSON.parse(localStorage.getItem('cart')) || {},
-    favorites: JSON.parse(localStorage.getItem('favorites')) || [],
+    cart: {},
+    favorites: [],
     orders: [],
     currentPage: 'home',
     banners: [],
@@ -49,9 +49,15 @@ export function setUser(userData) {
     state.user = userData;
     state.isRegistered = !!userData;
     if (userData) {
+        // Load cart and favorites from user object
+        state.cart = userData.cart || {};
+        state.favorites = userData.favorites || [];
         localStorage.setItem('user', JSON.stringify(userData));
         state.guestTelegramUser = null; // Ro'yxatdan o'tgandan so'ng mehmon ma'lumotini tozalash
     } else {
+        // Clear user-specific data
+        state.cart = {};
+        state.favorites = [];
         localStorage.removeItem('user');
     }
 }
@@ -80,7 +86,6 @@ export function setCurrentPage(page) {
 // --- Cart Logic (Savatcha mantig'i) ---
 export function addToCart(productId, quantity = 1) {
     state.cart[productId] = (state.cart[productId] || 0) + quantity;
-    saveCart();
 }
 
 export function updateCartItemQuantity(productId, quantity) {
@@ -89,16 +94,10 @@ export function updateCartItemQuantity(productId, quantity) {
     } else {
         delete state.cart[productId];
     }
-    saveCart();
 }
 
 export function clearCart() {
     state.cart = {};
-    saveCart();
-}
-
-function saveCart() {
-    localStorage.setItem('cart', JSON.stringify(state.cart));
 }
 
 // --- Favorites Logic (Sevimlilar mantig'i) ---
@@ -109,14 +108,9 @@ export function toggleFavorite(productId) {
     } else {
         state.favorites.push(productId);
     }
-    saveFavorites();
     return index === -1; // true if added, false if removed
 }
 
 export function isFavorite(productId) {
     return state.favorites.includes(productId);
-}
-
-function saveFavorites() {
-    localStorage.setItem('favorites', JSON.stringify(state.favorites));
 }
