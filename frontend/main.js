@@ -19,22 +19,27 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initializeApp() {
     ui.showLoading();
     try {
-        // Serverdan foydalanuvchi ma'lumotlarini olishga harakat qilamiz
-        const userData = await api.authenticateWithBackend();
-        // Agar muvaffaqiyatli bo'lsa (200 OK), serverdan kelgan ma'lumotni state'ga o'rnatamiz
-        state.setUser(userData); 
-    } catch (error) {
-        if (error.status === 404) {
-            // 404 xato - foydalanuvchi bazada topilmadi. Bu normal holat (yangi foydalanuvchi).
-            console.log("User not found on backend. Proceeding as guest.");
-            // State va localStorage'ni tozalaymiz
-            state.setUser(null); 
-        } else {
-            // Boshqa kutilmagan xatolar (500, 401, 403 va hokazo)
-            console.error("An unexpected error occurred during authentication:", error.message, "Status:", error.status);
-            WebApp.showAlert(ui.t('error_server'));
-            // Xavfsizlik uchun ilovani mehmon rejimida davom ettiramiz
+        // O'ZGARTIRILDI: Foydalanuvchini tekshirish uchun yangi funksiya chaqiriladi
+        const validationResult = await api.validateUser();
+
+        if (validationResult.status === 'existing_user') {
+            // Foydalanuvchi mavjud, ma'lumotlarini state'ga o'rnatamiz
+            state.setUser(validationResult.user);
+        } else if (validationResult.status === 'guest') {
+            // Foydalanuvchi mehmon, state'ni tozalab, telegram ma'lumotlarini saqlaymiz
             state.setUser(null);
+            state.setGuestTelegramUser(validationResult.telegramUser);
+            console.log("User is a guest. Telegram data stored for registration form.");
+        }
+
+    } catch (error) {
+        // Har qanday xatolik yuz bersa, xavfsizlik uchun mehmon rejimiga o'tamiz
+        console.error("An error occurred during user validation:", error.message, "Status:", error.status);
+        WebApp.showAlert(ui.t('error_server'));
+        state.setUser(null);
+        // Agar telegramUser ma'lumoti bo'lsa, uni saqlab qo'yamiz
+        if (error.data && error.data.telegramUser) {
+            state.setGuestTelegramUser(error.data.telegramUser);
         }
     }
 
@@ -273,10 +278,11 @@ async function handleRegisterUser() {
     }
 
     try {
-        const newUser = await api.registerUser({
+        // O'ZGARTIRILDI: registerUser o'rniga updateUser ishlatiladi
+        const newUser = await api.updateUser({
             first_name: firstName,
             last_name: lastName,
-            phone: '+998' + phone,
+            phone_number: '+998' + phone, // Backend 'phone_number' kutadi
         });
         state.setUser(newUser);
         ui.closeRegisterModal();

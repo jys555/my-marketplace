@@ -3,7 +3,8 @@ const initialUser = JSON.parse(localStorage.getItem('user'));
 
 let state = {
     lang: localStorage.getItem('userLang') || 'uz',
-    user: initialUser, // O'ZGARTIRILDI
+    user: initialUser,
+    guestTelegramUser: null, // qo'shildi
     isRegistered: !!initialUser, // O'ZGARTIRILDI
     products: [],
     cart: JSON.parse(localStorage.getItem('cart')) || {},
@@ -25,7 +26,8 @@ export const getOrders = () => state.orders;
 export const getCurrentPage = () => state.currentPage;
 export const getBanners = () => state.banners; 
 export const getProductById = (id) => state.products.find(p => p.id === id);
-export const getInitData = () => state.initData; // ADDED: Getter for initData
+export const getInitData = () => state.initData;
+export const getGuestTelegramUser = () => state.guestTelegramUser;
 
 
 // --- Setters (Holatni o'zgartirish) ---
@@ -48,9 +50,15 @@ export function setUser(userData) {
     state.isRegistered = !!userData;
     if (userData) {
         localStorage.setItem('user', JSON.stringify(userData));
+        state.guestTelegramUser = null; // Ro'yxatdan o'tgandan so'ng mehmon ma'lumotini tozalash
     } else {
         localStorage.removeItem('user');
     }
+}
+
+// QO'SHILDI: Mehmon ma'lumotlarini o'rnatish uchun
+export function setGuestTelegramUser(telegramUser) {
+    state.guestTelegramUser = telegramUser;
 }
 
 export function setProducts(products) {

@@ -1,4 +1,4 @@
-import { getLang, getUser, isRegistered as isUserRegistered, getProducts, getCart, getProductById, isFavorite, getOrders, getBanners } from './state.js';
+import { getLang, getUser, isRegistered as isUserRegistered, getProducts, getCart, getProductById, isFavorite, getOrders, getBanners, getGuestTelegramUser } from './state.js'; // getGuestTelegramUser import qilindi
 
 // Til sozlamalari va tarjimalar
 const translations = {
@@ -413,13 +413,14 @@ export function initCarousel() {
 }
 
 export function openRegisterModal() {
-    const telegramUser = window.Telegram.WebApp.initDataUnsafe?.user;
+    // O'ZGARTIRILDI: Ma'lumotlar endi state'dan olinadi
+    const guestUser = getGuestTelegramUser();
     modal.classList.remove('hidden');
     modal.innerHTML = `
       <div class="modal-content">
         <h3>${t('fill_profile_title')}</h3>
-        <input type="text" id="regFirstName" placeholder="${t('first_name_placeholder')}" value="${telegramUser?.first_name || ''}" required>
-        <input type="text" id="regLastName" placeholder="${t('last_name_placeholder')}" value="${telegramUser?.last_name || ''}">
+        <input type="text" id="regFirstName" placeholder="${t('first_name_placeholder')}" value="${guestUser?.first_name || ''}" required>
+        <input type="text" id="regLastName" placeholder="${t('last_name_placeholder')}" value="${guestUser?.last_name || ''}">
         <div class="phone-input">
           <span class="country-code">🇺🇿 +998</span>
           <input type="tel" id="regPhone" placeholder="${t('phone_placeholder')}" required>

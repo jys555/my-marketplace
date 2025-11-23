@@ -52,26 +52,30 @@ async function apiFetch(endpoint, options = {}) {
 }
 
 
-// --- Mavjud funksiyalaringiz o'zgarishsiz qoladi ---
-
-export async function registerUser(user) {
-    // server.js da telegram_id middleware orqali olinadi, shuning uchun
-    // bu yerdan yuborish shart emas.
-    return apiFetch('/users', { // Marshrut /users/register dan /users ga o'zgartirildi
-        method: 'POST',
-        body: JSON.stringify(user),
-    });
-}
-
-export function getUser(userId) {
-    return apiFetch(`/users/${userId}`);
-}
-
 export function updateUser(userData) {
     return apiFetch(`/users/profile`, {
         method: 'PUT',
         body: JSON.stringify(userData),
     });
+}
+
+// O'ZGARTIRILDI: Funksiya nomi va yo'li backendga moslashtirildi.
+export async function validateUser() {
+    try {
+        // Yo'l /auth/validate dan /users/validate ga o'zgartirildi
+        const data = await apiFetch('/users/validate', {
+            method: 'POST',
+        });
+        console.log('Validation successful:', data);
+        return data;
+    } catch (error) {
+        console.error('Validation failed in validateUser:', error.message, 'Status:', error.status);
+        throw error;
+    }
+}
+
+export function getUser(userId) {
+    return apiFetch(`/users/${userId}`);
 }
 
 export function getProducts() {
@@ -112,18 +116,4 @@ export function deleteProduct(productId) {
     return apiFetch(`/admin/products/${productId}`, {
         method: 'DELETE',
     });
-}
-
-export async function authenticateWithBackend() {
-    try {
-        const data = await apiFetch('/auth/validate', {
-            method: 'POST',
-        });
-        console.log('Authentication successful:', data);
-        return data;
-    } catch (error) {
-        console.error('Authentication failed in authenticateWithBackend:', error.message, 'Status:', error.status);
-        // Xatolikni o'zgartirmasdan yuqoriga uzatamiz
-        throw error;
-    }
 }
