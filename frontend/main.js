@@ -156,6 +156,18 @@ async function handleLanguageChange(lang) {
     navigateTo(state.getCurrentPage());
 }
 
+function handleOrderTabClick(event) {
+    const clickedTab = event.target;
+    // Boshqa tablardan 'active' klassini olib tashlaymiz
+    document.querySelectorAll('.tabs .tab-button').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    // Bosilgan tabga 'active' klassini qo'shamiz
+    clickedTab.classList.add('active');
+    // Buyurtmalarni filtrlab qayta chizamiz
+    ui.renderOrders(clickedTab.dataset.tab);
+}
+
 async function handleProfileEditToggle(event) {
     const isEditing = !document.getElementById('profile-form').classList.contains('disabled');
     if (isEditing) {
