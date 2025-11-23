@@ -282,7 +282,7 @@ async function handleRegisterUser() {
         const newUser = await api.updateUser({
             first_name: firstName,
             last_name: lastName,
-            phone_number: '+998' + phone, // Backend 'phone_number' kutadi
+            phone: '+998' + phone, 
         });
         state.setUser(newUser);
         ui.closeRegisterModal();
