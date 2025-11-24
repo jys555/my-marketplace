@@ -247,7 +247,7 @@ function getProfileContent() {
     const header = `
         <div class="page-header" id="profile-header">
             <button id="profile-header-back-btn" class="back-btn hidden">‹</button>
-            <h2 id="profile-header-title" class="page-title">${t('profile_title')}</h2>
+            <h2 id="profile-header-title" class="page-title">Profil</h2>
         </div>
     `;
 
@@ -287,7 +287,7 @@ function getProfileContent() {
                     <span class="badge">Tez orada</span>
                 </div>
                 <div class="menu-item" id="menu-item-language">
-                    <span class="icon">🌐</span>
+                    <span class="icon">${getLang() === 'uz' ? '🇺🇿' : '🇷🇺'}</span>
                     <span class="text">${t('profile_language')}</span>
                     <span class="value">${getLang() === 'uz' ? "O'zbekcha" : "Русский"}</span>
                     <span class="arrow">›</span>
@@ -339,17 +339,10 @@ function getProfileContent() {
         </div>
     `;
 
-    const languageSection = `
-        <div id="language-section" class="profile-subpage hidden">
-            <h3>${t('profile_language')}</h3>
-            <div class="lang-switcher">
-                <button id="lang-uz-btn" class="${getLang() === 'uz' ? 'active' : ''}">O'zbekcha</button>
-                <button id="lang-ru-btn" class="${getLang() === 'ru' ? 'active' : ''}">Русский</button>
-            </div>
-        </div>
-    `;
+    // Til tanlash bo'limi endi modal bo'lgani uchun bu yerdan olib tashlandi.
+    // const languageSection = ...
 
-    return `<div id="profile-page-wrapper">${header}${menu}${editSection}${ordersSection}${languageSection}</div>`;
+    return `<div id="profile-page-wrapper">${header}${menu}${editSection}${ordersSection}</div>`;
 }
 
 export function renderOrders(filter = 'current') {
@@ -447,37 +440,64 @@ function getFavoritesContent() {
     `;
 }
 
+export function renderLanguageModal() {
+    const currentLang = getLang();
+    const modalHtml = `
+        <div class="modal-overlay" id="language-modal-overlay">
+            <div class="language-modal-content">
+                <h3 class="language-modal-title">Tilni tanlang</h3>
+                <div class="language-options">
+                    <label for="lang-uz" class="language-option">
+                        <span class="lang-name">O'zbekcha</span>
+                        <span class="lang-flag">🇺🇿</span>
+                        <input type="radio" id="lang-uz" name="language" value="uz" ${currentLang === 'uz' ? 'checked' : ''}>
+                        <span class="radio-custom"></span>
+                    </label>
+                    <label for="lang-ru" class="language-option">
+                        <span class="lang-name">Русский</span>
+                        <span class="lang-flag">🇷🇺</span>
+                        <input type="radio" id="lang-ru" name="language" value="ru" ${currentLang === 'ru' ? 'checked' : ''}>
+                        <span class="radio-custom"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+export function closeLanguageModal() {
+    const modal = document.getElementById('language-modal-overlay');
+    if (modal) {
+        modal.remove();
+    }
+}
+
 export function showProfileSection(sectionName) {
     const backBtn = document.getElementById('profile-header-back-btn');
     const title = document.getElementById('profile-header-title');
     const menu = document.getElementById('profile-menu');
     const editSection = document.getElementById('profile-edit-section');
     const ordersSection = document.getElementById('orders-section');
-    const languageSection = document.getElementById('language-section');
-
-    // Barcha qismlarni yashirish
-    [menu, editSection, ordersSection, languageSection].forEach(el => el?.classList.add('hidden'));
+    
+    // Til bo'limi modal bo'lgani uchun bu yerdan olib tashlandi
+    const sections = [menu, editSection, ordersSection];
+    sections.forEach(s => s?.classList.add('hidden'));
 
     if (sectionName === 'menu') {
         menu?.classList.remove('hidden');
         backBtn?.classList.add('hidden');
-        if (title) title.innerText = t('profile_title');
+        if (title) title.innerText = 'Profil'; // Asosiy sarlavha
     } else {
-        // Ichki sahifa ko'rsatilganda menyuni yashirish va orqaga tugmasini ko'rsatish
-        menu?.classList.add('hidden');
         backBtn?.classList.remove('hidden');
-        
         if (sectionName === 'edit') {
             editSection?.classList.remove('hidden');
             if (title) title.innerText = t('profile_info');
         } else if (sectionName === 'orders') {
             ordersSection?.classList.remove('hidden');
             if (title) title.innerText = t('my_orders');
-            renderOrders(); // Bo'lim ko'rsatilganda buyurtmalarni chizish
-        } else if (sectionName === 'language') {
-            languageSection?.classList.remove('hidden');
-            if (title) title.innerText = t('profile_language');
         }
+        // 'language' holati endi bu funksiya tomonidan boshqarilmaydi
     }
 }
 

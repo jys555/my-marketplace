@@ -133,11 +133,10 @@ function attachPageEventListeners(pageName) {
                 ui.showProfileSection('orders');
                 ui.renderOrders(); // Initial render
             });
-            document.getElementById('menu-item-language')?.addEventListener('click', () => {
-                ui.showProfileSection('language');
-            });
+            document.getElementById('menu-item-language')?.addEventListener('click', handleOpenLanguageModal);
             document.getElementById('menu-item-about')?.addEventListener('click', () => WebApp.showAlert('Biz haqimizda sahifasi tez orada!'));
             document.getElementById('menu-item-contact')?.addEventListener('click', () => WebApp.showAlert('Biz bilan bog\'lanish sahifasi tez orada!'));
+            document.getElementById('logout-btn')?.addEventListener('click', () => WebApp.showAlert('Chiqish funksiyasi tez orada qo\'shiladi!'));
 
             // Back button listener
             document.getElementById('profile-header-back-btn')?.addEventListener('click', () => {
@@ -145,8 +144,6 @@ function attachPageEventListeners(pageName) {
             });
 
             // Listeners for hidden sections
-            document.getElementById('lang-uz-btn')?.addEventListener('click', () => handleLanguageChange('uz'));
-            document.getElementById('lang-ru-btn')?.addEventListener('click', () => handleLanguageChange('ru'));
             document.getElementById('save-profile-btn')?.addEventListener('click', handleSaveProfile);
             document.querySelectorAll('.tabs .tab-button').forEach(tab => {
                 tab.addEventListener('click', handleOrderTabClick);
@@ -167,6 +164,27 @@ function attachPageEventListeners(pageName) {
 function attachModalEventListeners() {
     document.getElementById('register-submit-btn')?.addEventListener('click', handleRegisterUser);
     document.getElementById('register-cancel-btn')?.addEventListener('click', ui.closeRegisterModal);
+}
+
+function handleOpenLanguageModal() {
+    ui.renderLanguageModal();
+    
+    const modalOverlay = document.getElementById('language-modal-overlay');
+    
+    // Modal tashqarisiga bosilganda yopish
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            ui.closeLanguageModal();
+        }
+    });
+
+    // Til tanlanganda
+    document.querySelectorAll('input[name="language"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            handleLanguageChange(e.target.value);
+            ui.closeLanguageModal();
+        });
+    });
 }
 
 async function handleLanguageChange(lang) {

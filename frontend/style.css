@@ -293,8 +293,8 @@ body {
     transform: translateY(-50%);
     background: none;
     border: none;
-    font-size: 28px;
-    font-weight: bold;
+    font-size: 24px; /* O'lchamni o'zgartirdim */
+    font-weight: normal; /* Qalinlikni olib tashladim */
     color: #333;
     cursor: pointer;
     padding: 0;
@@ -380,7 +380,7 @@ body {
 }
 
 .menu-item .icon {
-    font-size: 20px;
+    font-size: 22px; /* Bayroqlar uchun o'lcham */
     margin-right: 16px;
     width: 24px;
     text-align: center;
@@ -524,8 +524,108 @@ body {
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
+/* === Tilni tanlash modali === */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    z-index: 1100;
+}
+
+.language-modal-content {
+    background: #f0f2f5;
+    width: 100%;
+    max-width: 500px;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    padding: 16px;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.language-modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.language-options {
+    background-color: #fff;
+    border-radius: 12px;
+}
+
+.language-option {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    cursor: pointer;
+    position: relative;
+    border-bottom: 1px solid #f0f2f5;
+}
+
+.language-option:last-child {
+    border-bottom: none;
+}
+
+.language-option .lang-name {
+    flex-grow: 1;
+    font-size: 16px;
+}
+
+.language-option .lang-flag {
+    font-size: 24px;
+    margin-left: 16px;
+}
+
+.language-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.language-option .radio-custom {
+    width: 22px;
+    height: 22px;
+    border: 2px solid #c7c7cc;
+    border-radius: 50%;
+    margin-right: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.language-option .radio-custom::before {
+    content: '';
+    width: 12px;
+    height: 12px;
+    background-color: #007aff;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.2s;
+}
+
+.language-option input[type="radio"]:checked + .radio-custom {
+    border-color: #007aff;
+}
+
+.language-option input[type="radio"]:checked + .radio-custom::before {
+    transform: scale(1);
+}
+
 /* Eski, keraksiz stillarni o'chirish */
-.profile-page, .profile-section, #profile-form.disabled input, #edit-profile-btn {
+.profile-page, .profile-section, #profile-form.disabled input, #edit-profile-btn, .profile-subpage .lang-switcher {
     display: none !important;
 }
 
