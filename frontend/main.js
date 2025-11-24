@@ -125,13 +125,32 @@ function attachPageEventListeners(pageName) {
             });
             break;
         case 'profile':
+            // Main menu listeners
+            document.getElementById('edit-profile-icon')?.addEventListener('click', () => {
+                ui.showProfileSection('edit');
+            });
+            document.getElementById('menu-item-orders')?.addEventListener('click', () => {
+                ui.showProfileSection('orders');
+                ui.renderOrders(); // Initial render
+            });
+            document.getElementById('menu-item-language')?.addEventListener('click', () => {
+                ui.showProfileSection('language');
+            });
+            document.getElementById('menu-item-about')?.addEventListener('click', () => WebApp.showAlert('Biz haqimizda sahifasi tez orada!'));
+            document.getElementById('menu-item-contact')?.addEventListener('click', () => WebApp.showAlert('Biz bilan bog\'lanish sahifasi tez orada!'));
+
+            // Back button listener
+            document.getElementById('profile-header-back-btn')?.addEventListener('click', () => {
+                ui.showProfileSection('menu');
+            });
+
+            // Listeners for hidden sections
             document.getElementById('lang-uz-btn')?.addEventListener('click', () => handleLanguageChange('uz'));
             document.getElementById('lang-ru-btn')?.addEventListener('click', () => handleLanguageChange('ru'));
-            document.getElementById('edit-profile-btn')?.addEventListener('click', handleProfileEditToggle);
+            document.getElementById('save-profile-btn')?.addEventListener('click', handleSaveProfile);
             document.querySelectorAll('.tabs .tab-button').forEach(tab => {
                 tab.addEventListener('click', handleOrderTabClick);
             });
-            ui.renderOrders();
             break;
         case 'cart':
             document.querySelectorAll('.quantity-btn').forEach(btn => {
@@ -168,34 +187,30 @@ function handleOrderTabClick(event) {
     ui.renderOrders(clickedTab.dataset.tab);
 }
 
-async function handleProfileEditToggle(event) {
-    const isEditing = !document.getElementById('profile-form').classList.contains('disabled');
-    if (isEditing) {
-        const user = state.getUser();
-        const firstName = document.getElementById('firstName').value.trim();
-        const lastName = document.getElementById('lastName').value.trim();
-        const phone = document.getElementById('phone').value.trim().replace(/\\s/g, '');
+async function handleSaveProfile() {
+    const firstName = document.getElementById('firstName').value.trim();
+    const lastName = document.getElementById('lastName').value.trim();
+    const phone = document.getElementById('phone').value.trim().replace(/\s/g, '');
 
-        if (!firstName || phone.length !== 9) {
-            WebApp.showAlert(ui.t('please_fill_fields'));
-            return;
-        }
-        try {
-            const updatedUser = await api.updateUser({
-                first_name: firstName,
-                last_name: lastName,
-                phone: '+998' + phone,
-            });
-            state.setUser(updatedUser);
-            WebApp.showAlert(ui.t('profile_saved'));
-            ui.toggleProfileEdit(false);
-        } catch (err) {
-            WebApp.showAlert(`${ui.t('error_saving')}: ${err.message}`);
-        }
-    } else {
-        ui.toggleProfileEdit(true);
+    if (!firstName || phone.length !== 9) {
+        WebApp.showAlert(ui.t('please_fill_fields'));
+        return;
+    }
+    try {
+        const updatedUser = await api.updateUser({
+            first_name: firstName,
+            last_name: lastName,
+            phone: '+998' + phone,
+        });
+        state.setUser(updatedUser);
+        WebApp.showAlert(ui.t('profile_saved'));
+        navigateTo('profile'); // Re-render profile page to show updated info and return to menu
+    } catch (err) {
+        WebApp.showAlert(`${ui.t('error_saving')}: ${err.message}`);
     }
 }
+
+
 
 async function handleAddToCart(event) {
     event.stopPropagation();

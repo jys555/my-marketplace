@@ -240,44 +240,109 @@ export function renderProducts() {
 
 function getProfileContent() {
     const user = getUser() || {};
-    const { first_name = '', last_name = '', phone = '', username } = user;
-    const number = phone.startsWith('+998') ? phone.slice(4) : phone;
+    const { first_name = 'Guest', last_name = '', phone = '', username } = user;
+    const displayName = `${first_name} ${last_name}`.trim();
+    
+    const header = `
+        <div class="page-header" id="profile-header">
+            <button id="profile-header-back-btn" class="header-button hidden">‹</button>
+            <h2 id="profile-header-title">${t('profile_title')}</h2>
+            <div class="header-placeholder" style="width: 40px;"></div>
+        </div>
+    `;
 
-    return `
-    <div class="profile-page">
-        <h2>${t('profile_title')}</h2>
-        <div class="profile-section">
-            <h3>${t('profile_info')}</h3>
-            <form id="profile-form" class="disabled">
-                <div class="form-group"><label for="firstName">${t('first_name_placeholder')}</label><input type="text" id="firstName" value="${first_name}" disabled></div>
-                <div class="form-group"><label for="lastName">${t('last_name_placeholder')}</label><input type="text" id="lastName" value="${last_name || ''}" disabled></div>
-                <div class="form-group">
-                    <label for="phone">${t('phone_label')}</label>
-                    <div class="phone-input">
-                        <span class="country-code">🇺🇿 +998</span>
-                        <input type="tel" id="phone" value="${number}" placeholder="${t('phone_placeholder')}" disabled>
-                    </div>
+    const menu = `
+        <div id="profile-menu">
+            <div class="user-info-card">
+                <div class="user-avatar">👤</div>
+                <div class="user-details">
+                    <h4>${displayName}</h4>
+                    <p>${phone || ''}</p>
                 </div>
-                <div class="form-group"><label>Telegram username</label><input type="text" value="${username ? '@' + username : '-'}" disabled></div>
-                <button type="button" id="edit-profile-btn">${t('edit_button')}</button>
-            </form>
-        </div>
-        <div class="profile-section">
-            <h3>${t('profile_language')}</h3>
-            <div class="lang-switcher">
-                <button id="lang-uz-btn" class="${getLang() === 'uz' ? 'active' : ''}">O'zbekcha</button>
-                <button id="lang-ru-btn" class="${getLang() === 'ru' ? 'active' : ''}">Русский</button>
+                <button id="edit-profile-icon" class="icon-button">✏️</button>
+            </div>
+
+            <div class="menu-list">
+                <div class="menu-item" id="menu-item-orders">
+                    <span>🛍️ ${t('my_orders')}</span>
+                    <span class="arrow">›</span>
+                </div>
+                <div class="menu-item">
+                    <span>💰 Ballarim</span>
+                    <span class="badge-soon">Tez orada</span>
+                </div>
+                <div class="menu-item">
+                    <span>⭐️ Sharhlarim</span>
+                    <span class="badge-soon">Tez orada</span>
+                </div>
+            </div>
+
+            <div class="menu-list">
+                <div class="menu-item">
+                    <span>⚙️ Sozlamalar</span>
+                    <span class="badge-soon">Tez orada</span>
+                </div>
+                <div class="menu-item" id="menu-item-language">
+                    <span>🌐 ${t('profile_language')}</span>
+                    <span class="current-lang">${getLang() === 'uz' ? "O'zbekcha" : "Русский"} <span class="arrow">›</span></span>
+                </div>
+                <div class="menu-item" id="menu-item-about">
+                    <span>ℹ️ Biz haqimizda</span>
+                    <span class="arrow">›</span>
+                </div>
+                <div class="menu-item" id="menu-item-contact">
+                    <span>✉️ Biz bilan bog'lanish</span>
+                    <span class="arrow">›</span>
+                </div>
             </div>
         </div>
-        <div class="profile-section">
-            <h3>${t('my_orders')}</h3>
-            <div class="tabs">
-                <button class="tab-button active" data-tab="current">${t('current_orders')}</button>
-                <button class="tab-button" data-tab="all">${t('all_orders')}</button>
+    `;
+
+    const number = phone.startsWith('+998') ? phone.slice(4) : phone;
+    const editSection = `
+        <div id="profile-edit-section" class="hidden">
+             <div class="profile-section">
+                <form id="profile-form">
+                    <div class="form-group"><label for="firstName">${t('first_name_placeholder')}</label><input type="text" id="firstName" value="${first_name}"></div>
+                    <div class="form-group"><label for="lastName">${t('last_name_placeholder')}</label><input type="text" id="lastName" value="${last_name || ''}"></div>
+                    <div class="form-group">
+                        <label for="phone">${t('phone_label')}</label>
+                        <div class="phone-input">
+                            <span class="country-code">🇺🇿 +998</span>
+                            <input type="tel" id="phone" value="${number}" placeholder="${t('phone_placeholder')}">
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Telegram username</label><input type="text" value="${username ? '@' + username : '-'}" disabled></div>
+                    <button type="button" id="save-profile-btn">${t('save_button')}</button>
+                </form>
             </div>
-            <div id="orders-list"><p>${t('loading')}</p></div>
         </div>
-    </div>`;
+    `;
+
+    const ordersSection = `
+        <div id="orders-section" class="hidden">
+            <div class="profile-section">
+                <div class="tabs">
+                    <button class="tab-button active" data-tab="current">${t('current_orders')}</button>
+                    <button class="tab-button" data-tab="all">${t('all_orders')}</button>
+                </div>
+                <div id="orders-list"><p>${t('loading')}</p></div>
+            </div>
+        </div>
+    `;
+
+    const languageSection = `
+        <div id="language-section" class="hidden">
+            <div class="profile-section">
+                <div class="lang-switcher">
+                    <button id="lang-uz-btn" class="${getLang() === 'uz' ? 'active' : ''}">O'zbekcha</button>
+                    <button id="lang-ru-btn" class="${getLang() === 'ru' ? 'active' : ''}">Русский</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    return `${header}<div class="profile-page">${menu}${editSection}${ordersSection}${languageSection}</div>`;
 }
 
 export function renderOrders(filter = 'current') {
@@ -373,6 +438,37 @@ function getFavoritesContent() {
             `).join('')}
         </div>
     `;
+}
+
+export function showProfileSection(sectionName) {
+    const backBtn = document.getElementById('profile-header-back-btn');
+    const title = document.getElementById('profile-header-title');
+
+    const menu = document.getElementById('profile-menu');
+    const editSection = document.getElementById('profile-edit-section');
+    const ordersSection = document.getElementById('orders-section');
+    const languageSection = documentgetElementById('language-section');
+
+    const sections = [menu, editSection, ordersSection, languageSection];
+    sections.forEach(s => s?.classList.add('hidden'));
+
+    if (sectionName === 'menu') {
+        menu?.classList.remove('hidden');
+        backBtn?.classList.add('hidden');
+        if (title) title.innerText = t('profile_title');
+    } else {
+        backBtn?.classList.remove('hidden');
+        if (sectionName === 'edit') {
+            editSection?.classList.remove('hidden');
+            if (title) title.innerText = t('profile_info');
+        } else if (sectionName === 'orders') {
+            ordersSection?.classList.remove('hidden');
+            if (title) title.innerText = t('my_orders');
+        } else if (sectionName === 'language') {
+            languageSection?.classList.remove('hidden');
+            if (title) title.innerText = t('profile_language');
+        }
+    }
 }
 
 export function updateNavbar(pageName) {
