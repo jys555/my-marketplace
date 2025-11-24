@@ -268,70 +268,122 @@ body {
   color: #0088cc;
 }
 
-/* === Profil sahifasi === */
-.profile-page {
+/* === Yangi Profil Sahifasi Stili === */
+
+#profile-page .page-header {
     display: flex;
-    flex-direction: column;
-    gap: 24px;
+    align-items: center;
+    padding: 10px 16px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-.profile-section {
-    background: white;
-    padding: 16px;
-    border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+
+#profile-page .page-header .back-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    margin-right: 16px;
 }
-.profile-section h3 {
-    margin-bottom: 16px;
+
+#profile-page .page-header .page-title {
     font-size: 18px;
+    font-weight: 600;
+}
+
+.profile-menu {
+    margin-top: 20px;
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 0 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.profile-menu-item {
+    display: flex;
+    align-items: center;
+    padding: 16px 0;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.profile-menu-item:last-child {
+    border-bottom: none;
+}
+
+.profile-menu-item .icon {
+    font-size: 22px;
+    margin-right: 16px;
+    color: #457b9d;
+    width: 24px;
+    text-align: center;
+}
+
+.profile-menu-item .text {
+    flex-grow: 1;
+    font-size: 16px;
     color: #333;
 }
-#profile-form.disabled input {
+
+.profile-menu-item .chevron {
+    font-size: 18px;
+    color: #ccc;
+}
+
+.profile-menu-item .soon-badge {
     background-color: #f0f0f0;
-    color: #555;
+    color: #999;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    margin-left: auto;
+    margin-right: 8px;
 }
-#profile-form .form-group {
-    margin-bottom: 12px;
+
+/* Profile Section Content */
+.profile-section-content {
+    padding: 16px;
+    background-color: #fff;
+    margin: 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
-#profile-form label {
+
+.profile-section-content h3 {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+#profile-edit-section .form-group {
+    margin-bottom: 16px;
+}
+
+#profile-edit-section label {
     display: block;
-    margin-bottom: 4px;
     font-size: 14px;
     color: #666;
+    margin-bottom: 6px;
 }
-#profile-form input {
+
+#profile-edit-section input {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
+    padding: 12px;
+    border: 1px solid #ddd;
     border-radius: 8px;
     font-size: 16px;
 }
-#edit-profile-btn {
+
+#save-profile-btn {
     width: 100%;
-    padding: 12px;
-    background-color: #0088cc;
+    padding: 14px;
+    background-color: #457b9d;
     color: white;
     border: none;
     border-radius: 8px;
     font-size: 16px;
+    font-weight: 600;
     cursor: pointer;
     margin-top: 10px;
-}
-.lang-switcher {
-    display: flex;
-    gap: 10px;
-}
-.lang-switcher button {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background: #f0f0f0;
-    cursor: pointer;
-}
-.lang-switcher button.active {
-    background: #0088cc;
-    color: white;
-    border-color: #0088cc;
 }
 
 /* === Buyurtmalar === */
