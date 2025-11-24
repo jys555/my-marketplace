@@ -228,8 +228,6 @@ async function handleSaveProfile() {
     }
 }
 
-
-
 async function handleAddToCart(event) {
     event.stopPropagation();
     const productId = parseInt(event.target.dataset.id);
