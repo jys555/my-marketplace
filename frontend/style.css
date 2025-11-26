@@ -14,21 +14,26 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
-  /* Yuqorida qora lenta (45px) + pastda navbar uchun joy */
+  /* Yuqorida qora lenta (46px) + pastda navbar uchun joy */
   padding-top: 30px;
   padding-bottom: 90px;
 }
 
-/* === QORA LENTA (rasmdagidek - tekis tepa + yumaloq pastki burchaklar) === */
+/* === QORA LENTA (rasmdagidek - ichkariga qaragan yumaloq burchaklar) === */
 body::before {
   content: '';
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 45px; /* 30px tekis + 15px yumaloq qism */
-  background: #000;
-  border-radius: 0 0 16px 16px; /* Pastki burchaklar yumaloq */
+  height: 46px; /* 30px tekis + 16px yumaloq qism */
+  background: 
+    /* Chap burchakda oq doira (ichkariga qaragan hoshiya) */
+    radial-gradient(circle at 0 30px, #fff 16px, transparent 16px),
+    /* O'ng burchakda oq doira (ichkariga qaragan hoshiya) */
+    radial-gradient(circle at 100% 30px, #fff 16px, transparent 16px),
+    /* Qora fon */
+    #000;
   z-index: 9999;
 }
 
