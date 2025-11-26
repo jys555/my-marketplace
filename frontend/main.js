@@ -202,8 +202,15 @@ function attachPageEventListeners(pageName) {
             document.getElementById('logout-btn')?.addEventListener('click', () => WebApp.showAlert('Chiqish funksiyasi tez orada qo\'shiladi!'));
 
             // Back button listener
-            document.getElementById('profile-header-back-btn')?.addEventListener('click', () => {
-                ui.showProfileSection('menu');
+            document.getElementById('profile-header-back-btn')?.addEventListener('click', (e) => {
+                const action = e.target.closest('.back-btn')?.dataset.action;
+                if (action === 'navigate-home') {
+                    // Asosiy menyudan boshqa sahifaga qaytish
+                    navigateTo('home');
+                } else {
+                    // Ichki sahifalardan menyuga qaytish
+                    ui.showProfileSection('menu');
+                }
             });
 
             // Listeners for hidden sections

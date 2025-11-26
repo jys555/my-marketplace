@@ -294,8 +294,8 @@ function getProfileContent() {
 
     const header = `
         <div class="page-header fixed-header" id="profile-header">
-            <button id="profile-header-back-btn" class="back-btn hidden">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button id="profile-header-back-btn" class="back-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M15 18l-6-6 6-6"/>
                 </svg>
             </button>
@@ -583,12 +583,17 @@ export function showProfileSection(sectionName) {
     const sections = [menu, editSection, ordersSection];
     sections.forEach(s => s?.classList.add('hidden'));
 
+    // Back tugmasi har doim ko'rinadi
+    backBtn?.classList.remove('hidden');
+    
     if (sectionName === 'menu') {
         menu?.classList.remove('hidden');
-        backBtn?.classList.add('hidden');
         if (title) title.innerText = t('profile_title');
+        // Asosiy menyuda back tugmasi boshqa sahifaga qaytaradi
+        backBtn.dataset.action = 'navigate-home';
     } else {
-        backBtn?.classList.remove('hidden');
+        // Ichki sahifalarda back tugmasi menyuga qaytaradi
+        backBtn.dataset.action = 'navigate-menu';
         if (sectionName === 'edit') {
             editSection?.classList.remove('hidden');
             if (title) title.innerText = t('profile_info');
