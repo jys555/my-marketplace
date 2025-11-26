@@ -387,7 +387,7 @@ body {
     min-height: 56px;
 }
 
-/* Back tugmasi (barcha sahifalarda bir xil) */
+/* Back tugmasi (barcha sahifalarda bir xil - faqat strelka) */
 .back-btn {
     width: 40px;
     height: 40px;
@@ -399,18 +399,12 @@ body {
     color: #000;
     cursor: pointer;
     padding: 0;
-    border-radius: 8px;
-    transition: background-color 0.2s;
     flex-shrink: 0;
 }
 
-.back-btn:hover {
-    background-color: #f5f5f5;
-}
-
 .back-btn svg {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
     stroke-width: 2.5;
 }
 

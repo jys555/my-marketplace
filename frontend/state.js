@@ -24,6 +24,7 @@ let state = {
     favorites: [],
     orders: [],
     currentPage: 'home',
+    previousPage: 'home', // Oxirgi sahifa (profil uchun qaytish)
     banners: [],
     initData: null,
 };
@@ -94,6 +95,12 @@ export function setOrders(orders) {
 
 export function setCurrentPage(page) {
     state.currentPage = page;
+}
+
+export const getPreviousPage = () => state.previousPage;
+
+export function setPreviousPage(page) {
+    state.previousPage = page;
 }
 
 // --- Cart Logic (Savatcha mantig'i) ---
