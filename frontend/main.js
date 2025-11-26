@@ -157,7 +157,7 @@ async function loadInitialData() {
 // Telegram BackButton callback
 let globalBackButtonCallback = null;
 
-function navigateTo(pageName) {
+function navigateTo(pageName, addToHistory = true) {
     const protectedPages = ['profile', 'favorites', 'cart'];
     if (protectedPages.includes(pageName) && !state.isRegistered()) {
         pendingAction = () => navigateTo(pageName);
@@ -166,10 +166,10 @@ function navigateTo(pageName) {
         return;
     }
     
-    // Oldingi sahifani saqlash
+    // Joriy sahifani tarixga qo'shish (faqat yangi sahifaga o'tganda)
     const currentPage = state.getCurrentPage();
-    if (currentPage && currentPage !== pageName) {
-        state.setPreviousPage(currentPage);
+    if (addToHistory && currentPage && currentPage !== pageName) {
+        state.pushToHistory(currentPage);
     }
     
     state.setCurrentPage(pageName);
@@ -177,6 +177,12 @@ function navigateTo(pageName) {
     
     // Telegram BackButton boshqaruvi
     updateTelegramBackButton(pageName);
+}
+
+// Tarixdan orqaga qaytish (back button uchun)
+function goBack() {
+    const previousPage = state.popFromHistory();
+    navigateTo(previousPage, false); // Tarixga qo'shmaslik
 }
 
 // Telegram BackButton ni yangilash
@@ -190,6 +196,8 @@ function updateTelegramBackButton(pageName) {
                 globalBackButtonCallback = null;
             }
         }
+        // Home sahifada tarixni tozalash
+        state.clearHistory();
     } else {
         // Boshqa sahifalarda BackButton ko'rsatish
         if (WebApp.BackButton) {
@@ -198,8 +206,7 @@ function updateTelegramBackButton(pageName) {
             }
             
             globalBackButtonCallback = () => {
-                const previousPage = state.getPreviousPage() || 'home';
-                navigateTo(previousPage);
+                goBack();
             };
             
             WebApp.BackButton.onClick(globalBackButtonCallback);

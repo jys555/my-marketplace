@@ -625,8 +625,8 @@ export function updateNavbar(pageName) {
     const navItems = [
         { page: 'home', icon: 'home', label: t('nav_home') },
         { page: 'catalog', icon: 'catalog', label: t('nav_catalog') },
-        { page: 'cart', icon: 'cart', label: t('nav_cart') },
         { page: 'favorites', icon: 'favorites', label: t('nav_favorites') },
+        { page: 'cart', icon: 'cart', label: t('nav_cart') },
         { page: 'profile', icon: 'profile', label: t('nav_profile') }
     ];
 

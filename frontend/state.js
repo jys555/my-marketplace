@@ -24,7 +24,7 @@ let state = {
     favorites: [],
     orders: [],
     currentPage: 'home',
-    previousPage: 'home', // Oxirgi sahifa (profil uchun qaytish)
+    navigationHistory: [], // Tarix stack - back button uchun
     banners: [],
     initData: null,
 };
@@ -97,10 +97,27 @@ export function setCurrentPage(page) {
     state.currentPage = page;
 }
 
-export const getPreviousPage = () => state.previousPage;
+// Tarix stack funksiyalari
+export function pushToHistory(page) {
+    // Faqat har xil sahifalarni qo'shish (ketma-ket bir xil sahifani qo'shmaslik)
+    if (state.navigationHistory[state.navigationHistory.length - 1] !== page) {
+        state.navigationHistory.push(page);
+    }
+}
 
-export function setPreviousPage(page) {
-    state.previousPage = page;
+export function popFromHistory() {
+    if (state.navigationHistory.length > 0) {
+        return state.navigationHistory.pop();
+    }
+    return 'home';
+}
+
+export function getHistoryLength() {
+    return state.navigationHistory.length;
+}
+
+export function clearHistory() {
+    state.navigationHistory = [];
 }
 
 // --- Cart Logic (Savatcha mantig'i) ---

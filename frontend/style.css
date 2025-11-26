@@ -427,12 +427,12 @@ body::before {
 }
 
 .navbar button.active {
-  color: #000;
+  color: #007aff;
 }
 
 .navbar button.active .nav-icon svg {
-  fill: #000;
-  stroke: #000;
+  fill: #007aff;
+  stroke: #007aff;
 }
 
 /* === Profil sahifasi (YANGI DIZAYN - rasmdagidek) === */
