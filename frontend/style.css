@@ -14,8 +14,8 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
-  /* Yuqorida qora lenta (29px + 25px quloqcha) + pastda navbar uchun joy */
-  padding-top: 29px;
+  /* Yuqorida qora lenta (29px + 25px quloqcha = 54px) + pastda navbar uchun joy */
+  padding-top: 54px;
   padding-bottom: 90px;
 }
 
@@ -66,12 +66,12 @@ body::before {
   padding: 60px 20px;
   font-size: 17px;
   color: #8e8e93;
-  min-height: calc(100vh - 29px);
+  min-height: calc(100vh - 54px - 90px);
 }
 
 #main {
   background: #fff;
-  min-height: calc(100vh - 29px);
+  min-height: calc(100vh - 54px - 90px);
 }
 
 /* Oddiy sahifa headerlari */
@@ -483,7 +483,7 @@ body::before {
 .profile-container {
     padding: 12px 16px;
     background: #f2f2f7;
-    min-height: calc(100vh - 120px);
+    min-height: calc(100vh - 54px - 90px - 48px);
 }
 
 .user-card {
@@ -644,7 +644,7 @@ body::before {
 .profile-subpage {
     background-color: #f2f2f7;
     padding: 16px;
-    min-height: calc(100vh - 100px);
+    min-height: calc(100vh - 54px - 90px - 48px);
 }
 
 .profile-subpage h3 {
