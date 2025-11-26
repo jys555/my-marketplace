@@ -338,7 +338,7 @@ body {
   align-items: center;
   /* 56px navbar + 34px qurilma gesture bar */
   padding: 10px 0;
-  padding-bottom: 50px; /* Qurilma navigatsiyasi uchun qattiq qiymat */
+  padding-bottom: 43px; /* Qurilma navigatsiyasi uchun qattiq qiymat */
   border-top: 0.5px solid rgba(0,0,0,0.12);
   z-index: 900;
 }
