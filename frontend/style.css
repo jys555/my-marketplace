@@ -14,8 +14,8 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
-  /* Yuqorida qora lenta (29px + 25px quloqcha = 54px) + pastda navbar uchun joy */
-  padding-top: 54px;
+  /* Yuqorida qora lenta (29px) + pastda navbar uchun joy */
+  padding-top: 29px;
   padding-bottom: 90px;
 }
 
@@ -59,19 +59,21 @@ body::before {
   z-index: 9999;
 }
 
-/* === ASOSIY KONTENT (oddiy, hoshiyasiz) === */
+/* === ASOSIY KONTENT (yuqori burchaklari yumaloq - quloqchalarga mos) === */
 #loading {
   background: #f2f2f7;
+  border-radius: 25px 25px 0 0;
   text-align: center;
   padding: 60px 20px;
   font-size: 17px;
   color: #8e8e93;
-  min-height: calc(100vh - 54px - 90px);
+  min-height: calc(100vh - 29px - 90px);
 }
 
 #main {
   background: #fff;
-  min-height: calc(100vh - 54px - 90px);
+  border-radius: 25px 25px 0 0;
+  min-height: calc(100vh - 29px - 90px);
 }
 
 /* Oddiy sahifa headerlari */
@@ -108,6 +110,7 @@ body::before {
     padding: 16px;
     padding-bottom: 20px;
     background: #fff;
+    border-radius: 25px 25px 0 0;
 }
 
 .header {
@@ -434,11 +437,13 @@ body::before {
 #main:has(#profile-page-wrapper) {
     padding: 0;
     background-color: #f2f2f7;
+    border-radius: 25px 25px 0 0;
 }
 
 /* Profile page wrapper */
 #profile-page-wrapper {
     background: #fff;
+    border-radius: 25px 25px 0 0;
 }
 
 /* Fixed header - barcha sahifalar uchun */
@@ -449,6 +454,7 @@ body::before {
     right: 0;
     z-index: 100;
     background-color: #fff;
+    border-radius: 25px 25px 0 0;
 }
 
 /* Umumiy sahifa headeri */
@@ -483,7 +489,7 @@ body::before {
 .profile-container {
     padding: 12px 16px;
     background: #f2f2f7;
-    min-height: calc(100vh - 54px - 90px - 48px);
+    min-height: calc(100vh - 29px - 90px - 48px);
 }
 
 .user-card {
@@ -644,7 +650,7 @@ body::before {
 .profile-subpage {
     background-color: #f2f2f7;
     padding: 16px;
-    min-height: calc(100vh - 54px - 90px - 48px);
+    min-height: calc(100vh - 29px - 90px - 48px);
 }
 
 .profile-subpage h3 {
