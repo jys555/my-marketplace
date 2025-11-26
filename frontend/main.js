@@ -75,16 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
     state.setInitData(WebApp.initData);
     WebApp.ready();
     
-    // Fullscreen rejimini yoqish (to'liq ilova ko'rinishi uchun)
-    WebApp.expand(); // Barcha versiyalar uchun kengaytirish
-    if (WebApp.isVersionAtLeast && WebApp.isVersionAtLeast('8.0')) {
-        WebApp.requestFullscreen();
-    }
-    
-    // Header rangini sozlash (agar ko'rinsa)
-    if (WebApp.setHeaderColor) {
-        WebApp.setHeaderColor('#ffffff');
-    }
+    // Ilovani kengaytirish (fullscreen EMAS - status bar va qurilma nav ko'rinadi)
+    WebApp.expand();
     
     initializeApp();
 });
@@ -154,6 +146,9 @@ async function loadInitialData() {
     }
 }
 
+// Telegram BackButton callback
+let globalBackButtonCallback = null;
+
 function navigateTo(pageName) {
     const protectedPages = ['profile', 'favorites', 'cart'];
     if (protectedPages.includes(pageName) && !state.isRegistered()) {
@@ -162,12 +157,47 @@ function navigateTo(pageName) {
         attachModalEventListeners();
         return;
     }
-    // Profilga o'tishdan oldin hozirgi sahifani saqlash
-    if (pageName === 'profile' && state.getCurrentPage() !== 'profile') {
-        state.setPreviousPage(state.getCurrentPage());
+    
+    // Oldingi sahifani saqlash
+    const currentPage = state.getCurrentPage();
+    if (currentPage && currentPage !== pageName) {
+        state.setPreviousPage(currentPage);
     }
+    
     state.setCurrentPage(pageName);
     ui.renderPage(pageName, attachPageEventListeners);
+    
+    // Telegram BackButton boshqaruvi
+    updateTelegramBackButton(pageName);
+}
+
+// Telegram BackButton ni yangilash
+function updateTelegramBackButton(pageName) {
+    // Bosh sahifada BackButton yo'q
+    if (pageName === 'home') {
+        if (WebApp.BackButton) {
+            WebApp.BackButton.hide();
+            if (globalBackButtonCallback) {
+                WebApp.BackButton.offClick(globalBackButtonCallback);
+                globalBackButtonCallback = null;
+            }
+        }
+    } else {
+        // Boshqa sahifalarda BackButton ko'rsatish
+        if (WebApp.BackButton) {
+            if (globalBackButtonCallback) {
+                WebApp.BackButton.offClick(globalBackButtonCallback);
+            }
+            
+            globalBackButtonCallback = () => {
+                const previousPage = state.getPreviousPage() || 'home';
+                navigateTo(previousPage);
+            };
+            
+            WebApp.BackButton.onClick(globalBackButtonCallback);
+            WebApp.BackButton.show();
+        }
+    }
 }
 
 function attachPageEventListeners(pageName) {

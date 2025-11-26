@@ -195,14 +195,7 @@ export function hideLoading() {
 export function renderPage(pageName, attachEventListeners) {
     hideLoading();
     
-    // Telegram BackButton'ni boshqarish
-    const WebApp = window.Telegram?.WebApp;
-    if (WebApp?.BackButton) {
-        // Profil sahifasidan boshqa sahifaga o'tganda BackButton'ni yashirish
-        if (pageName !== 'profile') {
-            WebApp.BackButton.hide();
-        }
-    }
+    // BackButton boshqaruvi main.js dagi navigateTo() da amalga oshiriladi
     
     let content = '';
     switch (pageName) {
@@ -223,7 +216,7 @@ export function renderPage(pageName, attachEventListeners) {
     }
     main.innerHTML = content;
     updateNavbar(pageName);
-    attachEventListeners(pageName); // Event listener'larni bog'lash
+    attachEventListeners(pageName);
 }
 
 function getHomeContent() {
@@ -578,10 +571,10 @@ export function closeLanguageModal() {
     }
 }
 
-// Telegram BackButton callback'ini saqlash
-let telegramBackButtonCallback = null;
+// Profil ichki sahifalari uchun BackButton callback
+let profileBackButtonCallback = null;
 
-export function showProfileSection(sectionName) {
+export function showProfileSection(sectionName, globalBackHandler = null) {
     const title = document.getElementById('profile-header-title');
     const menu = document.getElementById('profile-menu');
     const editSection = document.getElementById('profile-edit-section');
@@ -590,33 +583,31 @@ export function showProfileSection(sectionName) {
     const sections = [menu, editSection, ordersSection];
     sections.forEach(s => s?.classList.add('hidden'));
     
-    // Telegram BackButton boshqaruvi (faqat Telegram BackButton ishlatiladi)
     const WebApp = window.Telegram?.WebApp;
     
     if (sectionName === 'menu') {
         menu?.classList.remove('hidden');
         if (title) title.innerText = t('profile_title');
         
-        // Asosiy menyuda Telegram BackButton'ni yashirish
-        if (WebApp?.BackButton) {
-            WebApp.BackButton.hide();
-            if (telegramBackButtonCallback) {
-                WebApp.BackButton.offClick(telegramBackButtonCallback);
-                telegramBackButtonCallback = null;
-            }
+        // Profil menyusida - global BackButton ishlaydi (main.js da boshqariladi)
+        // Ichki callback ni tozalash
+        if (WebApp?.BackButton && profileBackButtonCallback) {
+            WebApp.BackButton.offClick(profileBackButtonCallback);
+            profileBackButtonCallback = null;
         }
     } else {
-        // Ichki sahifalarda Telegram BackButton'ni ko'rsatish
+        // Ichki sahifalarda (edit, orders) - menyuga qaytarish
         if (WebApp?.BackButton) {
-            // Eski callback'ni olib tashlash
-            if (telegramBackButtonCallback) {
-                WebApp.BackButton.offClick(telegramBackButtonCallback);
+            // Avvalgi callback ni olib tashlash
+            if (profileBackButtonCallback) {
+                WebApp.BackButton.offClick(profileBackButtonCallback);
             }
-            // Yangi callback - menyuga qaytaradi
-            telegramBackButtonCallback = () => {
+            
+            // Menyuga qaytaruvchi callback
+            profileBackButtonCallback = () => {
                 showProfileSection('menu');
             };
-            WebApp.BackButton.onClick(telegramBackButtonCallback);
+            WebApp.BackButton.onClick(profileBackButtonCallback);
             WebApp.BackButton.show();
         }
         

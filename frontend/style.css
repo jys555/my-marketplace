@@ -5,31 +5,26 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
-html {
-  /* Status bar ko'rinishi uchun */
-  background: #fff;
+html, body {
+  height: 100%;
+  overflow-x: hidden;
 }
 
 body {
   background: #f2f2f7;
-  min-height: 100vh;
-  /* Yuqorida status bar uchun joy */
-  padding-top: env(safe-area-inset-top, 0px);
-  /* Pastda navbar + qurilma nav uchun */
-  padding-bottom: calc(65px + env(safe-area-inset-bottom, 0px));
+  /* Pastda navbar uchun joy (qurilma nav ustida) */
+  padding-bottom: 60px;
 }
 
 #loading {
   text-align: center;
-  padding: 50px;
-  padding-top: calc(50px + env(safe-area-inset-top, 0px));
-  font-size: 18px;
+  padding: 50px 20px;
+  font-size: 17px;
+  color: #8e8e93;
 }
 
 #main {
-  padding: 0;
-  /* Navbar + qurilma navigatsiyasi uchun joy */
-  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  min-height: 100%;
 }
 
 /* Oddiy sahifa headerlari */
@@ -64,7 +59,7 @@ body {
 /* Home page uchun #main stilini sozlash */
 #main:has(.header) {
     padding: 16px;
-    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    padding-bottom: 20px;
     background: #fff;
 }
 
@@ -324,7 +319,7 @@ body {
     color: #666;
 }
 
-/* === Navigatsiya paneli (pastda, qurilma navigatsiyasidan yuqorida) === */
+/* === Navigatsiya paneli (qurilma navigatsiyasidan yuqorida) === */
 .navbar {
   position: fixed;
   bottom: 0;
@@ -333,11 +328,9 @@ body {
   background: #fff;
   display: flex;
   justify-content: space-around;
-  align-items: flex-start;
-  padding: 10px 0;
-  /* Qurilma gesture bar uchun pastki padding */
-  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-  border-top: 0.5px solid rgba(0,0,0,0.1);
+  align-items: center;
+  padding: 8px 0 10px;
+  border-top: 0.5px solid rgba(0,0,0,0.12);
   z-index: 900;
 }
 
@@ -397,8 +390,6 @@ body {
     right: 0;
     z-index: 100;
     background-color: #fff;
-    /* Yuqorida safe area */
-    padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* Umumiy sahifa headeri */
