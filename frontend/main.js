@@ -75,8 +75,19 @@ document.addEventListener('DOMContentLoaded', () => {
     state.setInitData(WebApp.initData);
     WebApp.ready();
     
-    // Ilovani kengaytirish (fullscreen EMAS - status bar va qurilma nav ko'rinadi)
+    // Fullscreen rejimini yoqish
     WebApp.expand();
+    if (WebApp.requestFullscreen) {
+        WebApp.requestFullscreen();
+    }
+    
+    // Viewport sozlamalari
+    if (WebApp.setHeaderColor) {
+        WebApp.setHeaderColor('#ffffff');
+    }
+    if (WebApp.setBackgroundColor) {
+        WebApp.setBackgroundColor('#f2f2f7');
+    }
     
     initializeApp();
 });
