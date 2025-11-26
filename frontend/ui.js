@@ -194,6 +194,16 @@ export function hideLoading() {
 
 export function renderPage(pageName, attachEventListeners) {
     hideLoading();
+    
+    // Telegram BackButton'ni boshqarish
+    const WebApp = window.Telegram?.WebApp;
+    if (WebApp?.BackButton) {
+        // Profil sahifasidan boshqa sahifaga o'tganda BackButton'ni yashirish
+        if (pageName !== 'profile') {
+            WebApp.BackButton.hide();
+        }
+    }
+    
     let content = '';
     switch (pageName) {
         case 'home':
@@ -573,6 +583,9 @@ export function closeLanguageModal() {
     }
 }
 
+// Telegram BackButton callback'ini saqlash
+let telegramBackButtonCallback = null;
+
 export function showProfileSection(sectionName) {
     const backBtn = document.getElementById('profile-header-back-btn');
     const title = document.getElementById('profile-header-title');
@@ -586,14 +599,41 @@ export function showProfileSection(sectionName) {
     // Back tugmasi har doim ko'rinadi
     backBtn?.classList.remove('hidden');
     
+    // Telegram BackButton boshqaruvi
+    const WebApp = window.Telegram?.WebApp;
+    
     if (sectionName === 'menu') {
         menu?.classList.remove('hidden');
         if (title) title.innerText = t('profile_title');
         // Asosiy menyuda back tugmasi boshqa sahifaga qaytaradi
         backBtn.dataset.action = 'navigate-home';
+        
+        // Telegram BackButton'ni yashirish (asosiy menyuda)
+        if (WebApp?.BackButton) {
+            WebApp.BackButton.hide();
+            if (telegramBackButtonCallback) {
+                WebApp.BackButton.offClick(telegramBackButtonCallback);
+                telegramBackButtonCallback = null;
+            }
+        }
     } else {
         // Ichki sahifalarda back tugmasi menyuga qaytaradi
         backBtn.dataset.action = 'navigate-menu';
+        
+        // Telegram BackButton'ni ko'rsatish (ichki sahifalarda)
+        if (WebApp?.BackButton) {
+            // Eski callback'ni olib tashlash
+            if (telegramBackButtonCallback) {
+                WebApp.BackButton.offClick(telegramBackButtonCallback);
+            }
+            // Yangi callback
+            telegramBackButtonCallback = () => {
+                showProfileSection('menu');
+            };
+            WebApp.BackButton.onClick(telegramBackButtonCallback);
+            WebApp.BackButton.show();
+        }
+        
         if (sectionName === 'edit') {
             editSection?.classList.remove('hidden');
             if (title) title.innerText = t('profile_info');

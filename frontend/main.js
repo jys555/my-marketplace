@@ -74,6 +74,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     state.setInitData(WebApp.initData);
     WebApp.ready();
+    
+    // Fullscreen rejimini yoqish (to'liq ilova ko'rinishi uchun)
+    WebApp.expand(); // Barcha versiyalar uchun kengaytirish
+    if (WebApp.isVersionAtLeast && WebApp.isVersionAtLeast('8.0')) {
+        WebApp.requestFullscreen();
+    }
+    
+    // Header rangini sozlash (agar ko'rinsa)
+    if (WebApp.setHeaderColor) {
+        WebApp.setHeaderColor('#ffffff');
+    }
+    
     initializeApp();
 });
 
