@@ -14,26 +14,26 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
-  /* Yuqorida qora lenta (25px + 15px quloqcha) + pastda navbar uchun joy */
-  padding-top: 25px;
+  /* Yuqorida qora lenta (28px + 15px quloqcha) + pastda navbar uchun joy */
+  padding-top: 28px;
   padding-bottom: 90px;
 }
 
-/* === QORA LENTA (25px + shaffof kesimli quloqchalar) === */
+/* === QORA LENTA (28px + kontent tomonga qaragan quloqchalar) === */
 body::before {
   content: '';
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 40px; /* 25px lenta + 15px quloqcha */
+  height: 43px; /* 28px lenta + 15px quloqcha */
   background: 
-    /* Asosiy qora lenta (25px) */
-    linear-gradient(#000, #000) top / 100% 25px no-repeat,
-    /* Chap quloqcha - ichki burchagi shaffof aylana bilan kesilgan */
-    radial-gradient(circle at 100% 0, transparent 15px, #000 15px) bottom left / 15px 15px no-repeat,
-    /* O'ng quloqcha - ichki burchagi shaffof aylana bilan kesilgan */
-    radial-gradient(circle at 0 0, transparent 15px, #000 15px) bottom right / 15px 15px no-repeat;
+    /* Asosiy qora lenta (28px) */
+    linear-gradient(#000, #000) top / 100% 28px no-repeat,
+    /* Chap quloqcha - aylana kontent tomonga (pastga-o'ngga) qaragan */
+    radial-gradient(circle at 100% 100%, transparent 15px, #000 15px) bottom left / 15px 15px no-repeat,
+    /* O'ng quloqcha - aylana kontent tomonga (pastga-chapga) qaragan */
+    radial-gradient(circle at 0 100%, transparent 15px, #000 15px) bottom right / 15px 15px no-repeat;
   z-index: 9999;
 }
 
@@ -44,12 +44,12 @@ body::before {
   padding: 60px 20px;
   font-size: 17px;
   color: #8e8e93;
-  min-height: calc(100vh - 25px);
+  min-height: calc(100vh - 28px);
 }
 
 #main {
   background: #fff;
-  min-height: calc(100vh - 25px);
+  min-height: calc(100vh - 28px);
 }
 
 /* Oddiy sahifa headerlari */
