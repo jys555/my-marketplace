@@ -6,27 +6,47 @@
 }
 
 html {
-  background: #f2f2f7;
+  /* Telegram header va yuqori qism uchun qora fon */
+  background: #000;
 }
 
 body {
-  background: #f2f2f7;
+  background: #000;
   min-height: 100vh;
-  min-height: 100dvh; /* Dynamic viewport height */
-  /* Pastda navbar + qurilma navigatsiyasi uchun joy (90px = 56px navbar + 34px gesture bar) */
+  min-height: 100dvh;
   padding-bottom: 90px;
   overflow-x: hidden;
+  /* Yuqorida qora lenta uchun joy */
+  padding-top: 15px;
+}
+
+/* Asosiy kontent konteyner - oq fon, yuqori burchaklari yumaloq */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 15px;
+  background: #000;
+  z-index: 1000;
 }
 
 #loading {
+  background: #f2f2f7;
+  border-radius: 16px 16px 0 0;
   text-align: center;
   padding: 60px 20px;
   font-size: 17px;
   color: #8e8e93;
+  min-height: calc(100vh - 15px);
 }
 
 #main {
-  min-height: 100%;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  min-height: calc(100vh - 15px);
+  overflow: hidden;
 }
 
 /* Oddiy sahifa headerlari */
@@ -63,6 +83,7 @@ body {
     padding: 16px;
     padding-bottom: 20px;
     background: #fff;
+    border-radius: 16px 16px 0 0;
 }
 
 .header {
@@ -389,6 +410,14 @@ body {
 #main:has(#profile-page-wrapper) {
     padding: 0;
     background-color: #f2f2f7;
+    border-radius: 16px 16px 0 0;
+}
+
+/* Profile page wrapper */
+#profile-page-wrapper {
+    background: #fff;
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
 }
 
 /* Fixed header - barcha sahifalar uchun */
@@ -399,6 +428,7 @@ body {
     right: 0;
     z-index: 100;
     background-color: #fff;
+    border-radius: 16px 16px 0 0;
 }
 
 /* Umumiy sahifa headeri */
@@ -424,11 +454,6 @@ body {
 .header-spacer {
     width: 40px;
     flex-shrink: 0;
-}
-
-/* Profile sahifasi uchun maxsus wrapper */
-#profile-page-wrapper {
-    background: #fff;
 }
 
 #profile-page-wrapper .page-header {

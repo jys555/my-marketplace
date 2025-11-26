@@ -75,15 +75,15 @@ document.addEventListener('DOMContentLoaded', () => {
     state.setInitData(WebApp.initData);
     WebApp.ready();
     
-    // Ilovani kengaytirish (fullscreen EMAS - header kichikroq bo'ladi)
+    // Ilovani kengaytirish
     WebApp.expand();
     
-    // Ranglarni sozlash
+    // Telegram headerini qora rangga o'zgartirish (ilova tepasi bilan birlashib ketadi)
     if (WebApp.setHeaderColor) {
-        WebApp.setHeaderColor('#ffffff');
+        WebApp.setHeaderColor('#000000');
     }
     if (WebApp.setBackgroundColor) {
-        WebApp.setBackgroundColor('#f2f2f7');
+        WebApp.setBackgroundColor('#000000');
     }
     
     initializeApp();
