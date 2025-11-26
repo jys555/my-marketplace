@@ -75,13 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
     state.setInitData(WebApp.initData);
     WebApp.ready();
     
-    // Fullscreen rejimini yoqish
+    // Ilovani kengaytirish (fullscreen EMAS - header kichikroq bo'ladi)
     WebApp.expand();
-    if (WebApp.requestFullscreen) {
-        WebApp.requestFullscreen();
-    }
     
-    // Viewport sozlamalari
+    // Ranglarni sozlash
     if (WebApp.setHeaderColor) {
         WebApp.setHeaderColor('#ffffff');
     }

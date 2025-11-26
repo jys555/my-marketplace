@@ -6,16 +6,15 @@
 }
 
 html {
-  /* Fullscreen rejimida status bar uchun fon rangi */
-  background: linear-gradient(to bottom, #f2f2f7 0%, #f2f2f7 100%);
+  background: #f2f2f7;
 }
 
 body {
   background: #f2f2f7;
   min-height: 100vh;
-  /* Fullscreen: yuqorida status bar, pastda qurilma nav uchun joy */
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  min-height: 100dvh; /* Dynamic viewport height */
+  /* Pastda navbar + qurilma navigatsiyasi uchun joy (90px = 56px navbar + 34px gesture bar) */
+  padding-bottom: 90px;
   overflow-x: hidden;
 }
 
@@ -337,9 +336,9 @@ body {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  /* Yuqorida padding, pastda safe-area */
+  /* 56px navbar + 34px qurilma gesture bar */
   padding: 10px 0;
-  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: 34px; /* Qurilma navigatsiyasi uchun qattiq qiymat */
   border-top: 0.5px solid rgba(0,0,0,0.12);
   z-index: 900;
 }
