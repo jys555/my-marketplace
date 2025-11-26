@@ -626,16 +626,26 @@ body {
     padding: 0 4px;
 }
 
+/* Label yuqoriga ko'tarilganda (qiymat mavjud yoki focus) */
 .floating-input input:focus + label,
-.floating-input input:not(:placeholder-shown) + label,
-.floating-input.has-value label {
+.floating-input input:not(:placeholder-shown) + label {
     top: 0;
     font-size: 13px;
+}
+
+/* Faqat focus holatida ko'k rang */
+.floating-input input:focus + label {
     color: #007aff;
+}
+
+/* Qiymat bor lekin focus yo'q - kulrang */
+.floating-input input:not(:focus):not(:placeholder-shown) + label {
+    color: #8e8e93;
 }
 
 /* Phone input uchun maxsus stil */
 .phone-floating-input {
+    position: relative;
     margin-bottom: 20px;
 }
 
@@ -680,6 +690,7 @@ body {
     color: #c7c7cc;
 }
 
+/* Phone label - doim yuqorida (1-rasmdagidek) */
 .phone-floating-input label {
     position: absolute;
     top: -8px;
@@ -690,6 +701,7 @@ body {
     padding: 0 4px;
 }
 
+/* Focus holatida ko'k rang */
 .phone-floating-input:focus-within label {
     color: #007aff;
 }

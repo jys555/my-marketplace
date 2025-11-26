@@ -369,21 +369,21 @@ function getProfileContent() {
     const editSection = `
         <div id="profile-edit-section" class="profile-subpage hidden">
              <form id="profile-form">
-                <div class="floating-input ${first_name ? 'has-value' : ''}">
+                <div class="floating-input">
                     <input type="text" id="firstName" value="${first_name}" placeholder=" ">
                     <label for="firstName">${t('first_name_label')}</label>
                 </div>
-                <div class="floating-input ${last_name ? 'has-value' : ''}">
+                <div class="floating-input">
                     <input type="text" id="lastName" value="${last_name || ''}" placeholder=" ">
                     <label for="lastName">${t('last_name_label')}</label>
                 </div>
-                <div class="floating-input phone-floating-input ${number ? 'has-value' : ''}">
+                <div class="phone-floating-input">
+                    <label for="phone">${t('phone_label')}</label>
                     <div class="phone-input-wrapper">
                         <span class="country-code">🇺🇿 +998</span>
                         <span class="divider">|</span>
                         <input type="tel" id="phone" value="${number}" placeholder="${t('phone_placeholder')}">
                     </div>
-                    <label for="phone">${t('phone_label')}</label>
                 </div>
                 <button type="button" id="save-profile-btn">${t('save_button')}</button>
             </form>
@@ -663,21 +663,21 @@ export function openRegisterModal() {
     modal.innerHTML = `
       <div class="modal-content register-modal">
         <h3>${t('fill_profile_title')}</h3>
-        <div class="floating-input ${firstName ? 'has-value' : ''}">
+        <div class="floating-input">
             <input type="text" id="regFirstName" value="${firstName}" placeholder=" " required>
             <label for="regFirstName">${t('first_name_label')}</label>
         </div>
-        <div class="floating-input ${lastName ? 'has-value' : ''}">
+        <div class="floating-input">
             <input type="text" id="regLastName" value="${lastName}" placeholder=" ">
             <label for="regLastName">${t('last_name_label')}</label>
         </div>
-        <div class="floating-input phone-floating-input">
+        <div class="phone-floating-input">
+            <label for="regPhone">${t('phone_label')}</label>
             <div class="phone-input-wrapper">
                 <span class="country-code">🇺🇿 +998</span>
                 <span class="divider">|</span>
                 <input type="tel" id="regPhone" placeholder="${t('phone_placeholder')}" required>
             </div>
-            <label for="regPhone">${t('phone_label')}</label>
         </div>
         <button id="register-submit-btn">${t('save_button')}</button>
         <button id="register-cancel-btn">${t('cancel_button')}</button>
