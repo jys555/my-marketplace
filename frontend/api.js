@@ -88,10 +88,6 @@ export async function validateUser() {
     }
 }
 
-export function getUser(userId) {
-    return apiFetch(`/users/${userId}`);
-}
-
 export function getProducts() {
     return apiFetch('/products');
 }
@@ -108,26 +104,5 @@ export function createOrder(order) {
     return apiFetch('/orders', {
         method: 'POST',
         body: JSON.stringify(order),
-    });
-}
-
-// --- Admin funksiyalari ---
-export function createProduct(product) {
-    return apiFetch('/admin/products', {
-        method: 'POST',
-        body: JSON.stringify(product),
-    });
-}
-
-export function updateProduct(productId, product) {
-    return apiFetch(`/admin/products/${productId}`, {
-        method: 'PUT',
-        body: JSON.stringify(product),
-    });
-}
-
-export function deleteProduct(productId) {
-    return apiFetch(`/admin/products/${productId}`, {
-        method: 'DELETE',
     });
 }

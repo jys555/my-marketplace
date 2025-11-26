@@ -363,8 +363,8 @@ export function renderOrders(filter = 'current') {
         <div class="order-card" data-id="${order.id}">
             <h4>${t('order_number')} ${order.id}</h4>
             <p><strong>${t('order_status')}:</strong> ${order.status}</p>
-            <p><strong>${t('order_items_count')}:</strong> ${order.items.length}</p>
-            <p><strong>${t('order_total')}:</strong> ${order.total_price} so'm</p>
+            <p><strong>${t('order_items_count')}:</strong> ${order.items ? order.items.length : 0}</p>
+            <p><strong>${t('order_total')}:</strong> ${Number(order.total_amount).toLocaleString()} so'm</p>
         </div>
     `).join('');
 }
@@ -382,20 +382,21 @@ function getCartContent() {
         const product = getProductById(parseInt(id));
         if (!product) return '';
         const quantity = cart[id];
-        totalPrice += product.sale_price * quantity;
+        const itemPrice = product.display_price || product.sale_price || product.price;
+        totalPrice += itemPrice * quantity;
         return `
             <div class="cart-item" data-id="${id}">
                 <img src="${product.image || 'https://via.placeholder.com/80'}" alt="${product.name}">
                 <div class="item-details">
                     <h4>${product.name}</h4>
-                    <p>${product.display_price} so'm</p>
+                    <p>${Number(itemPrice).toLocaleString()} so'm</p>
                 </div>
                 <div class="item-quantity">
                     <button class="quantity-btn" data-id="${id}" data-change="-1">-</button>
                     <span>${quantity}</span>
                     <button class="quantity-btn" data-id="${id}" data-change="1">+</button>
                 </div>
-                <div class="item-total">${(product.sale_price * quantity).toLocaleString()} so'm</div>
+                <div class="item-total">${(itemPrice * quantity).toLocaleString()} so'm</div>
             </div>
         `;
     }).join('');
@@ -559,14 +560,4 @@ export function openRegisterModal() {
 export function closeRegisterModal() {
     modal.classList.add('hidden');
     modal.innerHTML = '';
-}
-
-export function toggleProfileEdit(isEditing) {
-    const form = document.getElementById('profile-form');
-    const button = document.getElementById('edit-profile-btn');
-    form.classList.toggle('disabled', !isEditing);
-    form.querySelectorAll('input').forEach(el => {
-        if (!el.value.startsWith('@')) el.disabled = !isEditing;
-    });
-    button.textContent = isEditing ? t('save_button') : t('edit_button');
 }

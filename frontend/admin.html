@@ -72,35 +72,31 @@
 
     // Admin tekshiruvi
     tg.ready();
-    const userId = tg.initDataUnsafe?.user?.id?.toString();
+    const initData = tg.initData; // To'g'ri autentifikatsiya uchun initData ishlatamiz
 
     async function checkAdminAccess() {
-      if (!userId) {
+      if (!initData) {
         document.body.innerHTML = '<h1>🚫 Ruxsat yo\'q</h1><p>Iltimos, ilovani Telegram ichida oching.</p>';
-        tg.close();
+        setTimeout(() => tg.close(), 2000);
         return;
       }
 
       try {
-        const res = await fetch(`${backendUrl}/api/auth/check-admin`, {
+        const res = await fetch(`${backendUrl}/api/users/check-admin`, {
           headers: {
-            'X-Telegram-ID': userId
+            'X-Telegram-Data': initData // To'g'ri header
           }
         });
 
         if (!res.ok) {
-          // Agar status 403 (Forbidden) bo'lsa, bu admin emasligini bildiradi.
-          // Boshqa xatoliklar server muammosini bildiradi.
           throw new Error('Admin status verification failed.');
         }
         
-        // Agar so'rov muvaffaqiyatli o'tsa (status 200), demak foydalanuvchi admin.
         console.log("✅ Admin access granted.");
         
       } catch (error) {
         console.error(error);
         document.body.innerHTML = '<h1>🚫 Ruxsat yo\'q</h1><p>Bu sahifaga faqat adminlar kira oladi.</p>';
-        // Xavfsizlik uchun, xato yuz berganda oynani yopish
         setTimeout(() => tg.close(), 3000);
       }
     }
@@ -134,7 +130,7 @@
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'X-Telegram-ID': userId 
+            'X-Telegram-Data': initData // To'g'ri header
           },
           body: JSON.stringify(product)
         });

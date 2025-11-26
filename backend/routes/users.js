@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, isAdmin } = require('../middleware/auth');
 
 // Validate user and return user data or guest status
 router.post('/validate', authenticate, async (req, res) => {
@@ -127,6 +127,12 @@ router.put('/favorites', authenticate, async (req, res) => {
         console.error('Error updating favorites:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
+});
+
+// Admin tekshirish endpointi
+router.get('/check-admin', authenticate, isAdmin, (req, res) => {
+    // Agar bu yerga yetib kelsa, demak foydalanuvchi admin
+    res.status(200).json({ is_admin: true });
 });
 
 module.exports = router;

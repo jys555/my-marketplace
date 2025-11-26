@@ -624,31 +624,7 @@ body {
     transform: scale(1);
 }
 
-/* Eski, keraksiz stillarni o'chirish */
-.profile-page, .profile-section, #profile-form.disabled input, #edit-profile-btn, .profile-subpage .lang-switcher {
-    display: none !important;
-}
-
-
 /* === Buyurtmalar === */
-.tabs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 16px;
-}
-.tab-button {
-    padding: 8px 16px;
-    border: 1px solid #ccc;
-    border-radius: 20px;
-    background: transparent;
-    cursor: pointer;
-    font-size: 14px;
-}
-.tab-button.active {
-    background-color: #0088cc;
-    color: white;
-    border-color: #0088cc;
-}
 .order-card {
     background: white;
     padding: 12px;
