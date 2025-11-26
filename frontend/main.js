@@ -217,27 +217,7 @@ function attachPageEventListeners(pageName) {
             document.getElementById('menu-item-contact')?.addEventListener('click', () => WebApp.showAlert('Biz bilan bog\'lanish sahifasi tez orada!'));
             document.getElementById('logout-btn')?.addEventListener('click', () => WebApp.showAlert('Chiqish funksiyasi tez orada qo\'shiladi!'));
 
-            // Back button listener (bir marta ishlashi uchun eski listenerlarni olib tashlash)
-            const backBtn = document.getElementById('profile-header-back-btn');
-            if (backBtn) {
-                // Element klonlash orqali eski listenerlarni olib tashlash
-                const newBackBtn = backBtn.cloneNode(true);
-                backBtn.parentNode.replaceChild(newBackBtn, backBtn);
-                
-                newBackBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const action = this.dataset.action;
-                    if (action === 'navigate-home') {
-                        // Asosiy menyudan oxirgi sahifaga qaytish
-                        const previousPage = state.getPreviousPage() || 'home';
-                        navigateTo(previousPage);
-                    } else {
-                        // Ichki sahifalardan menyuga qaytish
-                        ui.showProfileSection('menu');
-                    }
-                });
-            }
-
+            // Back tugmasi Telegram BackButton orqali boshqariladi (ui.js da)
             // Listeners for hidden sections
             document.getElementById('save-profile-btn')?.addEventListener('click', handleSaveProfile);
             document.querySelectorAll('.orders-tabs .orders-tab-button').forEach(tab => {

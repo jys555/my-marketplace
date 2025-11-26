@@ -302,15 +302,10 @@ function getProfileContent() {
     const displayName = escapeHtml(`${first_name} ${last_name}`.trim());
     const displayPhone = phone ? `+${phone.replace(/\D/g, '')}` : '';
 
+    // Header - faqat sarlavha (back tugma Telegram tomonidan boshqariladi)
     const header = `
         <div class="page-header fixed-header" id="profile-header">
-            <button id="profile-header-back-btn" class="back-btn">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M15 18l-6-6 6-6"/>
-                </svg>
-            </button>
             <h2 id="profile-header-title" class="page-title">${t('profile_title')}</h2>
-            <div class="header-spacer"></div>
         </div>
     `;
 
@@ -587,7 +582,6 @@ export function closeLanguageModal() {
 let telegramBackButtonCallback = null;
 
 export function showProfileSection(sectionName) {
-    const backBtn = document.getElementById('profile-header-back-btn');
     const title = document.getElementById('profile-header-title');
     const menu = document.getElementById('profile-menu');
     const editSection = document.getElementById('profile-edit-section');
@@ -595,20 +589,15 @@ export function showProfileSection(sectionName) {
     
     const sections = [menu, editSection, ordersSection];
     sections.forEach(s => s?.classList.add('hidden'));
-
-    // Back tugmasi har doim ko'rinadi
-    backBtn?.classList.remove('hidden');
     
-    // Telegram BackButton boshqaruvi
+    // Telegram BackButton boshqaruvi (faqat Telegram BackButton ishlatiladi)
     const WebApp = window.Telegram?.WebApp;
     
     if (sectionName === 'menu') {
         menu?.classList.remove('hidden');
         if (title) title.innerText = t('profile_title');
-        // Asosiy menyuda back tugmasi boshqa sahifaga qaytaradi
-        backBtn.dataset.action = 'navigate-home';
         
-        // Telegram BackButton'ni yashirish (asosiy menyuda)
+        // Asosiy menyuda Telegram BackButton'ni yashirish
         if (WebApp?.BackButton) {
             WebApp.BackButton.hide();
             if (telegramBackButtonCallback) {
@@ -617,16 +606,13 @@ export function showProfileSection(sectionName) {
             }
         }
     } else {
-        // Ichki sahifalarda back tugmasi menyuga qaytaradi
-        backBtn.dataset.action = 'navigate-menu';
-        
-        // Telegram BackButton'ni ko'rsatish (ichki sahifalarda)
+        // Ichki sahifalarda Telegram BackButton'ni ko'rsatish
         if (WebApp?.BackButton) {
             // Eski callback'ni olib tashlash
             if (telegramBackButtonCallback) {
                 WebApp.BackButton.offClick(telegramBackButtonCallback);
             }
-            // Yangi callback
+            // Yangi callback - menyuga qaytaradi
             telegramBackButtonCallback = () => {
                 showProfileSection('menu');
             };
