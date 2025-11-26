@@ -15,20 +15,20 @@ body {
   min-height: 100dvh;
   overflow-x: hidden;
   /* Yuqorida qora lenta + pastda navbar uchun joy */
-  padding-top: 20px;
+  padding-top: 15px;
   padding-bottom: 90px;
 }
 
-/* === QORA LENTA (doimiy, tepada, pastki qismi yumaloq) === */
+/* === QORA LENTA (doimiy, tepada, pastga qaragan yumaloq hoshiya) === */
 body::before {
   content: '';
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 40px;
+  height: 30px;
   background: #000;
-  border-radius: 0 0 20px 20px; /* Pastki burchaklar yumaloq */
+  border-radius: 0 0 50% 50% / 0 0 100% 100%; /* Pastga qaragan yarim doira shakl */
   z-index: 9999;
 }
 
@@ -39,12 +39,12 @@ body::before {
   padding: 60px 20px;
   font-size: 17px;
   color: #8e8e93;
-  min-height: calc(100vh - 20px);
+  min-height: calc(100vh - 15px);
 }
 
 #main {
   background: #fff;
-  min-height: calc(100vh - 20px);
+  min-height: calc(100vh - 15px);
 }
 
 /* Oddiy sahifa headerlari */
