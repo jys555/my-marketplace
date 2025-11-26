@@ -7,7 +7,7 @@
 
 body {
   background: #f5f5f5;
-  padding-bottom: 60px; /* navigatsiya uchun joy */
+  padding-bottom: 70px; /* navigatsiya uchun joy */
 }
 
 #loading {
@@ -18,6 +18,32 @@ body {
 
 #main {
   padding: 16px;
+  padding-bottom: 80px;
+}
+
+/* Oddiy sahifa headerlari */
+.simple-header {
+    margin-bottom: 16px;
+}
+
+.simple-header .page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #000;
+}
+
+.page-content {
+    padding-bottom: 20px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #8e8e93;
+}
+
+.empty-state p {
+    font-size: 16px;
 }
 
 .hidden {
@@ -254,18 +280,47 @@ body {
   background: white;
   display: flex;
   justify-content: space-around;
-  padding: 12px 0;
+  padding: 8px 0 12px;
   box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
   z-index: 900;
 }
+
 .navbar button {
   background: none;
   border: none;
-  font-size: 20px;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  color: #8e8e93;
+  transition: color 0.2s;
 }
+
+.navbar button .nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navbar button .nav-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.navbar button .nav-label {
+  font-size: 10px;
+  font-weight: 500;
+}
+
 .navbar button.active {
-  color: #0088cc;
+  color: #5856D6;
+}
+
+.navbar button.active .nav-icon svg {
+  fill: #5856D6;
+  stroke: #5856D6;
 }
 
 /* === Profil sahifasi (YANGI DIZAYN) === */
@@ -273,37 +328,63 @@ body {
 /* Profil sahifasi uchun #main elementining ichki bo'shliqlarini olib tashlash */
 #main:has(#profile-page-wrapper) {
     padding: 0;
+    padding-top: 56px; /* Fixed header uchun joy */
     background-color: #f0f2f5;
+}
+
+/* Fixed header - barcha sahifalar uchun */
+.fixed-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
 }
 
 #profile-page-wrapper .page-header {
     display: flex;
     align-items: center;
-    justify-content: center;
-    position: relative;
+    justify-content: space-between;
     background-color: #fff;
-    padding: 12px 16px;
-    border-bottom: 1px solid #e0e0e0;
+    padding: 14px 16px;
+    border-bottom: 1px solid #e8e8e8;
+    min-height: 56px;
 }
 
 #profile-page-wrapper .back-btn {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: none;
     border: none;
-    font-size: 24px; /* O'lchamni o'zgartirdim */
-    font-weight: normal; /* Qalinlikni olib tashladim */
-    color: #333;
+    color: #000;
     cursor: pointer;
     padding: 0;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+#profile-page-wrapper .back-btn:hover {
+    background-color: #f0f0f0;
+}
+
+#profile-page-wrapper .back-btn svg {
+    width: 24px;
+    height: 24px;
 }
 
 #profile-page-wrapper .page-title {
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 600;
     color: #000;
+    flex: 1;
+    text-align: center;
+}
+
+#profile-page-wrapper .header-spacer {
+    width: 40px;
 }
 
 .profile-container {
@@ -379,35 +460,44 @@ body {
     background-color: #f8f8f8;
 }
 
-.menu-item .icon {
-    font-size: 22px; /* Bayroqlar uchun o'lcham */
+.menu-item.disabled-item {
+    cursor: default;
+}
+
+.menu-item .menu-icon {
+    font-size: 22px;
     margin-right: 16px;
-    width: 24px;
+    width: 28px;
     text-align: center;
 }
 
-.menu-item .text {
+.menu-item .menu-icon.lang-icon {
+    font-size: 24px;
+}
+
+.menu-item .menu-text {
     flex-grow: 1;
     font-size: 16px;
+    color: #000;
 }
 
-.menu-item .arrow {
+.menu-item .menu-arrow {
     color: #c7c7cc;
     font-size: 20px;
+    margin-left: 8px;
 }
 
-.menu-item .badge {
+.menu-item .menu-badge {
     color: #8e8e93;
-    font-size: 15px;
-    margin-left: auto;
-    padding-right: 8px;
+    font-size: 14px;
+    background: #f0f0f0;
+    padding: 4px 10px;
+    border-radius: 12px;
 }
 
-.menu-item .value {
+.menu-item .menu-value {
     color: #8e8e93;
     font-size: 15px;
-    margin-left: auto;
-    padding-right: 8px;
 }
 
 .logout-section {
@@ -539,12 +629,12 @@ body {
 }
 
 .language-modal-content {
-    background: #f0f2f5;
+    background: #fff;
     width: 100%;
     max-width: 500px;
     border-top-left-radius: 16px;
     border-top-right-radius: 16px;
-    padding: 16px;
+    padding: 20px 16px 32px;
     animation: slideUp 0.3s ease-out;
 }
 
@@ -554,38 +644,28 @@ body {
 }
 
 .language-modal-title {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 600;
-    text-align: center;
-    margin-bottom: 24px;
+    text-align: left;
+    margin-bottom: 20px;
+    padding-left: 4px;
 }
 
 .language-options {
     background-color: #fff;
-    border-radius: 12px;
 }
 
 .language-option {
     display: flex;
     align-items: center;
-    padding: 16px;
+    padding: 16px 4px;
     cursor: pointer;
     position: relative;
-    border-bottom: 1px solid #f0f2f5;
+    border-bottom: 1px solid #e8e8e8;
 }
 
 .language-option:last-child {
     border-bottom: none;
-}
-
-.language-option .lang-name {
-    flex-grow: 1;
-    font-size: 16px;
-}
-
-.language-option .lang-flag {
-    font-size: 24px;
-    margin-left: 16px;
 }
 
 .language-option input[type="radio"] {
@@ -596,32 +676,44 @@ body {
 }
 
 .language-option .radio-custom {
-    width: 22px;
-    height: 22px;
-    border: 2px solid #c7c7cc;
+    width: 24px;
+    height: 24px;
+    border: 2px solid #d1d1d6;
     border-radius: 50%;
     margin-right: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
 }
 
-.language-option .radio-custom::before {
+.language-option .radio-custom.checked {
+    border-color: #000;
+    background: #000;
+}
+
+.language-option .radio-custom.checked::before {
     content: '';
-    width: 12px;
-    height: 12px;
-    background-color: #007aff;
+    width: 8px;
+    height: 8px;
+    background-color: #fff;
     border-radius: 50%;
-    transform: scale(0);
-    transition: transform 0.2s;
 }
 
-.language-option input[type="radio"]:checked + .radio-custom {
-    border-color: #007aff;
+.language-option .lang-name {
+    flex-grow: 1;
+    font-size: 17px;
+    color: #000;
 }
 
-.language-option input[type="radio"]:checked + .radio-custom::before {
-    transform: scale(1);
+.language-option .lang-flag {
+    width: 32px;
+    height: 32px;
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* === Buyurtmalar === */

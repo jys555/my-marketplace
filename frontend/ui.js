@@ -31,12 +31,14 @@ const translations = {
         phone_placeholder: "90 123 45 67",
         save_button: "Saqlash",
         cancel_button: "Bekor qilish",
-        nav_home: "🏠",
-        nav_catalog: "🛍️",
-        nav_favorites: "❤️",
-        nav_cart: "🛒",
-        nav_profile: "👤",
-        profile_title: "👤 Profilim",
+        // Navigatsiya
+        nav_home: "Bosh sahifa",
+        nav_catalog: "Katalog",
+        nav_favorites: "Sevimlilar",
+        nav_cart: "Savat",
+        nav_profile: "Profil",
+        // Profil sahifasi
+        profile_title: "Profil",
         profile_info: "Shaxsiy ma'lumotlar",
         profile_language: "Ilova tili",
         edit_button: "Tahrirlash",
@@ -44,10 +46,23 @@ const translations = {
         profile_saved: "✅ Profilingiz muvaffaqiyatli saqlandi!",
         error_saving: "Saqlashda xatolik",
         page_not_ready: "{pageName} sahifasi hali tayyor emas.",
-        favorites_title: "❤️ Sevimlilar",
-        favorites_empty: "Sizda sevimlilar ro'yxati bo'sh.",
-        confirm_order: "Buyurtmani tasdiqlash",
+        // Profil menyu elementlari
         my_orders: "Buyurtmalarim",
+        my_points: "Ballarim",
+        my_reviews: "Sharhlarim",
+        settings: "Sozlamalar",
+        about_us: "Biz haqimizda",
+        contact_us: "Biz bilan bog'lanish",
+        logout: "Chiqish",
+        coming_soon: "Tez orada",
+        language_uz: "O'zbekcha",
+        language_ru: "Русский",
+        select_language: "Tilni tanlang",
+        // Sevimlilar
+        favorites_title: "Sevimlilar",
+        favorites_empty: "Sizda sevimlilar ro'yxati bo'sh.",
+        // Buyurtmalar
+        confirm_order: "Buyurtmani tasdiqlash",
         current_orders: "Hozirgi",
         all_orders: "Barchasi",
         order_number: "Buyurtma №",
@@ -56,7 +71,8 @@ const translations = {
         order_total: "Umumiy summa",
         order_details_not_ready: "Buyurtma #{order_number} tafsilotlari hali tayyor emas.",
         no_orders_yet: "Sizda hali buyurtmalar yo'q.",
-        cart_title: "🛒 Savatcha",
+        // Savatcha
+        cart_title: "Savat",
         cart_empty: "Savatchangiz bo'sh.",
         total_price: "Umumiy narx",
         item: "ta",
@@ -90,12 +106,14 @@ const translations = {
         phone_placeholder: "90 123 45 67",
         save_button: "Сохранить",
         cancel_button: "Отмена",
-        nav_home: "🏠",
-        nav_catalog: "🛍️",
-        nav_favorites: "❤️",
-        nav_cart: "🛒",
-        nav_profile: "👤",
-        profile_title: "👤 Мой профиль",
+        // Навигация
+        nav_home: "Главная",
+        nav_catalog: "Каталог",
+        nav_favorites: "Избранное",
+        nav_cart: "Корзина",
+        nav_profile: "Профиль",
+        // Страница профиля
+        profile_title: "Профиль",
         profile_info: "Личные данные",
         profile_language: "Язык приложения",
         edit_button: "Редактировать",
@@ -103,10 +121,23 @@ const translations = {
         profile_saved: "✅ Ваш профиль успешно сохранен!",
         error_saving: "Ошибка сохранения",
         page_not_ready: "Страница {pageName} еще не готова.",
-        favorites_title: "❤️ Избранное",
-        favorites_empty: "Ваш список избранного пуст.",
-        confirm_order: "Подтвердить заказ",
+        // Элементы меню профиля
         my_orders: "Мои заказы",
+        my_points: "Мои баллы",
+        my_reviews: "Мои отзывы",
+        settings: "Настройки",
+        about_us: "О нас",
+        contact_us: "Связаться с нами",
+        logout: "Выйти",
+        coming_soon: "Скоро",
+        language_uz: "O'zbekcha",
+        language_ru: "Русский",
+        select_language: "Выберите язык",
+        // Избранное
+        favorites_title: "Избранное",
+        favorites_empty: "Ваш список избранного пуст.",
+        // Заказы
+        confirm_order: "Подтвердить заказ",
         current_orders: "Текущие",
         all_orders: "Все",
         order_number: "Заказ №",
@@ -115,7 +146,8 @@ const translations = {
         order_total: "Итоговая сумма",
         order_details_not_ready: "Детали заказа №{order_number} еще не готовы.",
         no_orders_yet: "У вас еще нет заказов.",
-        cart_title: "🛒 Корзина",
+        // Корзина
+        cart_title: "Корзина",
         cart_empty: "Ваша корзина пуста.",
         total_price: "Итоговая цена",
         item: "шт.",
@@ -257,9 +289,14 @@ function getProfileContent() {
     const displayPhone = phone ? `+${phone.replace(/\D/g, '')}` : '';
 
     const header = `
-        <div class="page-header" id="profile-header">
-            <button id="profile-header-back-btn" class="back-btn hidden">‹</button>
-            <h2 id="profile-header-title" class="page-title">Profil</h2>
+        <div class="page-header fixed-header" id="profile-header">
+            <button id="profile-header-back-btn" class="back-btn hidden">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M15 18l-6-6 6-6"/>
+                </svg>
+            </button>
+            <h2 id="profile-header-title" class="page-title">${t('profile_title')}</h2>
+            <div class="header-spacer"></div>
         </div>
     `;
 
@@ -276,48 +313,48 @@ function getProfileContent() {
 
             <div class="menu-section">
                 <div class="menu-item" id="menu-item-orders">
-                    <span class="icon">🛍️</span>
-                    <span class="text">${t('my_orders')}</span>
-                    <span class="arrow">›</span>
+                    <span class="menu-icon">🛍️</span>
+                    <span class="menu-text">${t('my_orders')}</span>
+                    <span class="menu-arrow">›</span>
                 </div>
-                <div class="menu-item">
-                    <span class="icon">💰</span>
-                    <span class="text">Ballarim</span>
-                    <span class="badge">Tez orada</span>
+                <div class="menu-item disabled-item">
+                    <span class="menu-icon">💰</span>
+                    <span class="menu-text">${t('my_points')}</span>
+                    <span class="menu-badge">${t('coming_soon')}</span>
                 </div>
-                <div class="menu-item">
-                    <span class="icon">⭐️</span>
-                    <span class="text">Sharhlarim</span>
-                    <span class="badge">Tez orada</span>
+                <div class="menu-item disabled-item">
+                    <span class="menu-icon">⭐</span>
+                    <span class="menu-text">${t('my_reviews')}</span>
+                    <span class="menu-badge">${t('coming_soon')}</span>
                 </div>
             </div>
 
             <div class="menu-section">
-                 <div class="menu-item">
-                    <span class="icon">⚙️</span>
-                    <span class="text">Sozlamalar</span>
-                    <span class="badge">Tez orada</span>
+                <div class="menu-item disabled-item">
+                    <span class="menu-icon">⚙️</span>
+                    <span class="menu-text">${t('settings')}</span>
+                    <span class="menu-badge">${t('coming_soon')}</span>
                 </div>
                 <div class="menu-item" id="menu-item-language">
-                    <span class="icon">${getLang() === 'uz' ? '🇺🇿' : '🇷🇺'}</span>
-                    <span class="text">${t('profile_language')}</span>
-                    <span class="value">${getLang() === 'uz' ? "O'zbekcha" : "Русский"}</span>
-                    <span class="arrow">›</span>
+                    <span class="menu-icon lang-icon">${getLang() === 'uz' ? '🇺🇿' : '🇷🇺'}</span>
+                    <span class="menu-text">${t('profile_language')}</span>
+                    <span class="menu-value">${getLang() === 'uz' ? t('language_uz') : t('language_ru')}</span>
+                    <span class="menu-arrow">›</span>
                 </div>
-                <div class="menu-item" id="menu-item-about">
-                    <span class="icon">ℹ️</span>
-                    <span class="text">Biz haqimizda</span>
-                    <span class="arrow">›</span>
+                <div class="menu-item disabled-item" id="menu-item-about">
+                    <span class="menu-icon">ℹ️</span>
+                    <span class="menu-text">${t('about_us')}</span>
+                    <span class="menu-badge">${t('coming_soon')}</span>
                 </div>
-                <div class="menu-item" id="menu-item-contact">
-                    <span class="icon">✉️</span>
-                    <span class="text">Biz bilan bog'lanish</span>
-                    <span class="arrow">›</span>
+                <div class="menu-item disabled-item" id="menu-item-contact">
+                    <span class="menu-icon">✉️</span>
+                    <span class="menu-text">${t('contact_us')}</span>
+                    <span class="menu-badge">${t('coming_soon')}</span>
                 </div>
             </div>
             
             <div class="logout-section">
-                <button id="logout-btn">Chiqish</button>
+                <button id="logout-btn">${t('logout')}</button>
             </div>
         </div>
     `;
@@ -385,8 +422,14 @@ function getCartContent() {
     const cart = getCart();
     const productIds = Object.keys(cart);
 
+    const pageHeader = `
+        <div class="page-header simple-header">
+            <h2 class="page-title">${t('cart_title')}</h2>
+        </div>
+    `;
+
     if (productIds.length === 0) {
-        return `<h2>${t('cart_title')}</h2><p>${t('cart_empty')}</p>`;
+        return `${pageHeader}<div class="empty-state"><p>${t('cart_empty')}</p></div>`;
     }
 
     let totalPrice = 0;
@@ -414,41 +457,63 @@ function getCartContent() {
     }).join('');
 
     return `
-        <h2>${t('cart_title')}</h2>
-        <div id="cart-items">${itemsHtml}</div>
-        <div class="cart-summary">
-            <h3>${t('total_price')}: ${totalPrice.toLocaleString()} so'm</h3>
-            <div class="checkout-options">
-                <h4>${t('payment_method')}</h4>
-                <label><input type="radio" name="payment" value="cash" checked> ${t('cash')}</label>
-                <h4>${t('delivery_method')}</h4>
-                <label><input type="radio" name="delivery" value="pickup" checked> ${t('pickup')}</label>
+        ${pageHeader}
+        <div class="page-content">
+            <div id="cart-items">${itemsHtml}</div>
+            <div class="cart-summary">
+                <h3>${t('total_price')}: ${totalPrice.toLocaleString()} so'm</h3>
+                <div class="checkout-options">
+                    <h4>${t('payment_method')}</h4>
+                    <label><input type="radio" name="payment" value="cash" checked> ${t('cash')}</label>
+                    <h4>${t('delivery_method')}</h4>
+                    <label><input type="radio" name="delivery" value="pickup" checked> ${t('pickup')}</label>
+                </div>
+                <button id="confirm-order-btn">${t('confirm_order')}</button>
             </div>
-            <button id="confirm-order-btn">${t('confirm_order')}</button>
         </div>
     `;
 }
 
 function getFavoritesContent() {
     const favorites = getFavorites();
+    const pageHeader = `
+        <div class="page-header simple-header">
+            <h2 class="page-title">${t('favorites_title')}</h2>
+        </div>
+    `;
+
     if (favorites.length === 0) {
-        return `<h2>${t('favorites_title')}</h2><p>${t('favorites_empty')}</p>`;
+        return `${pageHeader}<div class="empty-state"><p>${t('favorites_empty')}</p></div>`;
     }
     const products = getProducts();
     const favoriteProducts = products.filter(p => favorites.includes(p.id));
 
     return `
-        <h2>${t('favorites_title')}</h2>
-        <div class="products-grid" id="products">
-            ${favoriteProducts.map(p => `
-              <div class="product-card" data-id="${p.id}">
-                <img src="${p.image || 'https://via.placeholder.com/150'}" alt="${p.name}">
-                <div class="like-btn liked" data-id="${p.id}">❤️</div>
-                <h4>${p.name}</h4>
-                <p><span class="price">${p.display_price} so'm</span></p>
-                <button class="add-to-cart-btn" data-id="${p.id}">${t('nav_cart')}</button>
-              </div>
-            `).join('')}
+        ${pageHeader}
+        <div class="page-content">
+            <div class="products-grid" id="products">
+                ${favoriteProducts.map(p => {
+                    const safeName = escapeHtml(p.name);
+                    const safeImage = escapeHtml(p.image) || 'https://via.placeholder.com/150';
+                    return `
+                      <div class="product-card" data-id="${p.id}">
+                        <div class="product-card-image-wrapper">
+                          <img src="${safeImage}" alt="${safeName}">
+                          <div class="like-btn liked" data-id="${p.id}">❤️</div>
+                        </div>
+                        <div class="product-card-info">
+                          <h4>${safeName}</h4>
+                          <div class="product-card-footer">
+                            <p class="price-container">
+                              <span class="price">${p.display_price} so'm</span>
+                            </p>
+                            <button class="add-to-cart-btn" data-id="${p.id}">🛒</button>
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                }).join('')}
+            </div>
         </div>
     `;
 }
@@ -458,19 +523,19 @@ export function renderLanguageModal() {
     const modalHtml = `
         <div class="modal-overlay" id="language-modal-overlay">
             <div class="language-modal-content">
-                <h3 class="language-modal-title">Tilni tanlang</h3>
+                <h3 class="language-modal-title">${t('select_language')}</h3>
                 <div class="language-options">
-                    <label for="lang-uz" class="language-option">
-                        <span class="lang-name">O'zbekcha</span>
-                        <span class="lang-flag">🇺🇿</span>
-                        <input type="radio" id="lang-uz" name="language" value="uz" ${currentLang === 'uz' ? 'checked' : ''}>
-                        <span class="radio-custom"></span>
-                    </label>
                     <label for="lang-ru" class="language-option">
+                        <span class="radio-custom ${currentLang === 'ru' ? 'checked' : ''}"></span>
                         <span class="lang-name">Русский</span>
                         <span class="lang-flag">🇷🇺</span>
                         <input type="radio" id="lang-ru" name="language" value="ru" ${currentLang === 'ru' ? 'checked' : ''}>
-                        <span class="radio-custom"></span>
+                    </label>
+                    <label for="lang-uz" class="language-option">
+                        <span class="radio-custom ${currentLang === 'uz' ? 'checked' : ''}"></span>
+                        <span class="lang-name">O'zbekcha</span>
+                        <span class="lang-flag">🇺🇿</span>
+                        <input type="radio" id="lang-uz" name="language" value="uz" ${currentLang === 'uz' ? 'checked' : ''}>
                     </label>
                 </div>
             </div>
@@ -493,14 +558,13 @@ export function showProfileSection(sectionName) {
     const editSection = document.getElementById('profile-edit-section');
     const ordersSection = document.getElementById('orders-section');
     
-    // Til bo'limi modal bo'lgani uchun bu yerdan olib tashlandi
     const sections = [menu, editSection, ordersSection];
     sections.forEach(s => s?.classList.add('hidden'));
 
     if (sectionName === 'menu') {
         menu?.classList.remove('hidden');
         backBtn?.classList.add('hidden');
-        if (title) title.innerText = 'Profil'; // Asosiy sarlavha
+        if (title) title.innerText = t('profile_title');
     } else {
         backBtn?.classList.remove('hidden');
         if (sectionName === 'edit') {
@@ -510,14 +574,32 @@ export function showProfileSection(sectionName) {
             ordersSection?.classList.remove('hidden');
             if (title) title.innerText = t('my_orders');
         }
-        // 'language' holati endi bu funksiya tomonidan boshqarilmaydi
     }
 }
 
 export function updateNavbar(pageName) {
-    document.querySelectorAll('.navbar button').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.page === pageName);
-    });
+    const navItems = [
+        { page: 'home', icon: 'home', label: t('nav_home') },
+        { page: 'catalog', icon: 'catalog', label: t('nav_catalog') },
+        { page: 'cart', icon: 'cart', label: t('nav_cart') },
+        { page: 'favorites', icon: 'favorites', label: t('nav_favorites') },
+        { page: 'profile', icon: 'profile', label: t('nav_profile') }
+    ];
+
+    const icons = {
+        home: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>`,
+        catalog: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
+        cart: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`,
+        favorites: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+        profile: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`
+    };
+
+    navbar.innerHTML = navItems.map(item => `
+        <button data-page="${item.page}" class="${pageName === item.page ? 'active' : ''}">
+            <span class="nav-icon">${icons[item.icon]}</span>
+            <span class="nav-label">${item.label}</span>
+        </button>
+    `).join('');
 }
 
 export function initCarousel() {
