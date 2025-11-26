@@ -5,6 +5,67 @@ import * as ui from './ui.js';
 const WebApp = window.Telegram.WebApp;
 let pendingAction = null;
 
+// Telefon raqamini formatlash (00 000 00 00)
+function formatPhoneNumber(value) {
+    // Faqat raqamlarni olish
+    const digits = value.replace(/\D/g, '').slice(0, 9);
+    
+    // Format: 00 000 00 00
+    let formatted = '';
+    if (digits.length > 0) {
+        formatted = digits.slice(0, 2);
+    }
+    if (digits.length > 2) {
+        formatted += ' ' + digits.slice(2, 5);
+    }
+    if (digits.length > 5) {
+        formatted += ' ' + digits.slice(5, 7);
+    }
+    if (digits.length > 7) {
+        formatted += ' ' + digits.slice(7, 9);
+    }
+    
+    return formatted;
+}
+
+// Telefon input event handler
+function handlePhoneInput(event) {
+    const input = event.target;
+    const cursorPos = input.selectionStart;
+    const oldValue = input.value;
+    const oldLength = oldValue.length;
+    
+    // Formatlash
+    const newValue = formatPhoneNumber(input.value);
+    input.value = newValue;
+    
+    // Cursor pozitsiyasini saqlash
+    const newLength = newValue.length;
+    const diff = newLength - oldLength;
+    let newCursorPos = cursorPos + diff;
+    
+    // Cursor pozitsiyasini to'g'rilash
+    if (newCursorPos < 0) newCursorPos = 0;
+    if (newCursorPos > newLength) newCursorPos = newLength;
+    
+    input.setSelectionRange(newCursorPos, newCursorPos);
+}
+
+// Telefon inputlariga event listener qo'shish
+function attachPhoneFormatting() {
+    const phoneInputs = document.querySelectorAll('#phone, #regPhone');
+    phoneInputs.forEach(input => {
+        if (input && !input.dataset.formatted) {
+            input.addEventListener('input', handlePhoneInput);
+            input.dataset.formatted = 'true';
+            // Mavjud qiymatni formatlash
+            if (input.value) {
+                input.value = formatPhoneNumber(input.value);
+            }
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     if (!WebApp.initData) {
         ui.showLoading(ui.t('error_telegram'));
@@ -128,6 +189,8 @@ function attachPageEventListeners(pageName) {
             // Main menu listeners
             document.getElementById('edit-profile-icon')?.addEventListener('click', () => {
                 ui.showProfileSection('edit');
+                // Telefon formatlashni qo'shish
+                setTimeout(attachPhoneFormatting, 0);
             });
             document.getElementById('menu-item-orders')?.addEventListener('click', () => {
                 ui.showProfileSection('orders');
@@ -148,6 +211,9 @@ function attachPageEventListeners(pageName) {
             document.querySelectorAll('.orders-tabs .orders-tab-button').forEach(tab => {
                 tab.addEventListener('click', handleOrderTabClick);
             });
+            
+            // Telefon formatlashni qo'shish (agar edit section ko'rinsa)
+            attachPhoneFormatting();
             break;
         case 'cart':
             document.querySelectorAll('.quantity-btn').forEach(btn => {
@@ -164,6 +230,8 @@ function attachPageEventListeners(pageName) {
 function attachModalEventListeners() {
     document.getElementById('register-submit-btn')?.addEventListener('click', handleRegisterUser);
     document.getElementById('register-cancel-btn')?.addEventListener('click', ui.closeRegisterModal);
+    // Telefon formatlashni qo'shish
+    attachPhoneFormatting();
 }
 
 function handleOpenLanguageModal() {

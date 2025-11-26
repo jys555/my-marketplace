@@ -28,7 +28,7 @@ const translations = {
         first_name_label: "Ism (majburiy)",
         last_name_label: "Familiya (ixtiyoriy)",
         phone_label: "Telefon raqam",
-        phone_placeholder: "00 0000000",
+        phone_placeholder: "00 000 00 00",
         save_button: "Saqlash",
         cancel_button: "Bekor qilish",
         // Navigatsiya
@@ -105,7 +105,7 @@ const translations = {
         first_name_label: "Имя (обязательно)",
         last_name_label: "Фамилия (необязательно)",
         phone_label: "Номер телефона",
-        phone_placeholder: "00 0000000",
+        phone_placeholder: "00 000 00 00",
         save_button: "Сохранить",
         cancel_button: "Отмена",
         // Навигация
