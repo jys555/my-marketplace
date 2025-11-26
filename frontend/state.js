@@ -1,5 +1,18 @@
 // frontend/state.js
-const initialUser = JSON.parse(localStorage.getItem('user'));
+
+// localStorage'dan xavfsiz o'qish (buzilgan ma'lumotlardan himoya)
+function safeGetFromStorage(key) {
+    try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : null;
+    } catch (e) {
+        console.warn(`localStorage "${key}" o'qishda xatolik, tozalanmoqda:`, e);
+        localStorage.removeItem(key);
+        return null;
+    }
+}
+
+const initialUser = safeGetFromStorage('user');
 
 let state = {
     lang: localStorage.getItem('userLang') || 'uz',

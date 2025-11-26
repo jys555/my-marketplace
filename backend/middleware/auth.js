@@ -19,6 +19,15 @@ async function authenticate(req, res, next) { // Funksiyani asinxron qilish
         const hash = params.get('hash');
         params.delete('hash');
 
+        // auth_date tekshiruvi - 24 soatdan eski ma'lumotlarni rad etish (replay attack oldini olish)
+        const authDate = parseInt(params.get('auth_date'));
+        const now = Math.floor(Date.now() / 1000);
+        const maxAge = 86400; // 24 soat (sekundlarda)
+        
+        if (!authDate || (now - authDate) > maxAge) {
+            return res.status(403).json({ message: 'Authentication data expired' });
+        }
+
         const dataCheckString = Array.from(params.entries())
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([key, value]) => `${key}=${value}`)

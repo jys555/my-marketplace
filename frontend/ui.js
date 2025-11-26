@@ -1,4 +1,13 @@
-import { getLang, getUser, isRegistered as isUserRegistered, getProducts, getCart, getProductById, isFavorite, getOrders, getBanners, getGuestTelegramUser, getFavorites } from './state.js'; // getGuestTelegramUser import qilindi
+import { getLang, getUser, isRegistered as isUserRegistered, getProducts, getCart, getProductById, isFavorite, getOrders, getBanners, getGuestTelegramUser, getFavorites } from './state.js';
+
+// XSS himoyasi uchun HTML escape funksiyasi
+function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 // Til sozlamalari va tarjimalar
 const translations = {
     uz: {
@@ -173,7 +182,8 @@ export function renderPage(pageName, attachEventListeners) {
 
 function getHomeContent() {
     const user = getUser();
-    const displayName = isUserRegistered() ? (user.first_name || window.Telegram.WebApp.initDataUnsafe?.user?.first_name) : t('guest');
+    const rawName = isUserRegistered() ? (user.first_name || window.Telegram.WebApp.initDataUnsafe?.user?.first_name) : t('guest');
+    const displayName = escapeHtml(rawName);
 
     // QO'SHILDI: Bannerlarni state'dan olish
     const banners = getBanners();
@@ -215,16 +225,18 @@ export function renderProducts() {
     productsContainer.innerHTML = products.map(p => {
         const hasSale = p.sale_price && p.price > p.sale_price;
         const salePercentage = hasSale ? Math.round(((p.price - p.sale_price) / p.price) * 100) : 0;
+        const safeName = escapeHtml(p.name);
+        const safeImage = escapeHtml(p.image) || 'https://via.placeholder.com/150';
 
         return `
           <div class="product-card" data-id="${p.id}">
             <div class="product-card-image-wrapper">
-              <img src="${p.image || 'https://via.placeholder.com/150'}" alt="${p.name}">
+              <img src="${safeImage}" alt="${safeName}">
               <div class="like-btn ${isFavorite(p.id) ? 'liked' : ''}" data-id="${p.id}">${isFavorite(p.id) ? '❤️' : '♡'}</div>
               ${hasSale ? `<div class="sale-badge">-${salePercentage}%</div>` : ''}
             </div>
             <div class="product-card-info">
-              <h4>${p.name}</h4>
+              <h4>${safeName}</h4>
               <div class="product-card-footer">
                 <p class="price-container">
                   <span class="price">${p.display_price} so'm</span>
@@ -241,7 +253,7 @@ export function renderProducts() {
 function getProfileContent() {
     const user = getUser() || {};
     const { first_name = 'Guest', last_name = '', phone = '' } = user;
-    const displayName = `${first_name} ${last_name}`.trim();
+    const displayName = escapeHtml(`${first_name} ${last_name}`.trim());
     const displayPhone = phone ? `+${phone.replace(/\D/g, '')}` : '';
 
     const header = `

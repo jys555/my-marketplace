@@ -332,7 +332,7 @@ async function handleConfirmOrder() {
 async function handleRegisterUser() {
     const firstName = document.getElementById('regFirstName').value.trim();
     const lastName = document.getElementById('regLastName').value.trim();
-    const phone = document.getElementById('regPhone').value.trim().replace(/\\s/g, '');
+    const phone = document.getElementById('regPhone').value.trim().replace(/\s/g, '');
 
     if (!firstName || phone.length !== 9) {
         WebApp.showAlert(ui.t('please_fill_fields'));

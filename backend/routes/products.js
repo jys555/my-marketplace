@@ -7,15 +7,18 @@ const router = express.Router();
 // GET /api/products - Fetch all active products with language support
 router.get('/', async (req, res) => {
     // Tilni so'rovdan olamiz, standart 'uz'
-    const lang = ['uz', 'ru'].includes(req.query.lang) ? req.query.lang : 'uz';
+    const lang = req.query.lang === 'ru' ? 'ru' : 'uz';
+    
+    // Xavfsiz ustun nomlari (SQL injection oldini olish)
+    const nameCol = lang === 'ru' ? 'name_ru' : 'name_uz';
+    const descCol = lang === 'ru' ? 'description_ru' : 'description_uz';
 
     try {
-        // is_active=TRUE sharti va sort_order olib tashlandi
         const { rows } = await pool.query(`
             SELECT 
                 p.id, 
-                COALESCE(NULLIF(p.name_${lang}, ''), p.name_uz) as name,
-                COALESCE(NULLIF(p.description_${lang}, ''), p.description_uz) as description,
+                COALESCE(NULLIF(p.${nameCol}, ''), p.name_uz) as name,
+                COALESCE(NULLIF(p.${descCol}, ''), p.description_uz) as description,
                 p.price, 
                 p.sale_price, 
                 p.image_url AS image,

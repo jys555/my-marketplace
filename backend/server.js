@@ -3,6 +3,7 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 // Marshrutlarni import qilish
 const bannerRoutes = require('./routes/banners');
@@ -13,10 +14,20 @@ const orderRoutes = require('./routes/orders');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Rate limiting - DDoS va brute-force hujumlaridan himoya
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 daqiqa
+    max: 100, // Har bir IP dan 15 daqiqada maksimum 100 ta so'rov
+    message: { error: 'Too many requests, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // Global middleware
 app.use(helmet({ contentSecurityPolicy: false })); // Xavfsizlik headerlari
 app.use(cors()); // CORS sozlamalari
 app.use(express.json());
+app.use('/api/', apiLimiter); // API endpointlariga rate limit qo'llash
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // API marshrutlari
