@@ -14,25 +14,22 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
-  /* Yuqorida qora lenta + pastda navbar uchun joy */
-  padding-top: 30px;
+  /* Yuqorida qora lenta (45px) + pastda navbar uchun joy */
+  padding-top: 35px;
   padding-bottom: 90px;
 }
 
-/* === QORA LENTA (pastki burchaklari botiq/ichkariga) === */
+/* === QORA LENTA (2-rasmdagidek - yuqori yumaloq, pastki pastga egik) === */
 body::before {
   content: '';
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 30px;
-  background: 
-    /* Chap pastki burchak - botiq (ichkariga) */
-    radial-gradient(circle at 0 100%, #fff 12px, transparent 12px),
-    /* O'ng pastki burchak - botiq (ichkariga) */
-    radial-gradient(circle at 100% 100%, #fff 12px, transparent 12px),
-    #000;
+  height: 45px;
+  background: #000;
+  /* Yuqori burchaklar yumaloq, pastki qism pastga egik */
+  border-radius: 0 0 50% 50% / 0 0 30px 30px;
   z-index: 9999;
 }
 
