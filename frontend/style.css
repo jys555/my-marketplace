@@ -14,26 +14,48 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
-  /* Yuqorida qora lenta (30px + 25px quloqcha) + pastda navbar uchun joy */
-  padding-top: 30px;
+  /* Yuqorida qora lenta (29px + 25px quloqcha) + pastda navbar uchun joy */
+  padding-top: 29px;
   padding-bottom: 90px;
 }
 
-/* === QORA LENTA (30px + 25px quloqchalar) === */
+/* === QORA LENTA (29px + 25px quloqchalar - bir butun) === */
 body::before {
   content: '';
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 55px; /* 30px lenta + 25px quloqcha */
-  background: 
-    /* Asosiy qora lenta (30px) */
-    linear-gradient(#000, #000) top / 100% 30px no-repeat,
-    /* Chap quloqcha - aylana kontent tomonga qaragan */
-    radial-gradient(circle at 100% 100%, transparent 25px, #000 25px) bottom left / 25px 25px no-repeat,
-    /* O'ng quloqcha - aylana kontent tomonga qaragan */
-    radial-gradient(circle at 0 100%, transparent 25px, #000 25px) bottom right / 25px 25px no-repeat;
+  height: 54px; /* 29px lenta + 25px quloqcha */
+  background-color: #000;
+  -webkit-mask-image: 
+    linear-gradient(#000, #000),
+    radial-gradient(circle at 100% 100%, transparent 25px, #000 25px),
+    radial-gradient(circle at 0 100%, transparent 25px, #000 25px);
+  -webkit-mask-size: 
+    100% 29px,
+    25px 25px,
+    25px 25px;
+  -webkit-mask-position: 
+    top,
+    bottom left,
+    bottom right;
+  -webkit-mask-repeat: no-repeat;
+  mask-image: 
+    linear-gradient(#000, #000),
+    radial-gradient(circle at 100% 100%, transparent 25px, #000 25px),
+    radial-gradient(circle at 0 100%, transparent 25px, #000 25px);
+  mask-size: 
+    100% 29px,
+    25px 25px,
+    25px 25px;
+  mask-position: 
+    top,
+    bottom left,
+    bottom right;
+  mask-repeat: no-repeat;
+  mask-composite: add;
+  -webkit-mask-composite: source-over;
   z-index: 9999;
 }
 
@@ -44,12 +66,12 @@ body::before {
   padding: 60px 20px;
   font-size: 17px;
   color: #8e8e93;
-  min-height: calc(100vh - 30px);
+  min-height: calc(100vh - 29px);
 }
 
 #main {
   background: #fff;
-  min-height: calc(100vh - 30px);
+  min-height: calc(100vh - 29px);
 }
 
 /* Oddiy sahifa headerlari */
