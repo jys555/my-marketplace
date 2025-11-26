@@ -14,26 +14,22 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
-  /* Yuqorida qora lenta (46px) + pastda navbar uchun joy */
+  /* Yuqorida qora lenta + pastda navbar uchun joy */
   padding-top: 30px;
   padding-bottom: 90px;
 }
 
-/* === QORA LENTA (rasmdagidek - ichkariga qaragan yumaloq burchaklar) === */
+/* === QORA LENTA (1-rasmdagidek - app oynasi yuqori hoshiyasi) === */
 body::before {
   content: '';
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 46px; /* 30px tekis + 16px yumaloq qism */
-  background: 
-    /* Chap burchakda oq doira (ichkariga qaragan hoshiya) */
-    radial-gradient(circle at 0 30px, #fff 16px, transparent 16px),
-    /* O'ng burchakda oq doira (ichkariga qaragan hoshiya) */
-    radial-gradient(circle at 100% 30px, #fff 16px, transparent 16px),
-    /* Qora fon */
-    #000;
+  height: 30px;
+  background: #000;
+  /* Yuqori burchaklar yumaloq (app oynasi effekti) */
+  border-radius: 12px 12px 0 0;
   z-index: 9999;
 }
 
