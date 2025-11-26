@@ -19,7 +19,7 @@ body {
   padding-bottom: 90px;
 }
 
-/* === QORA LENTA (1-rasmdagidek - app oynasi yuqori hoshiyasi) === */
+/* === QORA LENTA (pastki burchaklari botiq/ichkariga) === */
 body::before {
   content: '';
   position: fixed;
@@ -27,9 +27,12 @@ body::before {
   left: 0;
   right: 0;
   height: 30px;
-  background: #000;
-  /* Yuqori burchaklar yumaloq (app oynasi effekti) */
-  border-radius: 12px 12px 0 0;
+  background: 
+    /* Chap pastki burchak - botiq (ichkariga) */
+    radial-gradient(circle at 0 100%, #fff 12px, transparent 12px),
+    /* O'ng pastki burchak - botiq (ichkariga) */
+    radial-gradient(circle at 100% 100%, #fff 12px, transparent 12px),
+    #000;
   z-index: 9999;
 }
 
