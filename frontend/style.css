@@ -10,48 +10,53 @@ html {
 }
 
 body {
-  background: #000;
+  background: #fff;
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
-  /* Yuqorida qora lenta (30px) + pastda navbar uchun joy */
-  padding-top: 30px;
+  /* Yuqorida qora lenta (44px) + pastda navbar uchun joy */
+  padding-top: 44px;
   padding-bottom: 90px;
 }
 
-/* === QORA LENTA (rasmdagidek - quloqchalari bilan) === */
+/* === QORA LENTA (quloqchalari bilan - to'g'ri shaklda) === */
 body::before {
   content: '';
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 44px; /* 30px lenta + 14px quloqchalar */
-  background: 
-    /* Asosiy qora lenta (30px) */
-    linear-gradient(#000, #000) top center / 100% 30px no-repeat,
-    /* Chap quloqcha (ichki burchagi yumaloq) */
-    radial-gradient(circle at 100% 0, transparent 14px, #000 14px) bottom left / 14px 14px no-repeat,
-    /* O'ng quloqcha (ichki burchagi yumaloq) */
-    radial-gradient(circle at 0 0, transparent 14px, #000 14px) bottom right / 14px 14px no-repeat;
+  height: 44px;
+  background: #000;
   z-index: 9999;
 }
 
-/* === ASOSIY KONTENT (yuqori burchaklari yumaloq - rasmdagidek) === */
+/* Chap quloqcha uchun yumaloq kesim */
+body::after {
+  content: '';
+  position: fixed;
+  top: 30px;
+  left: 14px;
+  width: calc(100% - 28px);
+  height: 14px;
+  background: #fff;
+  border-radius: 14px 14px 0 0;
+  z-index: 10000;
+}
+
+/* === ASOSIY KONTENT (oddiy, hoshiyasiz) === */
 #loading {
   background: #f2f2f7;
-  border-radius: 14px 14px 0 0;
   text-align: center;
   padding: 60px 20px;
   font-size: 17px;
   color: #8e8e93;
-  min-height: calc(100vh - 30px);
+  min-height: calc(100vh - 44px);
 }
 
 #main {
   background: #fff;
-  border-radius: 14px 14px 0 0;
-  min-height: calc(100vh - 30px);
+  min-height: calc(100vh - 44px);
 }
 
 /* Oddiy sahifa headerlari */
@@ -88,7 +93,6 @@ body::before {
     padding: 16px;
     padding-bottom: 20px;
     background: #fff;
-    border-radius: 14px 14px 0 0;
 }
 
 .header {
@@ -415,13 +419,11 @@ body::before {
 #main:has(#profile-page-wrapper) {
     padding: 0;
     background-color: #f2f2f7;
-    border-radius: 14px 14px 0 0;
 }
 
 /* Profile page wrapper */
 #profile-page-wrapper {
     background: #fff;
-    border-radius: 14px 14px 0 0;
 }
 
 /* Fixed header - barcha sahifalar uchun */
@@ -432,7 +434,6 @@ body::before {
     right: 0;
     z-index: 100;
     background-color: #fff;
-    border-radius: 14px 14px 0 0;
 }
 
 /* Umumiy sahifa headeri */
