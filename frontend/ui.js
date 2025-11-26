@@ -340,7 +340,9 @@ function getProfileContent() {
                     <span class="menu-badge">${t('coming_soon')}</span>
                 </div>
                 <div class="menu-item" id="menu-item-language">
-                    <span class="menu-icon lang-icon">${getLang() === 'uz' ? '🇺🇿' : '🇷🇺'}</span>
+                    <span class="menu-icon lang-flag-icon">
+                        <img src="./assets/flags/${getLang() === 'uz' ? 'uzbekistan' : 'russia'}.svg" alt="${getLang().toUpperCase()}">
+                    </span>
                     <span class="menu-text">${t('profile_language')}</span>
                     <span class="menu-value">${getLang() === 'uz' ? t('language_uz') : t('language_ru')}</span>
                     <span class="menu-arrow">›</span>

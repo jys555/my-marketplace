@@ -519,8 +519,20 @@ body {
     text-align: center;
 }
 
-.menu-item .menu-icon.lang-icon {
-    font-size: 24px;
+.menu-item .menu-icon.lang-flag-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-item .menu-icon.lang-flag-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .menu-item .menu-text {
