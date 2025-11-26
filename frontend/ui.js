@@ -25,10 +25,10 @@ const translations = {
         added_to_favorites: "Tovar #{id} sevimlilarga qo'shildi.",
         removed_from_favorites: "Tovar #{id} sevimlilardan olib tashlandi.",
         fill_profile_title: "Profilingizni to'ldiring",
-        first_name_placeholder: "Ism",
-        last_name_placeholder: "Familiya",
+        first_name_label: "Ism (majburiy)",
+        last_name_label: "Familiya (ixtiyoriy)",
         phone_label: "Telefon raqam",
-        phone_placeholder: "90 123 45 67",
+        phone_placeholder: "00 0000000",
         save_button: "Saqlash",
         cancel_button: "Bekor qilish",
         // Navigatsiya
@@ -63,8 +63,10 @@ const translations = {
         favorites_empty: "Sizda sevimlilar ro'yxati bo'sh.",
         // Buyurtmalar
         confirm_order: "Buyurtmani tasdiqlash",
-        current_orders: "Hozirgi",
-        all_orders: "Barchasi",
+        active_orders: "Faol",
+        completed_orders: "Tugallangan",
+        no_active_orders: "Faol buyurtmalar yo'q",
+        no_active_orders_desc: "Bu erda buyurtmalar bo'ladi haydash yoki qabul qilishni kutish",
         order_number: "Buyurtma №",
         order_status: "Holati",
         order_items_count: "Mahsulotlar soni",
@@ -100,10 +102,10 @@ const translations = {
         added_to_favorites: "Товар #{id} добавлен в избранное.",
         removed_from_favorites: "Товар #{id} удален из избранного.",
         fill_profile_title: "Заполните свой профиль",
-        first_name_placeholder: "Имя",
-        last_name_placeholder: "Фамилия",
+        first_name_label: "Имя (обязательно)",
+        last_name_label: "Фамилия (необязательно)",
         phone_label: "Номер телефона",
-        phone_placeholder: "90 123 45 67",
+        phone_placeholder: "00 0000000",
         save_button: "Сохранить",
         cancel_button: "Отмена",
         // Навигация
@@ -138,8 +140,10 @@ const translations = {
         favorites_empty: "Ваш список избранного пуст.",
         // Заказы
         confirm_order: "Подтвердить заказ",
-        current_orders: "Текущие",
-        all_orders: "Все",
+        active_orders: "Активные",
+        completed_orders: "Завершённые",
+        no_active_orders: "Активных заказов нет",
+        no_active_orders_desc: "Здесь будут заказы на доставку или ожидающие получения",
         order_number: "Заказ №",
         order_status: "Статус",
         order_items_count: "Кол-во товаров",
@@ -362,16 +366,22 @@ function getProfileContent() {
     const number = phone.startsWith('+998') ? phone.slice(4) : phone;
     const editSection = `
         <div id="profile-edit-section" class="profile-subpage hidden">
-             <h3>${t('profile_info')}</h3>
              <form id="profile-form">
-                <div class="form-group"><label for="firstName">${t('first_name_placeholder')}</label><input type="text" id="firstName" value="${first_name}"></div>
-                <div class="form-group"><label for="lastName">${t('last_name_placeholder')}</label><input type="text" id="lastName" value="${last_name || ''}"></div>
-                <div class="form-group">
-                    <label for="phone">${t('phone_label')}</label>
-                    <div class="phone-input">
+                <div class="floating-input ${first_name ? 'has-value' : ''}">
+                    <input type="text" id="firstName" value="${first_name}" placeholder=" ">
+                    <label for="firstName">${t('first_name_label')}</label>
+                </div>
+                <div class="floating-input ${last_name ? 'has-value' : ''}">
+                    <input type="text" id="lastName" value="${last_name || ''}" placeholder=" ">
+                    <label for="lastName">${t('last_name_label')}</label>
+                </div>
+                <div class="floating-input phone-floating-input ${number ? 'has-value' : ''}">
+                    <div class="phone-input-wrapper">
                         <span class="country-code">🇺🇿 +998</span>
+                        <span class="divider">|</span>
                         <input type="tel" id="phone" value="${number}" placeholder="${t('phone_placeholder')}">
                     </div>
+                    <label for="phone">${t('phone_label')}</label>
                 </div>
                 <button type="button" id="save-profile-btn">${t('save_button')}</button>
             </form>
@@ -380,11 +390,11 @@ function getProfileContent() {
 
     const ordersSection = `
         <div id="orders-section" class="profile-subpage hidden">
-            <div class="tabs">
-                <button class="tab-button active" data-tab="current">${t('current_orders')}</button>
-                <button class="tab-button" data-tab="all">${t('all_orders')}</button>
+            <div class="orders-tabs">
+                <button class="orders-tab-button active" data-tab="active">${t('active_orders')}</button>
+                <button class="orders-tab-button" data-tab="completed">${t('completed_orders')}</button>
             </div>
-            <div id="orders-list"><p>${t('loading')}</p></div>
+            <div id="orders-list"></div>
         </div>
     `;
 
@@ -394,17 +404,23 @@ function getProfileContent() {
     return `<div id="profile-page-wrapper">${header}${menu}${editSection}${ordersSection}</div>`;
 }
 
-export function renderOrders(filter = 'current') {
+export function renderOrders(filter = 'active') {
     const ordersList = document.getElementById('orders-list');
     if (!ordersList) return;
 
     const allOrders = getOrders();
-    const filteredOrders = filter === 'current'
+    const filteredOrders = filter === 'active'
         ? allOrders.filter(o => !['completed', 'cancelled'].includes(o.status))
-        : allOrders;
+        : allOrders.filter(o => ['completed', 'cancelled'].includes(o.status));
 
     if (filteredOrders.length === 0) {
-        ordersList.innerHTML = `<p>${t('no_orders_yet')}</p>`;
+        ordersList.innerHTML = `
+            <div class="orders-empty-state">
+                <img src="./assets/images/empty-box.svg" alt="Empty" class="empty-image">
+                <h3>${t('no_active_orders')}</h3>
+                <p>${t('no_active_orders_desc')}</p>
+            </div>
+        `;
         return;
     }
 
@@ -528,13 +544,17 @@ export function renderLanguageModal() {
                     <label for="lang-ru" class="language-option">
                         <span class="radio-custom ${currentLang === 'ru' ? 'checked' : ''}"></span>
                         <span class="lang-name">Русский</span>
-                        <span class="lang-flag">🇷🇺</span>
+                        <span class="lang-flag">
+                            <img src="./assets/flags/russia.svg" alt="RU">
+                        </span>
                         <input type="radio" id="lang-ru" name="language" value="ru" ${currentLang === 'ru' ? 'checked' : ''}>
                     </label>
                     <label for="lang-uz" class="language-option">
                         <span class="radio-custom ${currentLang === 'uz' ? 'checked' : ''}"></span>
                         <span class="lang-name">O'zbekcha</span>
-                        <span class="lang-flag">🇺🇿</span>
+                        <span class="lang-flag">
+                            <img src="./assets/flags/uzbekistan.svg" alt="UZ">
+                        </span>
                         <input type="radio" id="lang-uz" name="language" value="uz" ${currentLang === 'uz' ? 'checked' : ''}>
                     </label>
                 </div>
@@ -635,15 +655,27 @@ export function initCarousel() {
 export function openRegisterModal() {
     // O'ZGARTIRILDI: Ma'lumotlar endi state'dan olinadi
     const guestUser = getGuestTelegramUser();
+    const firstName = guestUser?.first_name || '';
+    const lastName = guestUser?.last_name || '';
     modal.classList.remove('hidden');
     modal.innerHTML = `
-      <div class="modal-content">
+      <div class="modal-content register-modal">
         <h3>${t('fill_profile_title')}</h3>
-        <input type="text" id="regFirstName" placeholder="${t('first_name_placeholder')}" value="${guestUser?.first_name || ''}" required>
-        <input type="text" id="regLastName" placeholder="${t('last_name_placeholder')}" value="${guestUser?.last_name || ''}">
-        <div class="phone-input">
-          <span class="country-code">🇺🇿 +998</span>
-          <input type="tel" id="regPhone" placeholder="${t('phone_placeholder')}" required>
+        <div class="floating-input ${firstName ? 'has-value' : ''}">
+            <input type="text" id="regFirstName" value="${firstName}" placeholder=" " required>
+            <label for="regFirstName">${t('first_name_label')}</label>
+        </div>
+        <div class="floating-input ${lastName ? 'has-value' : ''}">
+            <input type="text" id="regLastName" value="${lastName}" placeholder=" ">
+            <label for="regLastName">${t('last_name_label')}</label>
+        </div>
+        <div class="floating-input phone-floating-input">
+            <div class="phone-input-wrapper">
+                <span class="country-code">🇺🇿 +998</span>
+                <span class="divider">|</span>
+                <input type="tel" id="regPhone" placeholder="${t('phone_placeholder')}" required>
+            </div>
+            <label for="regPhone">${t('phone_label')}</label>
         </div>
         <button id="register-submit-btn">${t('save_button')}</button>
         <button id="register-cancel-btn">${t('cancel_button')}</button>

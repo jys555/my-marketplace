@@ -145,7 +145,7 @@ function attachPageEventListeners(pageName) {
 
             // Listeners for hidden sections
             document.getElementById('save-profile-btn')?.addEventListener('click', handleSaveProfile);
-            document.querySelectorAll('.tabs .tab-button').forEach(tab => {
+            document.querySelectorAll('.orders-tabs .orders-tab-button').forEach(tab => {
                 tab.addEventListener('click', handleOrderTabClick);
             });
             break;
@@ -196,7 +196,7 @@ async function handleLanguageChange(lang) {
 function handleOrderTabClick(event) {
     const clickedTab = event.target;
     // Boshqa tablardan 'active' klassini olib tashlaymiz
-    document.querySelectorAll('.tabs .tab-button').forEach(tab => {
+    document.querySelectorAll('.orders-tabs .orders-tab-button').forEach(tab => {
         tab.classList.remove('active');
     });
     // Bosilgan tabga 'active' klassini qo'shamiz
