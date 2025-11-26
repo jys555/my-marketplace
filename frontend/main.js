@@ -75,13 +75,13 @@ document.addEventListener('DOMContentLoaded', () => {
     state.setInitData(WebApp.initData);
     WebApp.ready();
     
-    // Ilovani kengaytirish
+    // Fullscreen rejimini yoqish
     WebApp.expand();
-    
-    // Telegram headerini qora rangga o'zgartirish (ilova tepasi bilan birlashib ketadi)
-    if (WebApp.setHeaderColor) {
-        WebApp.setHeaderColor('#000000');
+    if (WebApp.requestFullscreen) {
+        WebApp.requestFullscreen();
     }
+    
+    // Fon rangini qora qilish (qora lenta bilan mos)
     if (WebApp.setBackgroundColor) {
         WebApp.setBackgroundColor('#000000');
     }
