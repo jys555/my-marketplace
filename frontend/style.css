@@ -364,6 +364,35 @@ body::before {
     font-weight: 600;
 }
 
+/* Savatga qo'shish tugmasi - pastki o'ngda */
+.add-to-cart-btn {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #ffcc00;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.add-to-cart-btn:active {
+    transform: scale(0.9);
+    background: #e6b800;
+}
+
+.add-to-cart-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
 .product-card-info {
     padding: 0 4px;
     display: flex;
@@ -473,6 +502,124 @@ body::before {
 
 .register-modal #register-cancel-btn:hover {
     color: #666;
+}
+
+/* === Savatga qo'shish modali (pastdan chiqadi) === */
+.cart-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    z-index: 1100;
+}
+
+.cart-modal-content {
+    background: #fff;
+    width: 100%;
+    max-width: 500px;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    padding: 20px;
+    animation: slideUp 0.3s ease-out;
+}
+
+.cart-modal-product {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.cart-modal-image {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+.cart-modal-info {
+    flex: 1;
+}
+
+.cart-modal-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: #000;
+    margin: 0 0 4px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.cart-modal-price {
+    font-size: 14px;
+    color: #8e8e93;
+    margin: 0;
+}
+
+.cart-modal-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cart-modal-buy-btn {
+    flex: 1;
+    padding: 16px 24px;
+    background: #000;
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.cart-modal-buy-btn:active {
+    background: #333;
+}
+
+.cart-modal-quantity {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: #f2f2f7;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.qty-btn {
+    width: 44px;
+    height: 52px;
+    border: none;
+    background: transparent;
+    font-size: 22px;
+    font-weight: 500;
+    color: #000;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+}
+
+.qty-btn:active {
+    background: rgba(0,0,0,0.08);
+}
+
+.qty-value {
+    min-width: 36px;
+    text-align: center;
+    font-size: 17px;
+    font-weight: 600;
+    color: #000;
 }
 
 /* === Navigatsiya paneli (JS orqali pozitsiyalanadi) === */

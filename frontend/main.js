@@ -424,46 +424,88 @@ async function handleSaveProfile() {
     }
 }
 
-async function handleAddToCart(event) {
+function handleAddToCart(event) {
     event.stopPropagation();
-    const productId = parseInt(event.target.dataset.id);
-    const action = async () => {
-        state.addToCart(productId);
-        try {
-            await api.updateCart(state.getCart());
-            const product = state.getProductById(productId);
-            WebApp.showPopup({ title: "✅", message: ui.t('added_to_cart', { name: product.name }) });
-        } catch (err) {
-            WebApp.showAlert(`${ui.t('error_saving')}: ${err.message}`);
-            // Revert state change on failure
-            state.updateCartItemQuantity(productId, (state.getCart()[productId] || 1) - 1);
-        }
-    };
+    const btn = event.target.closest('.add-to-cart-btn');
+    const productId = parseInt(btn.dataset.id);
+    
+    // Modal ochish
+    ui.openCartModal(productId);
+    attachCartModalEventListeners(productId);
+}
 
-    if (state.isRegistered()) {
-        await action();
-    } else {
-        pendingAction = action;
-        ui.openRegisterModal();
-        attachModalEventListeners();
+// Cart modal event listenerlari
+function attachCartModalEventListeners(productId) {
+    const overlay = document.getElementById('cart-modal-overlay');
+    const buyBtn = document.querySelector('.cart-modal-buy-btn');
+    const qtyBtns = document.querySelectorAll('.qty-btn');
+    let quantity = 1;
+    
+    // Modal tashqarisiga bosilganda yopish
+    overlay?.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            ui.closeCartModal();
+        }
+    });
+    
+    // Miqdorni o'zgartirish
+    qtyBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const change = parseInt(btn.dataset.change);
+            quantity = Math.max(1, quantity + change);
+            document.getElementById(`qty-value-${productId}`).textContent = quantity;
+        });
+    });
+    
+    // Sotib olish tugmasi
+    buyBtn?.addEventListener('click', async () => {
+        if (!state.isRegistered()) {
+            ui.closeCartModal();
+            pendingAction = () => addToCartAndCheckout(productId, quantity);
+            ui.openRegisterModal();
+            attachModalEventListeners();
+            return;
+        }
+        
+        await addToCartAndCheckout(productId, quantity);
+    });
+}
+
+// Savatga qo'shish va checkout
+async function addToCartAndCheckout(productId, quantity) {
+    try {
+        // Avval savatga qo'shish
+        for (let i = 0; i < quantity; i++) {
+            state.addToCart(productId);
+        }
+        await api.updateCart(state.getCart());
+        ui.closeCartModal();
+        
+        // Cart sahifasiga o'tish
+        navigateTo('cart');
+    } catch (err) {
+        WebApp.showAlert(`${ui.t('error_saving')}: ${err.message}`);
     }
 }
 
 async function handleToggleFavorite(event) {
     event.stopPropagation();
-    const btn = event.target;
+    const btn = event.target.closest('.like-btn');
     const productId = parseInt(btn.dataset.id);
+    const svg = btn.querySelector('svg');
+    
     const action = async () => {
         const added = state.toggleFavorite(productId);
         btn.classList.toggle('liked', added);
-        btn.textContent = added ? '❤️' : '♡';
+        
+        // SVG rangini o'zgartirish
+        if (svg) {
+            svg.setAttribute('fill', added ? '#ff3b5c' : 'none');
+            svg.setAttribute('stroke', added ? '#ff3b5c' : '#999');
+        }
 
         try {
             await api.updateFavorites(state.getFavorites());
-            WebApp.showPopup({
-                title: added ? '❤️' : '🤍',
-                message: added ? ui.t('added_to_favorites', { id: productId }) : ui.t('removed_from_favorites', { id: productId })
-            });
             if (state.getCurrentPage() === 'favorites') {
                 navigateTo('favorites');
             }
@@ -472,7 +514,10 @@ async function handleToggleFavorite(event) {
             // Revert state change on failure
             state.toggleFavorite(productId);
             btn.classList.toggle('liked', !added);
-            btn.textContent = !added ? '❤️' : '♡';
+            if (svg) {
+                svg.setAttribute('fill', !added ? '#ff3b5c' : 'none');
+                svg.setAttribute('stroke', !added ? '#ff3b5c' : '#999');
+            }
         }
     };
 

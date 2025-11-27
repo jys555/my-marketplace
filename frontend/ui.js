@@ -83,7 +83,8 @@ const translations = {
         delivery: "Pochta orqali",
         order_success: "✅ Buyurtmangiz qabul qilindi! Raqami: {order_number}",
         order_failed: "❌ Buyurtma yaratishda xatolik yuz berdi.",
-        added_to_cart: "{name} savatchaga qo'shildi"
+        added_to_cart: "{name} savatchaga qo'shildi",
+        buy_now: "Hozir sotib olish"
     },
     ru: {
         loading: "Загрузка данных...",
@@ -159,7 +160,8 @@ const translations = {
         delivery: "Доставка почтой",
         order_success: "✅ Ваш заказ принят! Номер: {order_number}",
         order_failed: "❌ Произошла ошибка при создании заказа.",
-        added_to_cart: "{name} добавлен в корзину"
+        added_to_cart: "{name} добавлен в корзину",
+        buy_now: "Купить сейчас"
     }
 };
 
@@ -290,6 +292,13 @@ export function renderProducts() {
                 </svg>
               </div>
               ${hasSale ? `<div class="sale-badge">-${salePercentage}%</div>` : ''}
+              <button class="add-to-cart-btn" data-id="${p.id}">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="9" cy="21" r="1"/>
+                  <circle cx="20" cy="21" r="1"/>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+              </button>
             </div>
             <div class="product-card-info">
               <h4>${safeName}</h4>
@@ -723,6 +732,46 @@ export function openRegisterModal() {
 }
 
 export function closeRegisterModal() {
+    modal.classList.add('hidden');
+    modal.innerHTML = '';
+}
+
+// Savatga qo'shish modali
+export function openCartModal(productId) {
+    const product = getProductById(productId);
+    if (!product) return;
+    
+    const safeImage = escapeHtml(product.image) || 'https://via.placeholder.com/150';
+    const safeName = escapeHtml(product.name);
+    const displayPrice = product.sale_price && product.price > product.sale_price 
+        ? product.sale_price 
+        : product.price;
+    
+    modal.classList.remove('hidden');
+    modal.innerHTML = `
+      <div class="cart-modal-overlay" id="cart-modal-overlay">
+        <div class="cart-modal-content">
+          <div class="cart-modal-product">
+            <img src="${safeImage}" alt="${safeName}" class="cart-modal-image">
+            <div class="cart-modal-info">
+              <h4 class="cart-modal-name">${safeName}</h4>
+              <p class="cart-modal-price">${Number(displayPrice).toLocaleString()} so'm</p>
+            </div>
+          </div>
+          <div class="cart-modal-actions">
+            <button class="cart-modal-buy-btn" data-id="${productId}">${t('buy_now')}</button>
+            <div class="cart-modal-quantity">
+              <button class="qty-btn minus" data-id="${productId}" data-change="-1">−</button>
+              <span class="qty-value" id="qty-value-${productId}">1</span>
+              <button class="qty-btn plus" data-id="${productId}" data-change="1">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+}
+
+export function closeCartModal() {
     modal.classList.add('hidden');
     modal.innerHTML = '';
 }
