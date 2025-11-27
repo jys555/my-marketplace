@@ -16,9 +16,8 @@ const translations = {
         error_server: "⚠️ Server bilan aloqada xatolik.",
         guest: "Mehmon",
         home_greeting: "Salom, <strong>{name}</strong>!",
-        search_placeholder: "Mahsulotlarni qidirish...",
-        pickup_location: "Buyerdan olib ketish mumkin",
-        popular_products: "🔥 Mashhur tovarlar",
+        search_placeholder: "Mahsulotlarni toping",
+        categories_title: "Kategoriyalar",
         products_not_loaded: "❌ Tovarlar yuklanmadi",
         no_products_yet: "Hozircha mahsulotlar yo'q.",
         product_details_not_ready: "Tovar #{id} tafsiloti hali tayyor emas.",
@@ -93,9 +92,8 @@ const translations = {
         error_server: "⚠️ Ошибка соединения с сервером.",
         guest: "Гость",
         home_greeting: "Привет, <strong>{name}</strong>!",
-        search_placeholder: "Поиск продуктов...",
-        pickup_location: "Доступен самовывоз",
-        popular_products: "🔥 Популярные товары",
+        search_placeholder: "Найти товары",
+        categories_title: "Категории",
         products_not_loaded: "❌ Не удалось загрузить товары",
         no_products_yet: "Товаров пока нет.",
         product_details_not_ready: "Информация о товаре #{id} еще не готова.",
@@ -220,14 +218,10 @@ export function renderPage(pageName, attachEventListeners) {
 }
 
 function getHomeContent() {
-    const user = getUser();
-    const rawName = isUserRegistered() ? (user.first_name || window.Telegram.WebApp.initDataUnsafe?.user?.first_name) : t('guest');
-    const displayName = escapeHtml(rawName);
-
-    // QO'SHILDI: Bannerlarni state'dan olish
+    // Bannerlarni state'dan olish
     const banners = getBanners();
 
-    // O'ZGARTIRILDI: Bannerlar mavjud bo'lsa, dinamik karusel yaratish
+    // Bannerlar mavjud bo'lsa, dinamik karusel yaratish
     const carouselHtml = banners && banners.length > 0 ? `
       <div class="carousel" id="carousel">
         ${banners.map((banner, index) => `
@@ -239,14 +233,28 @@ function getHomeContent() {
     ` : '';
 
     return `
-      <header class="header">
-        <div class="logo">🛒 Amazing Store</div>
-        <div class="user-greeting">${t('home_greeting', { name: displayName })}</div>
-        <input type="text" placeholder="${t('search_placeholder')}" ${isUserRegistered() ? '' : 'disabled'}>
-        <button id="location-btn">${t('pickup_location')}</button>
-      </header>
+      <div class="home-header">
+        <div class="brand-container">
+          <span class="brand-icon">🛒</span>
+          <span class="brand-name">Amazing Store</span>
+        </div>
+        <div class="search-container">
+          <span class="search-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="M21 21l-4.35-4.35"/>
+            </svg>
+          </span>
+          <input type="text" class="search-input" placeholder="${t('search_placeholder')}">
+        </div>
+      </div>
       ${carouselHtml}
-      <h3>${t('popular_products')}</h3>
+      <div class="categories-section">
+        <div class="categories-header" id="categories-btn">
+          <span class="categories-title">${t('categories_title')}</span>
+          <span class="categories-arrow">›</span>
+        </div>
+      </div>
       <div class="products-grid" id="products"></div>
     `;
 }
@@ -266,23 +274,25 @@ export function renderProducts() {
         const salePercentage = hasSale ? Math.round(((p.price - p.sale_price) / p.price) * 100) : 0;
         const safeName = escapeHtml(p.name);
         const safeImage = escapeHtml(p.image) || 'https://via.placeholder.com/150';
+        const displayPrice = hasSale ? p.sale_price : p.price;
 
         return `
           <div class="product-card" data-id="${p.id}">
             <div class="product-card-image-wrapper">
               <img src="${safeImage}" alt="${safeName}">
-              <div class="like-btn ${isFavorite(p.id) ? 'liked' : ''}" data-id="${p.id}">${isFavorite(p.id) ? '❤️' : '♡'}</div>
+              <div class="like-btn ${isFavorite(p.id) ? 'liked' : ''}" data-id="${p.id}">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="${isFavorite(p.id) ? '#ff3b5c' : 'none'}" stroke="${isFavorite(p.id) ? '#ff3b5c' : '#999'}" stroke-width="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </div>
               ${hasSale ? `<div class="sale-badge">-${salePercentage}%</div>` : ''}
             </div>
             <div class="product-card-info">
               <h4>${safeName}</h4>
-              <div class="product-card-footer">
-                <p class="price-container">
-                  <span class="price">${p.display_price} so'm</span>
-                  ${hasSale ? `<span class="old-price">${p.price.toLocaleString()} so'm</span>` : ''}
-                </p>
-                <button class="add-to-cart-btn" data-id="${p.id}">🛒</button>
-              </div>
+              <p class="price-line">
+                <span class="current-price">${Number(displayPrice).toLocaleString()} so'm</span>
+                ${hasSale ? `<span class="original-price">${p.price.toLocaleString()} so'm</span>` : ''}
+              </p>
             </div>
           </div>
         `;
@@ -475,16 +485,16 @@ function getCartContent() {
     return `
         ${pageHeader}
         <div class="page-content">
-            <div id="cart-items">${itemsHtml}</div>
-            <div class="cart-summary">
-                <h3>${t('total_price')}: ${totalPrice.toLocaleString()} so'm</h3>
-                <div class="checkout-options">
-                    <h4>${t('payment_method')}</h4>
-                    <label><input type="radio" name="payment" value="cash" checked> ${t('cash')}</label>
-                    <h4>${t('delivery_method')}</h4>
-                    <label><input type="radio" name="delivery" value="pickup" checked> ${t('pickup')}</label>
-                </div>
-                <button id="confirm-order-btn">${t('confirm_order')}</button>
+        <div id="cart-items">${itemsHtml}</div>
+        <div class="cart-summary">
+            <h3>${t('total_price')}: ${totalPrice.toLocaleString()} so'm</h3>
+            <div class="checkout-options">
+                <h4>${t('payment_method')}</h4>
+                <label><input type="radio" name="payment" value="cash" checked> ${t('cash')}</label>
+                <h4>${t('delivery_method')}</h4>
+                <label><input type="radio" name="delivery" value="pickup" checked> ${t('pickup')}</label>
+            </div>
+            <button id="confirm-order-btn">${t('confirm_order')}</button>
             </div>
         </div>
     `;
@@ -506,30 +516,36 @@ function getFavoritesContent() {
 
     return `
         ${pageHeader}
-        <div class="page-content">
-            <div class="products-grid" id="products">
+        <div class="page-content favorites-page">
+        <div class="products-grid" id="products">
                 ${favoriteProducts.map(p => {
+                    const hasSale = p.sale_price && p.price > p.sale_price;
+                    const salePercentage = hasSale ? Math.round(((p.price - p.sale_price) / p.price) * 100) : 0;
                     const safeName = escapeHtml(p.name);
                     const safeImage = escapeHtml(p.image) || 'https://via.placeholder.com/150';
+                    const displayPrice = hasSale ? p.sale_price : p.price;
                     return `
-                      <div class="product-card" data-id="${p.id}">
+              <div class="product-card" data-id="${p.id}">
                         <div class="product-card-image-wrapper">
                           <img src="${safeImage}" alt="${safeName}">
-                          <div class="like-btn liked" data-id="${p.id}">❤️</div>
+                          <div class="like-btn liked" data-id="${p.id}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#ff3b5c" stroke="#ff3b5c" stroke-width="2">
+                              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            </svg>
+                          </div>
+                          ${hasSale ? `<div class="sale-badge">-${salePercentage}%</div>` : ''}
                         </div>
                         <div class="product-card-info">
                           <h4>${safeName}</h4>
-                          <div class="product-card-footer">
-                            <p class="price-container">
-                              <span class="price">${p.display_price} so'm</span>
-                            </p>
-                            <button class="add-to-cart-btn" data-id="${p.id}">🛒</button>
-                          </div>
+                          <p class="price-line">
+                            <span class="current-price">${Number(displayPrice).toLocaleString()} so'm</span>
+                            ${hasSale ? `<span class="original-price">${p.price.toLocaleString()} so'm</span>` : ''}
+                          </p>
                         </div>
                       </div>
                     `;
                 }).join('')}
-            </div>
+              </div>
         </div>
     `;
 }
@@ -584,7 +600,7 @@ export function showProfileSection(sectionName, globalBackHandler = null) {
     sections.forEach(s => s?.classList.add('hidden'));
     
     const WebApp = window.Telegram?.WebApp;
-    
+
     if (sectionName === 'menu') {
         menu?.classList.remove('hidden');
         if (title) title.innerText = t('profile_title');
@@ -696,9 +712,9 @@ export function openRegisterModal() {
         <div class="phone-floating-input">
             <label for="regPhone">${t('phone_label')}</label>
             <div class="phone-input-wrapper">
-                <span class="country-code">🇺🇿 +998</span>
+          <span class="country-code">🇺🇿 +998</span>
                 <span class="divider">|</span>
-                <input type="tel" id="regPhone" placeholder="${t('phone_placeholder')}" required>
+          <input type="tel" id="regPhone" placeholder="${t('phone_placeholder')}" required>
             </div>
         </div>
         <button id="register-submit-btn">${t('save_button')}</button>
