@@ -293,8 +293,10 @@ export function renderProducts() {
               </div>
               ${hasSale ? `<div class="sale-badge">-${salePercentage}%</div>` : ''}
               <button class="add-to-cart-btn" data-id="${p.id}">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="#000">
-                  <path d="M17 18c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zM7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm0-3l1.1-2h7.45c.75 0 1.41-.41 1.75-1.03L21.7 4H5.21l-.94-2H1v2h2l3.6 7.59L3.62 17H19v-2H7z"/>
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                  <path fill="#000" d="M4 16V4H2V2h3a1 1 0 0 1 1 1v12h12.438l2-8H8V5h13a1 1 0 0 1 .97 1.243l-2.5 10A1 1 0 0 1 18.5 17H5a1 1 0 0 1-1-1z"/>
+                  <circle fill="#000" cx="6" cy="20" r="2"/>
+                  <circle fill="#000" cx="18" cy="20" r="2"/>
                 </svg>
               </button>
             </div>
@@ -660,7 +662,7 @@ export function updateNavbar(pageName) {
     const icons = {
         home: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>`,
         catalog: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
-        cart: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`,
+        cart: `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M4 16V4H2V2h3a1 1 0 0 1 1 1v12h12.438l2-8H8V5h13a1 1 0 0 1 .97 1.243l-2.5 10A1 1 0 0 1 18.5 17H5a1 1 0 0 1-1-1z"/><circle cx="6" cy="20" r="2"/><circle cx="18" cy="20" r="2"/></svg>`,
         favorites: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
         profile: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`
     };

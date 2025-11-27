@@ -364,26 +364,25 @@ body::before {
     font-weight: 600;
 }
 
-/* Savatga qo'shish tugmasi - pastki o'ngda */
+/* Savatga qo'shish tugmasi - pastki o'ng burchakda (rasm bilan mos) */
 .add-to-cart-btn {
     position: absolute;
-    bottom: 8px;
-    right: 8px;
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
+    bottom: 0;
+    right: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 16px 0 16px 0;
     background: rgb(109, 175, 247);
-    border: 2px solid #fff;
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     transition: transform 0.15s ease, background 0.15s ease;
 }
 
 .add-to-cart-btn:active {
-    transform: scale(0.9);
+    transform: scale(0.95);
     background: rgb(89, 155, 227);
 }
 
