@@ -5,6 +5,19 @@ import * as ui from './ui.js';
 const WebApp = window.Telegram.WebApp;
 let pendingAction = null;
 
+// Safe area padding ni yangilash
+function updateSafeAreaPadding() {
+    const safeArea = WebApp.safeAreaInset || { top: 0, bottom: 0, left: 0, right: 0 };
+    const contentSafeArea = WebApp.contentSafeAreaInset || { top: 0, bottom: 0, left: 0, right: 0 };
+    
+    // CSS custom properties orqali qiymatlarni uzatish
+    document.documentElement.style.setProperty('--safe-area-bottom', `${safeArea.bottom}px`);
+    document.documentElement.style.setProperty('--content-safe-area-bottom', `${contentSafeArea.bottom}px`);
+    document.documentElement.style.setProperty('--total-safe-area-bottom', `${Math.max(safeArea.bottom, contentSafeArea.bottom)}px`);
+    
+    console.log('Safe Area:', safeArea, 'Content Safe Area:', contentSafeArea);
+}
+
 // Telefon raqamini formatlash (00 000 00 00)
 function formatPhoneNumber(value) {
     // Faqat raqamlarni olish
@@ -80,6 +93,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (WebApp.requestFullscreen) {
         WebApp.requestFullscreen();
     }
+    
+    // Safe area o'zgarishlarini kuzatish
+    if (WebApp.onEvent) {
+        WebApp.onEvent('safeAreaChanged', updateSafeAreaPadding);
+        WebApp.onEvent('contentSafeAreaChanged', updateSafeAreaPadding);
+    }
+    
+    // Dastlabki safe area qiymatlarini qo'llash
+    updateSafeAreaPadding();
     
     // Fon rangini qora qilish (qora lenta bilan mos)
     if (WebApp.setBackgroundColor) {

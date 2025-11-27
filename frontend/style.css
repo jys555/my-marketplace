@@ -5,6 +5,13 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
+:root {
+  /* Fallback qiymatlar - Telegram API dan yangilanadi */
+  --safe-area-bottom: 0px;
+  --content-safe-area-bottom: 0px;
+  --total-safe-area-bottom: 34px;
+}
+
 html {
   background: #000;
 }
@@ -16,8 +23,8 @@ body {
   overflow: hidden;
   /* Yuqorida qora lenta (29px) + pastda navbar uchun joy */
   padding-top: 29px;
-  /* Navbar (56px) + qurilma safe area */
-  padding-bottom: calc(56px + env(safe-area-inset-bottom, 34px));
+  /* Navbar (56px) + safe area */
+  padding-bottom: calc(56px + var(--total-safe-area-bottom, 34px));
 }
 
 /* === QORA LENTA (29px + 25px quloqchalar - bir butun) === */
@@ -68,8 +75,8 @@ body::before {
   padding: 60px 20px;
   font-size: 17px;
   color: #8e8e93;
-  height: calc(100vh - 29px - 56px - env(safe-area-inset-bottom, 34px));
-  height: calc(100dvh - 29px - 56px - env(safe-area-inset-bottom, 34px));
+  height: calc(100vh - 29px - 56px - var(--total-safe-area-bottom, 34px));
+  height: calc(100dvh - 29px - 56px - var(--total-safe-area-bottom, 34px));
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -77,8 +84,8 @@ body::before {
 #main {
   background: #fff;
   border-radius: 25px 25px 0 0;
-  height: calc(100vh - 29px - 56px - env(safe-area-inset-bottom, 34px));
-  height: calc(100dvh - 29px - 56px - env(safe-area-inset-bottom, 34px));
+  height: calc(100vh - 29px - 56px - var(--total-safe-area-bottom, 34px));
+  height: calc(100dvh - 29px - 56px - var(--total-safe-area-bottom, 34px));
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -479,11 +486,11 @@ body::before {
   justify-content: space-around;
   align-items: center;
   padding: 10px 0;
-  /* Qurilma safe area ga moslashadi */
-  padding-bottom: calc(10px + env(safe-area-inset-bottom, 34px));
+  /* Telegram safe area + qo'shimcha padding */
+  padding-bottom: calc(12px + var(--total-safe-area-bottom, 34px));
   border-top: 0.5px solid rgba(0,0,0,0.12);
   z-index: 900;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, padding 0.2s ease;
 }
 
 .navbar.keyboard-open {
