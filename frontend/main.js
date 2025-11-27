@@ -81,6 +81,15 @@ function fixLayoutToScreen() {
     const contentSafeArea = WebApp.contentSafeAreaInset || { bottom: 0 };
     const safeAreaBottom = Math.max(safeArea.bottom, contentSafeArea.bottom);
     
+    // Debug - qiymatlarni ko'rish
+    console.log('fixLayoutToScreen:', {
+        screenHeight,
+        navbarHeight,
+        safeAreaBottom,
+        safeArea: safeArea.bottom,
+        contentSafeArea: contentSafeArea.bottom
+    });
+    
     // Navbar pozitsiyasi - qurilma navbaridan yuqorida (agar bor bo'lsa)
     const navbarTop = screenHeight - navbarHeight - safeAreaBottom;
     navbar.style.bottom = 'auto';

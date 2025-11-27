@@ -475,7 +475,7 @@ body::before {
     color: #666;
 }
 
-/* === Navigatsiya paneli (qurilma navigatsiyasidan yuqorida) === */
+/* === Navigatsiya paneli (JS orqali pozitsiyalanadi) === */
 .navbar {
   position: fixed;
   bottom: 0;
@@ -486,8 +486,6 @@ body::before {
   justify-content: space-around;
   align-items: center;
   padding: 10px 0;
-  /* Telegram safe area + qo'shimcha padding */
-  padding-bottom: calc(12px + var(--total-safe-area-bottom, 34px));
   border-top: 0.5px solid rgba(0,0,0,0.12);
   z-index: 900;
 }
