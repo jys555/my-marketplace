@@ -86,6 +86,21 @@ document.addEventListener('DOMContentLoaded', () => {
         WebApp.setBackgroundColor('#000000');
     }
     
+    // Klaviatura ochilganda navbarni yashirish
+    document.addEventListener('focusin', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            document.getElementById('navbar')?.classList.add('keyboard-open');
+        }
+    });
+    
+    document.addEventListener('focusout', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            setTimeout(() => {
+                document.getElementById('navbar')?.classList.remove('keyboard-open');
+            }, 100);
+        }
+    });
+    
     initializeApp();
 });
 

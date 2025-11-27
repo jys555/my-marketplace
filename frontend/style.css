@@ -478,9 +478,12 @@ body::before {
   padding: 10px 0;
   padding-bottom: 45px;
   border-top: 0.5px solid rgba(0,0,0,0.12);
-  z-index: 9000;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
+  z-index: 900;
+  transition: transform 0.2s ease;
+}
+
+.navbar.keyboard-open {
+  transform: translateY(100%);
 }
 
 .navbar button {
