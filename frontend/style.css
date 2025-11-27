@@ -21,10 +21,10 @@ body {
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
-  /* Yuqorida qora lenta (29px) + pastda navbar uchun joy */
+  /* Yuqorida qora lenta */
   padding-top: 29px;
-  /* Navbar (56px) + safe area */
-  padding-bottom: calc(56px + var(--total-safe-area-bottom, 34px));
+  /* Padding-bottom JS orqali boshqariladi */
+  padding-bottom: 0;
 }
 
 /* === QORA LENTA (29px + 25px quloqchalar - bir butun) === */

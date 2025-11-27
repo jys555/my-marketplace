@@ -108,25 +108,37 @@ document.addEventListener('DOMContentLoaded', () => {
         WebApp.setBackgroundColor('#000000');
     }
     
-    // Navbar pozitsiyasini ekran pastiga mahkamlash (klaviatura ta'sir qilmasin)
-    if (window.visualViewport) {
+    // Navbar va layoutni ekranga mahkamlash (visual viewport emas)
+    const fixLayoutToScreen = () => {
         const navbar = document.getElementById('navbar');
-        const initialWindowHeight = window.innerHeight;
+        const main = document.getElementById('main');
+        const loading = document.getElementById('loading');
         
-        window.visualViewport.addEventListener('resize', () => {
-            if (!navbar) return;
-            
-            // Visual viewport kichiklagan miqdorni hisoblash
-            const heightDiff = initialWindowHeight - window.visualViewport.height;
-            
-            // Navbarni pastga qaytarish (klaviatura ustida emas)
-            if (heightDiff > 100) { // Klaviatura ochilgan
-                navbar.style.transform = `translateY(${heightDiff}px)`;
-            } else {
-                navbar.style.transform = 'translateY(0)';
-            }
-        });
-    }
+        if (!navbar) return;
+        
+        const screenHeight = window.innerHeight;
+        const navbarHeight = navbar.offsetHeight;
+        const topBarHeight = 29; // Qora lenta
+        
+        // Navbar pozitsiyasi - ekran pastiga
+        const navbarTop = screenHeight - navbarHeight;
+        navbar.style.bottom = 'auto';
+        navbar.style.top = `${navbarTop}px`;
+        
+        // Content balandligi - qora lenta va navbar orasida
+        const contentHeight = navbarTop - topBarHeight;
+        if (main) main.style.height = `${contentHeight}px`;
+        if (loading) loading.style.height = `${contentHeight}px`;
+        
+        // Body padding kerak emas - content balandligi aniq
+        document.body.style.paddingBottom = '0';
+    };
+    
+    // Dastlab va orientatsiya o'zgarganda
+    fixLayoutToScreen();
+    window.addEventListener('orientationchange', () => {
+        setTimeout(fixLayoutToScreen, 100);
+    });
     
     initializeApp();
 });
