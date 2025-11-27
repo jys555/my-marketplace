@@ -76,12 +76,12 @@ function fixLayoutToScreen() {
     const navbarHeight = navbar.offsetHeight;
     const topBarHeight = 29; // Qora lenta
     
-    // Qurilma navigatsiyasi uchun safe area
+    // Qurilma navigatsiyasi uchun safe area (Telegram API dan)
     const safeArea = WebApp.safeAreaInset || { bottom: 0 };
     const contentSafeArea = WebApp.contentSafeAreaInset || { bottom: 0 };
-    const safeAreaBottom = Math.max(safeArea.bottom, contentSafeArea.bottom, 34); // Minimal 34px
+    const safeAreaBottom = Math.max(safeArea.bottom, contentSafeArea.bottom);
     
-    // Navbar pozitsiyasi - qurilma navbaridan yuqorida
+    // Navbar pozitsiyasi - qurilma navbaridan yuqorida (agar bor bo'lsa)
     const navbarTop = screenHeight - navbarHeight - safeAreaBottom;
     navbar.style.bottom = 'auto';
     navbar.style.top = `${navbarTop}px`;
