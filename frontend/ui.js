@@ -7,7 +7,6 @@ function escapeHtml(str) {
     div.textContent = str;
     return div.innerHTML;
 }
-
 // Til sozlamalari va tarjimalar
 const translations = {
     uz: {
