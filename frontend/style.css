@@ -6,15 +6,10 @@
 }
 
 :root {
-  /* Qurilma safe area o'lchamlari (fallback: 26px top, 34px bottom) */
-  --safe-top: env(safe-area-inset-top, 26px);
-  --safe-bottom: env(safe-area-inset-bottom, 34px);
-  /* Qora lenta = status bar + 3px */
-  --top-bar: calc(var(--safe-top) + 3px);
-  /* Qora lenta + quloqcha balandligi */
-  --top-bar-total: calc(var(--safe-top) + 3px + 25px);
-  /* Navbar balandligi */
-  --navbar-height: 56px;
+  /* Fallback qiymatlar - Telegram API dan yangilanadi */
+  --safe-area-bottom: 0px;
+  --content-safe-area-bottom: 0px;
+  --total-safe-area-bottom: 34px;
 }
 
 html {
@@ -26,27 +21,27 @@ body {
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
-  /* Yuqorida: qora lenta */
-  padding-top: var(--top-bar);
+  /* Yuqorida qora lenta */
+  padding-top: 29px;
+  /* Padding-bottom JS orqali boshqariladi */
   padding-bottom: 0;
 }
 
-/* === QORA LENTA (status bar + 3px + quloqchalar) === */
+/* === QORA LENTA (29px + 25px quloqchalar - bir butun) === */
 body::before {
   content: '';
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  /* Balandlik: status bar + 3px + 25px quloqcha */
-  height: var(--top-bar-total);
+  height: 54px; /* 29px lenta + 25px quloqcha */
   background-color: #000;
   -webkit-mask-image: 
     linear-gradient(#000, #000),
     radial-gradient(circle at 100% 100%, transparent 25px, #000 25px),
     radial-gradient(circle at 0 100%, transparent 25px, #000 25px);
   -webkit-mask-size: 
-    100% var(--top-bar),
+    100% 29px,
     25px 25px,
     25px 25px;
   -webkit-mask-position: 
@@ -59,7 +54,7 @@ body::before {
     radial-gradient(circle at 100% 100%, transparent 25px, #000 25px),
     radial-gradient(circle at 0 100%, transparent 25px, #000 25px);
   mask-size: 
-    100% var(--top-bar),
+    100% 29px,
     25px 25px,
     25px 25px;
   mask-position: 
@@ -72,7 +67,7 @@ body::before {
   z-index: 9999;
 }
 
-/* === ASOSIY KONTENT === */
+/* === ASOSIY KONTENT (yuqori burchaklari yumaloq - quloqchalarga mos) === */
 #loading {
   background: #f2f2f7;
   border-radius: 25px 25px 0 0;
@@ -80,8 +75,8 @@ body::before {
   padding: 60px 20px;
   font-size: 17px;
   color: #8e8e93;
-  /* Balandlik: ekran - qora lenta - navbar - qurilma nav */
-  height: calc(100dvh - var(--top-bar) - var(--navbar-height) - var(--safe-bottom));
+  height: calc(100vh - 29px - 56px - var(--total-safe-area-bottom, 34px));
+  height: calc(100dvh - 29px - 56px - var(--total-safe-area-bottom, 34px));
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -89,8 +84,8 @@ body::before {
 #main {
   background: #fff;
   border-radius: 25px 25px 0 0;
-  /* Balandlik: ekran - qora lenta - navbar - qurilma nav */
-  height: calc(100dvh - var(--top-bar) - var(--navbar-height) - var(--safe-bottom));
+  height: calc(100vh - 29px - 56px - var(--total-safe-area-bottom, 34px));
+  height: calc(100dvh - 29px - 56px - var(--total-safe-area-bottom, 34px));
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -480,7 +475,7 @@ body::before {
     color: #666;
 }
 
-/* === Navigatsiya paneli (qurilma navbaridan yuqorida) === */
+/* === Navigatsiya paneli (JS orqali pozitsiyalanadi) === */
 .navbar {
   position: fixed;
   bottom: 0;
@@ -491,8 +486,6 @@ body::before {
   justify-content: space-around;
   align-items: center;
   padding: 10px 0;
-  /* Qurilma navigatsiyasi ustida joylashish */
-  padding-bottom: calc(10px + var(--safe-bottom));
   border-top: 0.5px solid rgba(0,0,0,0.12);
   z-index: 900;
 }
