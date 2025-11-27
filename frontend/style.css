@@ -118,38 +118,38 @@ body::before {
 /* Home page uchun #main stilini sozlash */
 #main:has(.home-header) {
     padding: 0;
-    background: #f2f2f7;
+    background: #fff;
     border-radius: 25px 25px 0 0;
 }
 
-/* === Asosiy sahifa headeri === */
+/* === Asosiy sahifa headeri (brend moviy rangda) === */
 .home-header {
-    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-    padding: 16px;
-    padding-top: 20px;
-    border-radius: 25px 25px 0 0;
+    background: linear-gradient(135deg, #007aff 0%, #0051a8 100%);
+    padding: 14px 16px 20px;
+    border-radius: 25px 25px 25px 25px;
+    margin-bottom: 12px;
 }
 
 .brand-container {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
 .brand-icon {
-    font-size: 28px;
-    background: #fff;
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
+    font-size: 24px;
+    background: rgba(255,255,255,0.2);
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .brand-name {
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 700;
     color: #fff;
 }
@@ -161,6 +161,7 @@ body::before {
     border-radius: 12px;
     padding: 12px 14px;
     gap: 10px;
+    margin-bottom: 12px;
 }
 
 .search-icon {
@@ -183,31 +184,35 @@ body::before {
     color: #8e8e93;
 }
 
-/* === Karusel === */
+/* Salomlashish qismi */
+.greeting-text {
+    color: rgba(255,255,255,0.95);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* === Karusel (gorizontal scroll) === */
 .carousel {
-  width: calc(100% - 32px);
-  margin: 16px auto;
-  overflow: hidden;
-  border-radius: 16px;
-  position: relative;
-  aspect-ratio: 2 / 1;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 16px 16px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.carousel::-webkit-scrollbar {
+  display: none;
 }
 
 .carousel .slide {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  transition: opacity 0.5s ease-in-out;
-  z-index: 1;
-}
-
-.carousel .slide.active {
-  opacity: 1;
-  z-index: 2;
+  flex: 0 0 85%;
+  scroll-snap-align: start;
+  border-radius: 16px;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
 }
 
 .carousel .slide a {
@@ -225,34 +230,30 @@ body::before {
 /* === Kategoriyalar bo'limi === */
 .categories-section {
     padding: 0 16px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .categories-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #fff;
-    padding: 14px 16px;
-    border-radius: 12px;
+    padding: 10px 0;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    transition: background-color 0.15s ease;
 }
 
 .categories-header:active {
-    background-color: #f5f5f5;
+    opacity: 0.7;
 }
 
 .categories-title {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     color: #000;
 }
 
 .categories-arrow {
-    font-size: 22px;
-    color: #8e8e93;
+    font-size: 20px;
+    color: #c7c7cc;
     font-weight: 300;
 }
 
@@ -260,46 +261,48 @@ body::before {
 .products-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 12px;
   padding: 0 16px 20px;
 }
 
 .product-card {
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
+  background: transparent;
   display: flex;
   flex-direction: column;
 }
 
 .product-card-image-wrapper {
     position: relative;
-    border-radius: 12px;
+    border-radius: 16px;
     overflow: hidden;
+    background: #f5f5f5;
+    margin-bottom: 8px;
 }
 
 .product-card img {
   width: 100%;
-  aspect-ratio: 3 / 4; /* Rasm 3:4 formatda */
+  aspect-ratio: 3 / 4;
   object-fit: cover;
   display: block;
 }
 
-/* Like tugmasi - yuqori o'ngda */
+/* Like tugmasi - minimalistik (background yo'q) */
 .like-btn {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(255, 255, 255, 0.95);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  top: 10px;
+  right: 10px;
+  background: none;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   transition: transform 0.15s ease;
+}
+
+.like-btn svg {
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
 }
 
 .like-btn:active {
@@ -314,18 +317,18 @@ body::before {
 /* Chegirma badge - pastki chapda */
 .sale-badge {
     position: absolute;
-    bottom: 8px;
-    left: 8px;
+    bottom: 10px;
+    left: 10px;
     background-color: #ff3b5c;
     color: white;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 13px;
     font-weight: 600;
 }
 
 .product-card-info {
-    padding: 10px 4px;
+    padding: 0 2px;
     display: flex;
     flex-direction: column;
 }
@@ -334,38 +337,36 @@ body::before {
     font-size: 13px;
     font-weight: 400;
     color: #000;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     /* 2 qatordan keyin ko'p nuqta */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.3;
-    min-height: 34px;
+    line-height: 1.4;
+    min-height: 36px;
 }
 
 /* Narxlar qatori */
 .price-line {
     display: flex;
-    align-items: baseline;
-    gap: 8px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 2px;
 }
 
 /* Chegirma narxi - qizil */
 .current-price {
     color: #e31837;
     font-weight: 700;
-    font-size: 15px;
+    font-size: 16px;
 }
 
-/* Asl narx - chizilgan, qora */
+/* Asl narx - chizilgan, kulrang */
 .original-price {
-    color: #000;
+    color: #8e8e93;
     text-decoration: line-through;
-    font-size: 12px;
-    opacity: 0.6;
+    font-size: 13px;
 }
 
 /* === Modal === */

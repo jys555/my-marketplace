@@ -218,6 +218,10 @@ export function renderPage(pageName, attachEventListeners) {
 }
 
 function getHomeContent() {
+    const user = getUser();
+    const rawName = isUserRegistered() ? (user.first_name || window.Telegram.WebApp.initDataUnsafe?.user?.first_name) : t('guest');
+    const displayName = escapeHtml(rawName);
+
     // Bannerlarni state'dan olish
     const banners = getBanners();
 
@@ -225,7 +229,7 @@ function getHomeContent() {
     const carouselHtml = banners && banners.length > 0 ? `
       <div class="carousel" id="carousel">
         ${banners.map((banner, index) => `
-          <a href="${banner.link_url || '#'}" class="slide ${index === 0 ? 'active' : ''}">
+          <a href="${banner.link_url || '#'}" class="slide">
             <img src="${banner.image_url}" alt="${banner.title || 'Banner'}">
           </a>
         `).join('')}
@@ -247,6 +251,7 @@ function getHomeContent() {
           </span>
           <input type="text" class="search-input" placeholder="${t('search_placeholder')}">
         </div>
+        <div class="greeting-text">${t('home_greeting', { name: displayName })}</div>
       </div>
       ${carouselHtml}
       <div class="categories-section">
@@ -665,31 +670,31 @@ export function updateNavbar(pageName) {
 export function initCarousel() {
     const carousel = document.getElementById('carousel');
     if (!carousel) return;
-    let currentSlide = 0;
+    
     const slides = carousel.querySelectorAll('.slide');
-
     if (slides.length === 0) {
-        carousel.style.display = 'none'; // Karusel blokini yashirish
+        carousel.style.display = 'none';
         return;
     }
 
-    const update = () => {
-        slides.forEach((slide, index) => {
-            slide.classList.remove('active');
-            if (index === currentSlide) {
-                slide.classList.add('active');
-            }
-            // Transform usuli o'rniga opacity bilan almashtirish silliqroq bo'lishi mumkin
-            slide.style.opacity = index === currentSlide ? '1' : '0';
-        });
+    // Gorizontal scroll karusel - avtomatik aylantirish
+    let currentSlide = 0;
+    
+    const scrollToSlide = (index) => {
+        const slide = slides[index];
+        if (slide) {
+            carousel.scrollTo({
+                left: slide.offsetLeft - 16,
+                behavior: 'smooth'
+            });
+        }
     };
 
-    const autoSlide = setInterval(() => {
+    // Har 4 sekundda keyingi bannerga o'tish
+    setInterval(() => {
         currentSlide = (currentSlide + 1) % slides.length;
-        update();
+        scrollToSlide(currentSlide);
     }, 4000);
-
-    update();
 }
 
 export function openRegisterModal() {
