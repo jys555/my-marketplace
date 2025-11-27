@@ -64,6 +64,37 @@ function handlePhoneInput(event) {
     input.setSelectionRange(newCursorPos, newCursorPos);
 }
 
+// Navbar va layoutni ekranga mahkamlash
+function fixLayoutToScreen() {
+    const navbar = document.getElementById('navbar');
+    const main = document.getElementById('main');
+    const loading = document.getElementById('loading');
+    
+    if (!navbar) return;
+    
+    const screenHeight = window.innerHeight;
+    const navbarHeight = navbar.offsetHeight;
+    const topBarHeight = 29; // Qora lenta
+    
+    // Qurilma navigatsiyasi uchun safe area
+    const safeArea = WebApp.safeAreaInset || { bottom: 0 };
+    const contentSafeArea = WebApp.contentSafeAreaInset || { bottom: 0 };
+    const safeAreaBottom = Math.max(safeArea.bottom, contentSafeArea.bottom, 34); // Minimal 34px
+    
+    // Navbar pozitsiyasi - qurilma navbaridan yuqorida
+    const navbarTop = screenHeight - navbarHeight - safeAreaBottom;
+    navbar.style.bottom = 'auto';
+    navbar.style.top = `${navbarTop}px`;
+    
+    // Content balandligi - qora lenta va navbar orasida
+    const contentHeight = navbarTop - topBarHeight;
+    if (main) main.style.height = `${contentHeight}px`;
+    if (loading) loading.style.height = `${contentHeight}px`;
+    
+    // Body padding kerak emas
+    document.body.style.paddingBottom = '0';
+}
+
 // Telefon inputlariga event listener qo'shish
 function attachPhoneFormatting() {
     const phoneInputs = document.querySelectorAll('#phone, #regPhone');
@@ -108,34 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         WebApp.setBackgroundColor('#000000');
     }
     
-    // Navbar va layoutni ekranga mahkamlash (visual viewport emas)
-    const fixLayoutToScreen = () => {
-        const navbar = document.getElementById('navbar');
-        const main = document.getElementById('main');
-        const loading = document.getElementById('loading');
-        
-        if (!navbar) return;
-        
-        const screenHeight = window.innerHeight;
-        const navbarHeight = navbar.offsetHeight;
-        const topBarHeight = 29; // Qora lenta
-        
-        // Navbar pozitsiyasi - ekran pastiga
-        const navbarTop = screenHeight - navbarHeight;
-        navbar.style.bottom = 'auto';
-        navbar.style.top = `${navbarTop}px`;
-        
-        // Content balandligi - qora lenta va navbar orasida
-        const contentHeight = navbarTop - topBarHeight;
-        if (main) main.style.height = `${contentHeight}px`;
-        if (loading) loading.style.height = `${contentHeight}px`;
-        
-        // Body padding kerak emas - content balandligi aniq
-        document.body.style.paddingBottom = '0';
-    };
-    
-    // Dastlab va orientatsiya o'zgarganda
-    fixLayoutToScreen();
+    // Orientatsiya o'zgarganda layoutni yangilash
     window.addEventListener('orientationchange', () => {
         setTimeout(fixLayoutToScreen, 100);
     });
@@ -228,6 +232,9 @@ function navigateTo(pageName, addToHistory = true) {
     
     state.setCurrentPage(pageName);
     ui.renderPage(pageName, attachPageEventListeners);
+    
+    // Layout ni ekranga mahkamlash (navbar renderdan keyin)
+    fixLayoutToScreen();
     
     // Telegram BackButton boshqaruvi
     updateTelegramBackButton(pageName);
