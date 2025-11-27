@@ -228,8 +228,8 @@ function getHomeContent() {
     // Bannerlar mavjud bo'lsa, dinamik karusel yaratish
     const carouselHtml = banners && banners.length > 0 ? `
       <div class="carousel" id="carousel">
-        ${banners.map((banner, index) => `
-          <a href="${banner.link_url || '#'}" class="slide ${index === 0 ? 'active' : ''}">
+        ${banners.map((banner) => `
+          <a href="${banner.link_url || '#'}" class="slide">
             <img src="${banner.image_url}" alt="${banner.title || 'Banner'}">
           </a>
         `).join('')}
@@ -679,16 +679,16 @@ export function initCarousel() {
 
     let currentSlide = 0;
     
-    const showSlide = (index) => {
-        slides.forEach((slide, i) => {
-            slide.classList.toggle('active', i === index);
-        });
-    };
-
-    // Har 4 sekundda keyingi bannerga o'tish
+    // Har 4 sekundda keyingi bannerga scroll
     setInterval(() => {
         currentSlide = (currentSlide + 1) % slides.length;
-        showSlide(currentSlide);
+        const slide = slides[currentSlide];
+        if (slide) {
+            carousel.scrollTo({
+                left: slide.offsetLeft - 16,
+                behavior: 'smooth'
+            });
+        }
     }, 4000);
 }
 

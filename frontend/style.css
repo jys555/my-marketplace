@@ -212,22 +212,28 @@ body::before {
     font-weight: 700;
 }
 
-/* === Karusel (namunadagidek) === */
+/* === Karusel (yonma-yon) === */
 .carousel {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
   padding: 0 16px 16px;
-  overflow: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.carousel .slide {
-  width: 100%;
-  border-radius: 12px;
-  overflow: hidden;
-  aspect-ratio: 16 / 9;
+.carousel::-webkit-scrollbar {
   display: none;
 }
 
-.carousel .slide.active {
-  display: block;
+.carousel .slide {
+  flex: 0 0 92%;
+  scroll-snap-align: center;
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 2184 / 927;
 }
 
 .carousel .slide a {
@@ -304,8 +310,8 @@ body::before {
 /* Like tugmasi - oq ichli yurak */
 .like-btn {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 2px;
+  right: 2px;
   background: none;
   border: none;
   width: 32px;
