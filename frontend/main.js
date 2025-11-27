@@ -108,22 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
         WebApp.setBackgroundColor('#000000');
     }
     
-    // Klaviatura ochilganda navbarni yashirish (visualViewport API)
-    if (window.visualViewport) {
-        let initialHeight = window.visualViewport.height;
-        
-        window.visualViewport.addEventListener('resize', () => {
-            const navbar = document.getElementById('navbar');
-            if (!navbar) return;
-            
-            // Agar viewport kichiklashsa - klaviatura ochilgan
-            if (window.visualViewport.height < initialHeight * 0.8) {
-                navbar.classList.add('keyboard-open');
-            } else {
-                navbar.classList.remove('keyboard-open');
-            }
-        });
-    }
     
     initializeApp();
 });

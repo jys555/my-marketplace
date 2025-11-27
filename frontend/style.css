@@ -493,9 +493,6 @@ body::before {
   transition: transform 0.2s ease, padding 0.2s ease;
 }
 
-.navbar.keyboard-open {
-  transform: translateY(100%);
-}
 
 .navbar button {
   background: none;
