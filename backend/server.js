@@ -14,6 +14,9 @@ const orderRoutes = require('./routes/orders');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Railway, Heroku kabi platformalarda reverse proxy orqali ishlash uchun
+app.set('trust proxy', 1);
+
 // Rate limiting - DDoS va brute-force hujumlaridan himoya
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 daqiqa
