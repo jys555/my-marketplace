@@ -229,7 +229,7 @@ function getHomeContent() {
     const carouselHtml = banners && banners.length > 0 ? `
       <div class="carousel" id="carousel">
         ${banners.map((banner, index) => `
-          <a href="${banner.link_url || '#'}" class="slide">
+          <a href="${banner.link_url || '#'}" class="slide ${index === 0 ? 'active' : ''}">
             <img src="${banner.image_url}" alt="${banner.title || 'Banner'}">
           </a>
         `).join('')}
@@ -677,23 +677,18 @@ export function initCarousel() {
         return;
     }
 
-    // Gorizontal scroll karusel - avtomatik aylantirish
     let currentSlide = 0;
     
-    const scrollToSlide = (index) => {
-        const slide = slides[index];
-        if (slide) {
-            carousel.scrollTo({
-                left: slide.offsetLeft - 16,
-                behavior: 'smooth'
-            });
-        }
+    const showSlide = (index) => {
+        slides.forEach((slide, i) => {
+            slide.classList.toggle('active', i === index);
+        });
     };
 
     // Har 4 sekundda keyingi bannerga o'tish
     setInterval(() => {
         currentSlide = (currentSlide + 1) % slides.length;
-        scrollToSlide(currentSlide);
+        showSlide(currentSlide);
     }, 4000);
 }
 

@@ -212,28 +212,22 @@ body::before {
     font-weight: 700;
 }
 
-/* === Karusel (gorizontal scroll) === */
+/* === Karusel (namunadagidek) === */
 .carousel {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
   padding: 0 16px 16px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.carousel::-webkit-scrollbar {
-  display: none;
+  overflow: hidden;
 }
 
 .carousel .slide {
-  flex: 0 0 88%;
-  scroll-snap-align: start;
-  border-radius: 16px;
+  width: 100%;
+  border-radius: 12px;
   overflow: hidden;
-  aspect-ratio: 30 / 10;
+  aspect-ratio: 16 / 9;
+  display: none;
+}
+
+.carousel .slide.active {
+  display: block;
 }
 
 .carousel .slide a {
