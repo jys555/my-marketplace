@@ -233,7 +233,7 @@ body::before {
   scroll-snap-align: start;
   border-radius: 16px;
   overflow: hidden;
-  aspect-ratio: 20 / 8;
+  aspect-ratio: 30 / 10;
 }
 
 .carousel .slide a {
