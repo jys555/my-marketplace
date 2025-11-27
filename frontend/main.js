@@ -5,17 +5,11 @@ import * as ui from './ui.js';
 const WebApp = window.Telegram.WebApp;
 let pendingAction = null;
 
-// Safe area padding ni yangilash
-function updateSafeAreaPadding() {
-    const safeArea = WebApp.safeAreaInset || { top: 0, bottom: 0, left: 0, right: 0 };
-    const contentSafeArea = WebApp.contentSafeAreaInset || { top: 0, bottom: 0, left: 0, right: 0 };
-    
-    // CSS custom properties orqali qiymatlarni uzatish
-    document.documentElement.style.setProperty('--safe-area-bottom', `${safeArea.bottom}px`);
-    document.documentElement.style.setProperty('--content-safe-area-bottom', `${contentSafeArea.bottom}px`);
-    document.documentElement.style.setProperty('--total-safe-area-bottom', `${Math.max(safeArea.bottom, contentSafeArea.bottom)}px`);
-    
-    console.log('Safe Area:', safeArea, 'Content Safe Area:', contentSafeArea);
+// Debug uchun safe area qiymatlarini ko'rsatish
+function logSafeArea() {
+    const safeArea = WebApp.safeAreaInset || { top: 0, bottom: 0 };
+    const contentSafeArea = WebApp.contentSafeAreaInset || { top: 0, bottom: 0 };
+    console.log('Telegram Safe Area:', safeArea, 'Content Safe Area:', contentSafeArea);
 }
 
 // Telefon raqamini formatlash (00 000 00 00)
@@ -64,44 +58,17 @@ function handlePhoneInput(event) {
     input.setSelectionRange(newCursorPos, newCursorPos);
 }
 
-// Navbar va layoutni ekranga mahkamlash
+// Layout tayyor bo'lganini tekshirish (debug uchun)
 function fixLayoutToScreen() {
+    // CSS env() orqali barcha o'lchamlar avtomatik hisoblanadi
+    // Bu funksiya faqat debug uchun
     const navbar = document.getElementById('navbar');
-    const main = document.getElementById('main');
-    const loading = document.getElementById('loading');
-    
-    if (!navbar) return;
-    
-    const screenHeight = window.innerHeight;
-    const navbarHeight = navbar.offsetHeight;
-    const topBarHeight = 29; // Qora lenta
-    
-    // Qurilma navigatsiyasi uchun safe area (Telegram API dan)
-    const safeArea = WebApp.safeAreaInset || { bottom: 0 };
-    const contentSafeArea = WebApp.contentSafeAreaInset || { bottom: 0 };
-    const safeAreaBottom = Math.max(safeArea.bottom, contentSafeArea.bottom);
-    
-    // Debug - qiymatlarni ko'rish
-    console.log('fixLayoutToScreen:', {
-        screenHeight,
-        navbarHeight,
-        safeAreaBottom,
-        safeArea: safeArea.bottom,
-        contentSafeArea: contentSafeArea.bottom
-    });
-    
-    // Navbar pozitsiyasi - qurilma navbaridan yuqorida (agar bor bo'lsa)
-    const navbarTop = screenHeight - navbarHeight - safeAreaBottom;
-    navbar.style.bottom = 'auto';
-    navbar.style.top = `${navbarTop}px`;
-    
-    // Content balandligi - qora lenta va navbar orasida
-    const contentHeight = navbarTop - topBarHeight;
-    if (main) main.style.height = `${contentHeight}px`;
-    if (loading) loading.style.height = `${contentHeight}px`;
-    
-    // Body padding kerak emas
-    document.body.style.paddingBottom = '0';
+    if (navbar) {
+        console.log('Layout ready:', {
+            viewportHeight: window.innerHeight,
+            navbarHeight: navbar.offsetHeight
+        });
+    }
 }
 
 // Telefon inputlariga event listener qo'shish
@@ -134,14 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
         WebApp.requestFullscreen();
     }
     
-    // Safe area o'zgarishlarini kuzatish
-    if (WebApp.onEvent) {
-        WebApp.onEvent('safeAreaChanged', updateSafeAreaPadding);
-        WebApp.onEvent('contentSafeAreaChanged', updateSafeAreaPadding);
-    }
-    
-    // Dastlabki safe area qiymatlarini qo'llash
-    updateSafeAreaPadding();
+    // Safe area qiymatlarini log qilish (debug)
+    logSafeArea();
     
     // Fon rangini qora qilish (qora lenta bilan mos)
     if (WebApp.setBackgroundColor) {
