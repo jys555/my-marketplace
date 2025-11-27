@@ -229,7 +229,7 @@ body::before {
 }
 
 .carousel .slide {
-  flex: 0 0 98%;
+  flex: 0 0 100%;
   scroll-snap-align: center;
   border-radius: 12px;
   overflow: hidden;
