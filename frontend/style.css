@@ -125,7 +125,7 @@ body::before {
 /* === Asosiy sahifa headeri (brend rangi) === */
 .home-header {
     background: rgb(109, 175, 247);
-    padding: 20px 16px 24px;
+    padding: 14px 16px 18px;
     border-radius: 25px 25px 25px 25px;
     margin-bottom: 16px;
 }
@@ -134,25 +134,25 @@ body::before {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: 10px;
+    margin-bottom: 14px;
 }
 
 .brand-icon {
-    font-size: 32px;
+    font-size: 28px;
     background: rgba(255,255,255,0.25);
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .brand-name {
-    font-size: 26px;
+    font-size: 30px;
     font-weight: 700;
-    color: #fff;
+    color: #000;
 }
 
 .search-container {
@@ -185,63 +185,31 @@ body::before {
     color: #8e8e93;
 }
 
-/* Salomlashish qismi - animatsiyali */
+/* Salomlashish qismi - text animatsiyasi */
 .greeting-text {
-    color: #fff;
-    font-size: 17px;
+    font-size: 20px;
     font-weight: 600;
     text-align: center;
-    padding: 12px 20px;
-    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%);
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.3);
-    position: relative;
-    overflow: hidden;
-    animation: greetingPulse 3s ease-in-out infinite;
+    background: linear-gradient(90deg, #fff, #ffeb3b, #fff, #ffeb3b, #fff);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: textShine 3s linear infinite;
 }
 
-/* Pulsatsiya animatsiyasi */
-@keyframes greetingPulse {
-    0%, 100% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(255,255,255,0.4);
-    }
-    50% {
-        transform: scale(1.02);
-        box-shadow: 0 0 20px 4px rgba(255,255,255,0.2);
-    }
-}
-
-/* Shimmer effekti */
-.greeting-text::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255,255,255,0.3),
-        transparent
-    );
-    animation: shimmer 3s ease-in-out infinite;
-}
-
-@keyframes shimmer {
+@keyframes textShine {
     0% {
-        left: -100%;
+        background-position: 0% center;
     }
-    50%, 100% {
-        left: 100%;
+    100% {
+        background-position: 200% center;
     }
 }
 
-/* User ismini ajratib ko'rsatish */
+/* User ismi */
 .greeting-text strong {
-    color: #fff;
-    text-shadow: 0 0 10px rgba(255,255,255,0.5);
+    font-weight: 700;
 }
 
 /* === Karusel (gorizontal scroll) === */
@@ -261,11 +229,11 @@ body::before {
 }
 
 .carousel .slide {
-  flex: 0 0 92%;
+  flex: 0 0 90%;
   scroll-snap-align: start;
   border-radius: 16px;
   overflow: hidden;
-  aspect-ratio: 2 / 1;
+  aspect-ratio: 16 / 10;
 }
 
 .carousel .slide a {
@@ -339,26 +307,30 @@ body::before {
   display: block;
 }
 
-/* Like tugmasi - oq fon, grey border */
+/* Like tugmasi - faqat yurak */
 .like-btn {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background: #fff;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid #ddd;
+  top: 6px;
+  right: 6px;
+  background: none;
+  border: none;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: transform 0.15s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.like-btn svg {
+  width: 24px;
+  height: 24px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
 }
 
 .like-btn:active {
-    transform: scale(0.9);
+    transform: scale(0.85);
 }
 
 .like-btn.liked svg {
@@ -389,7 +361,7 @@ body::before {
     font-size: 13px;
     font-weight: 400;
     color: #000;
-    margin-bottom: 4px;
+    margin-bottom: 1px;
     /* 2 qatordan keyin ko'p nuqta */
     display: -webkit-box;
     -webkit-line-clamp: 2;
