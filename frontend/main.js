@@ -108,6 +108,25 @@ document.addEventListener('DOMContentLoaded', () => {
         WebApp.setBackgroundColor('#000000');
     }
     
+    // Navbar pozitsiyasini ekran pastiga mahkamlash (klaviatura ta'sir qilmasin)
+    if (window.visualViewport) {
+        const navbar = document.getElementById('navbar');
+        const initialWindowHeight = window.innerHeight;
+        
+        window.visualViewport.addEventListener('resize', () => {
+            if (!navbar) return;
+            
+            // Visual viewport kichiklagan miqdorni hisoblash
+            const heightDiff = initialWindowHeight - window.visualViewport.height;
+            
+            // Navbarni pastga qaytarish (klaviatura ustida emas)
+            if (heightDiff > 100) { // Klaviatura ochilgan
+                navbar.style.transform = `translateY(${heightDiff}px)`;
+            } else {
+                navbar.style.transform = 'translateY(0)';
+            }
+        });
+    }
     
     initializeApp();
 });

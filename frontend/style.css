@@ -490,7 +490,6 @@ body::before {
   padding-bottom: calc(12px + var(--total-safe-area-bottom, 34px));
   border-top: 0.5px solid rgba(0,0,0,0.12);
   z-index: 900;
-  transition: transform 0.2s ease, padding 0.2s ease;
 }
 
 
@@ -585,12 +584,6 @@ body::before {
     color: #000;
     text-align: center;
     margin: 0;
-}
-
-/* Header spacer (eski kod uchun moslik) */
-.header-spacer {
-    width: 40px;
-    flex-shrink: 0;
 }
 
 #profile-page-wrapper .page-header {
@@ -1164,18 +1157,18 @@ body::before {
     font-size: 18px;
     margin-bottom: 16px;
 }
-.order-options {
+.checkout-options {
     display: flex;
     flex-direction: column;
     gap: 16px;
 }
-.order-options .form-group label {
+.checkout-options .form-group label {
     display: block;
     margin-bottom: 6px;
     font-size: 14px;
     color: #555;
 }
-.order-options .form-group select {
+.checkout-options .form-group select {
     width: 100%;
     padding: 10px;
     border: 1px solid #ccc;
