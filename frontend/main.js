@@ -242,8 +242,9 @@ function attachPageEventListeners(pageName) {
         case 'home':
             ui.initCarousel();
             ui.renderProducts();
-            document.getElementById('location-btn')?.addEventListener('click', () => {
-                WebApp.openTelegramLink('https://t.me/uzrailway_bot');
+            // Kategoriyalar bosilganda katalogga o'tish
+            document.getElementById('categories-btn')?.addEventListener('click', () => {
+                navigateTo('catalog');
             });
             break;
         case 'profile':

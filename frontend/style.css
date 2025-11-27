@@ -122,34 +122,35 @@ body::before {
     border-radius: 25px 25px 0 0;
 }
 
-/* === Asosiy sahifa headeri (brend moviy rangda) === */
+/* === Asosiy sahifa headeri (brend rangi) === */
 .home-header {
-    background: linear-gradient(135deg, #007aff 0%, #0051a8 100%);
-    padding: 14px 16px 20px;
+    background: rgb(109, 175, 247);
+    padding: 20px 16px 24px;
     border-radius: 25px 25px 25px 25px;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
 }
 
 .brand-container {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
 }
 
 .brand-icon {
-    font-size: 24px;
-    background: rgba(255,255,255,0.2);
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    font-size: 32px;
+    background: rgba(255,255,255,0.25);
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .brand-name {
-    font-size: 20px;
+    font-size: 26px;
     font-weight: 700;
     color: #fff;
 }
@@ -159,9 +160,9 @@ body::before {
     align-items: center;
     background: #fff;
     border-radius: 12px;
-    padding: 12px 14px;
+    padding: 14px 16px;
     gap: 10px;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 }
 
 .search-icon {
@@ -184,17 +185,69 @@ body::before {
     color: #8e8e93;
 }
 
-/* Salomlashish qismi */
+/* Salomlashish qismi - animatsiyali */
 .greeting-text {
-    color: rgba(255,255,255,0.95);
-    font-size: 14px;
-    font-weight: 500;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 600;
+    text-align: center;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.3);
+    position: relative;
+    overflow: hidden;
+    animation: greetingPulse 3s ease-in-out infinite;
+}
+
+/* Pulsatsiya animatsiyasi */
+@keyframes greetingPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255,255,255,0.4);
+    }
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 0 20px 4px rgba(255,255,255,0.2);
+    }
+}
+
+/* Shimmer effekti */
+.greeting-text::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,0.3),
+        transparent
+    );
+    animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+    50%, 100% {
+        left: 100%;
+    }
+}
+
+/* User ismini ajratib ko'rsatish */
+.greeting-text strong {
+    color: #fff;
+    text-shadow: 0 0 10px rgba(255,255,255,0.5);
 }
 
 /* === Karusel (gorizontal scroll) === */
 .carousel {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
@@ -208,11 +261,11 @@ body::before {
 }
 
 .carousel .slide {
-  flex: 0 0 85%;
+  flex: 0 0 92%;
   scroll-snap-align: start;
   border-radius: 16px;
   overflow: hidden;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 2 / 1;
 }
 
 .carousel .slide a {
@@ -286,23 +339,22 @@ body::before {
   display: block;
 }
 
-/* Like tugmasi - minimalistik (background yo'q) */
+/* Like tugmasi - oq fon, grey border */
 .like-btn {
   position: absolute;
   top: 10px;
   right: 10px;
-  background: none;
-  width: 28px;
-  height: 28px;
+  background: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #ddd;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: transform 0.15s ease;
-}
-
-.like-btn svg {
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
 .like-btn:active {
@@ -320,7 +372,7 @@ body::before {
     bottom: 10px;
     left: 10px;
     background-color: #ff3b5c;
-    color: white;
+    color: rgb(109, 175, 247);
     padding: 5px 10px;
     border-radius: 8px;
     font-size: 13px;
@@ -328,7 +380,7 @@ body::before {
 }
 
 .product-card-info {
-    padding: 0 2px;
+    padding: 0 4px;
     display: flex;
     flex-direction: column;
 }
@@ -337,36 +389,38 @@ body::before {
     font-size: 13px;
     font-weight: 400;
     color: #000;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     /* 2 qatordan keyin ko'p nuqta */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.4;
-    min-height: 36px;
+    line-height: 1.3;
+    min-height: 34px;
 }
 
 /* Narxlar qatori */
 .price-line {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 0;
 }
 
 /* Chegirma narxi - qizil */
 .current-price {
     color: #e31837;
     font-weight: 700;
-    font-size: 16px;
+    font-size: 15px;
+    line-height: 1.3;
 }
 
 /* Asl narx - chizilgan, kulrang */
 .original-price {
     color: #8e8e93;
     text-decoration: line-through;
-    font-size: 13px;
+    font-size: 12px;
+    line-height: 1.3;
 }
 
 /* === Modal === */
@@ -485,12 +539,12 @@ body::before {
 }
 
 .navbar button.active {
-  color: #007aff;
+  color: rgb(109, 175, 247);
 }
 
 .navbar button.active .nav-icon svg {
-  fill: #007aff;
-  stroke: #007aff;
+  fill: rgb(109, 175, 247);
+  stroke: rgb(109, 175, 247);
 }
 
 /* === Profil sahifasi (YANGI DIZAYN - rasmdagidek) === */
