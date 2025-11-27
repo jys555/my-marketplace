@@ -371,26 +371,27 @@ body::before {
     right: 8px;
     width: 40px;
     height: 40px;
-    border-radius: 10px;
-    background: #ffcc00;
-    border: none;
+    border-radius: 12px;
+    background: rgb(109, 175, 247);
+    border: 2px solid #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: #000;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     transition: transform 0.15s ease, background 0.15s ease;
 }
 
 .add-to-cart-btn:active {
     transform: scale(0.9);
-    background: #e6b800;
+    background: rgb(89, 155, 227);
 }
 
 .add-to-cart-btn svg {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
+    fill: #000;
+    stroke: none;
 }
 
 .product-card-info {
