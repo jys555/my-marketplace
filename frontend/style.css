@@ -364,16 +364,18 @@ body::before {
     font-weight: 600;
 }
 
-/* Savatga qo'shish tugmasi - pastki o'ng burchakda (rasm bilan mos) */
+/* Savatga qo'shish tugmasi - pastki o'ng burchakda (namunadagidek) */
 .add-to-cart-btn {
     position: absolute;
     bottom: 0;
     right: 0;
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
     border-radius: 16px 0 16px 0;
     background: rgb(109, 175, 247);
-    border: none;
+    border: 3px solid #fff;
+    border-right: none;
+    border-bottom: none;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -387,8 +389,8 @@ body::before {
 }
 
 .add-to-cart-btn svg {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     fill: #000;
     stroke: none;
 }
@@ -622,7 +624,7 @@ body::before {
     color: #000;
 }
 
-/* === Navigatsiya paneli (JS orqali pozitsiyalanadi) === */
+/* === Navigatsiya paneli (namunadagidek) === */
 .navbar {
   position: fixed;
   bottom: 0;
@@ -632,11 +634,10 @@ body::before {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 10px 0;
-  border-top: 0.5px solid rgba(0,0,0,0.12);
+  padding: 8px 0 12px;
+  border-top: 1px solid #e0e0e0;
   z-index: 900;
 }
-
 
 .navbar button {
   background: none;
@@ -646,7 +647,7 @@ body::before {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 4px;
   padding: 4px 0;
   color: #8e8e93;
   transition: color 0.15s ease;
@@ -658,22 +659,21 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 26px;
+  height: 24px;
+  font-size: 22px;
 }
 
-.navbar button .nav-icon svg {
-  width: 24px;
-  height: 24px;
-  stroke-width: 1.8;
+.navbar button .nav-icon i {
+  font-size: 22px;
 }
 
 .navbar button .nav-label {
-  font-size: 10px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 400;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 60px;
+  max-width: 80px;
   text-align: center;
 }
 
@@ -681,9 +681,8 @@ body::before {
   color: rgb(109, 175, 247);
 }
 
-.navbar button.active .nav-icon svg {
-  fill: rgb(109, 175, 247);
-  stroke: rgb(109, 175, 247);
+.navbar button.active .nav-icon i {
+  color: rgb(109, 175, 247);
 }
 
 /* === Profil sahifasi (YANGI DIZAYN - rasmdagidek) === */
