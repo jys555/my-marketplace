@@ -369,8 +369,8 @@ body::before {
     position: absolute;
     bottom: -2px;
     right: -2px;
-    width: 45px;
-    height: 45px;
+    width: 48px;
+    height: 48px;
     border-radius: 14px;
     background: rgb(109, 175, 247);
     border: 2px solid #fff;
