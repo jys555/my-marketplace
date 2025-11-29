@@ -304,7 +304,7 @@ body::before {
 
 .product-card-image-wrapper {
     position: relative;
-    border-radius: 16px;
+    border-radius: 14px;
     overflow: hidden;
     background: #f5f5f5;
     margin-bottom: 8px;
@@ -371,7 +371,7 @@ body::before {
     right: -2px;
     width: 45px;
     height: 45px;
-    border-radius: 16px;
+    border-radius: 14px;
     background: rgb(109, 175, 247);
     border: 2px solid #fff;
     display: flex;
