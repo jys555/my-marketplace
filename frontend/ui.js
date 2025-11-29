@@ -648,17 +648,17 @@ export function showProfileSection(sectionName, globalBackHandler = null) {
 
 export function updateNavbar(pageName) {
     const navItems = [
-        { page: 'home', icon: 'fas fa-home', label: 'Uy' },
-        { page: 'catalog', icon: 'fas fa-bars', label: 'Kategoriyalar' },
-        { page: 'favorites', icon: 'far fa-heart', label: 'Sevimlilar' },
-        { page: 'cart', icon: 'fas fa-shopping-cart', label: 'Savatcha' },
-        { page: 'profile', icon: 'fas fa-user', label: 'Profil' }
+        { page: 'home', icon: 'fas fa-home', labelKey: 'nav_home' },
+        { page: 'catalog', icon: 'fas fa-bars', labelKey: 'nav_catalog' },
+        { page: 'favorites', icon: 'far fa-heart', labelKey: 'nav_favorites' },
+        { page: 'cart', icon: 'fas fa-shopping-cart', labelKey: 'nav_cart' },
+        { page: 'profile', icon: 'fas fa-user', labelKey: 'nav_profile' }
     ];
 
     navbar.innerHTML = navItems.map(item => `
         <button data-page="${item.page}" class="${pageName === item.page ? 'active' : ''}">
             <span class="nav-icon"><i class="${item.icon}"></i></span>
-            <span class="nav-label">${item.label}</span>
+            <span class="nav-label">${t(item.labelKey)}</span>
         </button>
     `).join('');
 }
