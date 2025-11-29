@@ -367,32 +367,29 @@ body::before {
 /* Savatga qo'shish tugmasi - pastki o'ng burchakda (namunadagidek) */
 .add-to-cart-btn {
     position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 44px;
-    height: 44px;
-    border-radius: 16px 0 16px 0;
+    bottom: 10px;
+    right: 10px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
     background: rgb(109, 175, 247);
     border: 3px solid #fff;
-    border-right: none;
-    border-bottom: none;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: transform 0.15s ease, background 0.15s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .add-to-cart-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.9);
     background: rgb(89, 155, 227);
 }
 
-.add-to-cart-btn svg {
-    width: 20px;
-    height: 20px;
-    fill: #000;
-    stroke: none;
+.add-to-cart-btn i {
+    font-size: 18px;
+    color: #000;
 }
 
 .product-card-info {

@@ -293,11 +293,7 @@ export function renderProducts() {
               </div>
               ${hasSale ? `<div class="sale-badge">-${salePercentage}%</div>` : ''}
               <button class="add-to-cart-btn" data-id="${p.id}">
-                <svg width="20" height="20" viewBox="0 0 24 24">
-                  <path fill="#000" d="M4 16V4H2V2h3a1 1 0 0 1 1 1v12h12.438l2-8H8V5h13a1 1 0 0 1 .97 1.243l-2.5 10A1 1 0 0 1 18.5 17H5a1 1 0 0 1-1-1z"/>
-                  <circle fill="#000" cx="6" cy="20" r="2"/>
-                  <circle fill="#000" cx="18" cy="20" r="2"/>
-                </svg>
+                <i class="fas fa-shopping-cart"></i>
               </button>
             </div>
             <div class="product-card-info">
