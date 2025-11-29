@@ -30,10 +30,10 @@ const translations = {
         save_button: "Saqlash",
         cancel_button: "Bekor qilish",
         // Navigatsiya
-        nav_home: "Bosh sahifa",
-        nav_catalog: "Katalog",
+        nav_home: "Uy",
+        nav_catalog: "Kategoriyalar",
         nav_favorites: "Sevimlilar",
-        nav_cart: "Savat",
+        nav_cart: "Savatcha",
         nav_profile: "Profil",
         // Profil sahifasi
         profile_title: "Profil",
@@ -107,8 +107,8 @@ const translations = {
         save_button: "Сохранить",
         cancel_button: "Отмена",
         // Навигация
-        nav_home: "Главная",
-        nav_catalog: "Каталог",
+        nav_home: "Дом",
+        nav_catalog: "Категории",
         nav_favorites: "Избранное",
         nav_cart: "Корзина",
         nav_profile: "Профиль",
