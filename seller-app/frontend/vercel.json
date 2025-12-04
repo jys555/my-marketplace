@@ -1,0 +1,9 @@
+{
+    "rewrites": [
+        {
+            "source": "/api/:path*",
+            "destination": "https://seller-app-backend.up.railway.app/api/:path*"
+        }
+    ]
+}
+

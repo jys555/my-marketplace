@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; background-color: #f4f4f9; color: #333; }
+    h2 { color: #005a9c; }
+    .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input, textarea { display: block; width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+    .lang-group { display: flex; gap: 20px; }
+    .lang-group > div { flex: 1; }
+    button { display: block; width: 100%; padding: 12px; background: #007aff; color: white; border: none; cursor: pointer; border-radius: 4px; font-size: 16px; font-weight: bold; }
+    button:hover { background: #005bb5; }
+    #result { margin-top: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>➕ Yangi mahsulot qo'shish</h2>
+    <form id="productForm">
+      
+      <div class="lang-group">
+        <div class="form-group">
+          <label for="name_uz">Nomi (O'zbekcha)</label>
+          <input type="text" id="name_uz" placeholder="Masalan, 'Qizil olma'" required>
+        </div>
+        <div class="form-group">
+          <label for="name_ru">Название (Русский)</label>
+          <input type="text" id="name_ru" placeholder="Например, 'Красное яблоко'" required>
+        </div>
+      </div>
+
+      <div class="lang-group">
+        <div class="form-group">
+          <label for="description_uz">Tavsif (O'zbekcha)</label>
+          <textarea id="description_uz" rows="4" placeholder="Mahsulot haqida ma'lumot..."></textarea>
+        </div>
+        <div class="form-group">
+          <label for="description_ru">Описание (Русский)</label>
+          <textarea id="description_ru" rows="4" placeholder="Информация о продукте..."></textarea>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="category_id">Kategoriya</label>
+        <select id="category_id" required>
+          <option value="">-- Kategoriyani tanlang --</option>
+          <!-- JavaScript orqali to'ldiriladi -->
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="price">Asosiy narxi (so'm)</label>
+        <input type="number" id="price" placeholder="Masalan, 15000" step="100" required>
+      </div>
+
+      <div class="form-group">
+        <label for="sale_price">Chegirmadagi narxi (so'm, ixtiyoriy)</label>
+        <input type="number" id="sale_price" placeholder="Masalan, 12000" step="100">
+      </div>
+
+      <div class="form-group">
+        <label for="image_url">Rasm URL manzili</label>
+        <input type="url" id="image_url" placeholder="https://example.com/image.jpg" required>
+      </div>
+
+      <button type="submit">Mahsulotni Saqlash</button>
+    </form>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    // Backend URL ni avtomatik aniqlash
+    // Vercel'da deploy bo'lsa, vercel.json orqali /api proxy qilinadi
+    const backendUrl = window.location.origin.includes('localhost') 
+      ? 'http://localhost:3000' 
+      : ''; // Production'da vercel.json /api ni Railway ga yo'naltiradi
+    
+    const tg = window.Telegram.WebApp;
+
+    // Admin tekshiruvi
+    tg.ready();
+    const initData = tg.initData; // To'g'ri autentifikatsiya uchun initData ishlatamiz
+
+    async function checkAdminAccess() {
+      if (!initData) {
+        document.body.innerHTML = '<h1>🚫 Ruxsat yo\'q</h1><p>Iltimos, ilovani Telegram ichida oching.</p>';
+        setTimeout(() => tg.close(), 2000);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${backendUrl}/api/users/check-admin`, {
+          headers: {
+            'X-Telegram-Data': initData // To'g'ri header
+          }
+        });
+
+        if (!res.ok) {
+          throw new Error('Admin status verification failed.');
+        }
+        
+        console.log("✅ Admin access granted.");
+        
+      } catch (error) {
+        console.error(error);
+        document.body.innerHTML = '<h1>🚫 Ruxsat yo\'q</h1><p>Bu sahifaga faqat adminlar kira oladi.</p>';
+        setTimeout(() => tg.close(), 3000);
+      }
+    }
+
+    checkAdminAccess();
+    
+    // O'ZGARTIRILDI: Kategoriyalarni yuklash
+    async function loadCategories() {
+      try {
+        const res = await fetch(`${backendUrl}/api/categories?lang=uz`);
+        if (!res.ok) throw new Error('Failed to load categories');
+        
+        const categories = await res.json();
+        const select = document.getElementById('category_id');
+        
+        categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat.id;
+          option.textContent = `${cat.icon} ${cat.name}`;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Categories load error:', error);
+        document.getElementById('result').innerHTML = '<p style="color:orange;">⚠️ Kategoriyalar yuklanmadi. Davom etishingiz mumkin.</p>';
+      }
+    }
+    
+    // Kategoriyalarni darhol yuklash
+    loadCategories();
+
+    document.getElementById('productForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const resultDiv = document.getElementById('result');
+      
+      // O'ZGARTIRILDI: category_id qo'shildi
+      const product = {
+        name_uz: document.getElementById('name_uz').value,
+        name_ru: document.getElementById('name_ru').value,
+        description_uz: document.getElementById('description_uz').value,
+        description_ru: document.getElementById('description_ru').value,
+        price: parseFloat(document.getElementById('price').value),
+        sale_price: document.getElementById('sale_price').value ? parseFloat(document.getElementById('sale_price').value) : null,
+        image_url: document.getElementById('image_url').value,
+        category_id: parseInt(document.getElementById('category_id').value)
+      };
+
+      // Validatsiya
+      if (!product.name_uz || !product.name_ru || !product.price || !product.image_url || !product.category_id) {
+          resultDiv.innerHTML = '<p style="color:red;">Iltimos, barcha majburiy maydonlarni to\'ldiring (kategoriya ham!).</p>';
+          return;
+      }
+
+      resultDiv.innerHTML = '<p style="color:blue;">Yuborilmoqda...</p>';
+
+      try {
+        const res = await fetch(`${backendUrl}/api/products`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Telegram-Data': initData // To'g'ri header
+          },
+          body: JSON.stringify(product)
+        });
+        
+        const responseData = await res.json();
+
+        if (res.ok) {
+          resultDiv.innerHTML = '<p style="color:green;">✅ Mahsulot muvaffaqiyatli qo\'shildi!</p>';
+          document.getElementById('productForm').reset();
+        } else {
+          throw new Error(responseData.error || 'Noma\'lum xatolik');
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<p style="color:red;">❌ Xatolik: ${err.message}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>

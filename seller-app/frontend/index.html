@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller App - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+        <div class="nav-left">
+            <div class="logo">M</div>
+            <div class="nav-links">
+                <a href="prices.html" class="nav-link">Narxlar</a>
+                <a href="orders.html" class="nav-link">Buyurtmalar</a>
+                <a href="inventory.html" class="nav-link">Ombor</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Marketplace Selector -->
+        <div class="marketplace-selector-container">
+            <button class="marketplace-selector-btn" onclick="openMarketplaceSelector()">
+                <span id="selected-marketplace">AMAZING_STORE</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Page Title -->
+        <h1 class="page-title">Xulosa</h1>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-content">
+            <!-- Chart Section (Left) -->
+            <div class="chart-section">
+                <div class="chart-header">
+                    <h2 class="chart-title">Buyurtmalar dinamikasi</h2>
+                    <div class="chart-controls">
+                        <select class="month-selector" id="month-selector">
+                            <option value="current">Dekabr</option>
+                            <option value="previous">Noyabr</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="chart-legend">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #FFC107;"></span>
+                        <span>Buyurtmalar summasi</span>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="analytics-chart"></canvas>
+                    <div id="chart-tooltip-modal" class="chart-tooltip-modal">
+                        <div class="tooltip-date" id="tooltip-date"></div>
+                        <div class="tooltip-content">
+                            <div class="tooltip-item">
+                                <span class="tooltip-label">Buyurtmalar:</span>
+                                <span class="tooltip-value" id="tooltip-orders-count"></span>
+                            </div>
+                            <div class="tooltip-item">
+                                <span class="tooltip-label">summasi:</span>
+                                <span class="tooltip-value" id="tooltip-orders-sum"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Cards (Right) -->
+            <div class="stats-cards-right">
+                <div class="stat-card-large">
+                    <div class="stat-label">Yaratilgan buyurtmalar summasi</div>
+                    <div class="stat-subtitle">shu oyda</div>
+                    <div class="stat-value-large" id="monthly-revenue">2.3 million so'm</div>
+                </div>
+                <div class="stat-card-large">
+                    <div class="stat-label">Yaratilgan buyurtmalar</div>
+                    <div class="stat-subtitle">shu oyda</div>
+                    <div class="stat-value-large" id="monthly-orders">34</div>
+                </div>
+                <div class="stat-card-large">
+                    <div class="stat-label">Sof foyda</div>
+                    <div class="stat-subtitle">shu oyda</div>
+                    <div class="stat-value-large" id="monthly-profit">450,000 so'm</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Marketplace Selector Modal -->
+    <div id="marketplace-modal" class="modal-overlay" onclick="closeMarketplaceSelector(event)">
+        <div class="modal-content marketplace-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title-left">Ofis va do'konlar</div>
+                <div class="modal-title-right">
+                    <a href="marketplaces.html" class="settings-link">Sozlamalar</a>
+                    <button class="modal-close" onclick="closeMarketplaceSelector()">×</button>
+                </div>
+            </div>
+            <div class="marketplace-list">
+                <div class="marketplace-item active" onclick="selectMarketplace('amazing_store', 'AMAZING_STORE')">
+                    <div class="marketplace-name">AMAZING_STORE</div>
+                    <div class="marketplace-code">202049831</div>
+                </div>
+                <div class="marketplace-item active" onclick="selectMarketplace('all', 'Barcha do\'konlar')">
+                    <div class="marketplace-name">Barcha do'konlar</div>
+                </div>
+                <div class="marketplace-item" onclick="selectMarketplace('fby', 'FBY · Amazing Store')">
+                    <div class="marketplace-name">FBY · Amazing Store</div>
+                    <div class="marketplace-code">202144267</div>
+                </div>
+                <div class="marketplace-item" onclick="selectMarketplace('fbs', 'FBS · Amazing Store FBS')">
+                    <div class="marketplace-name">FBS · Amazing Store FBS</div>
+                    <div class="marketplace-code">216531205</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="app.js"></script>
+</body>
+</html>
+

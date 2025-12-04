@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <clipPath id="circleClip">
+    <circle cx="50" cy="50" r="50"/>
+  </clipPath>
+  <g clip-path="url(#circleClip)">
+    <rect width="100" height="30" fill="#1eb53a"/>
+    <rect y="30" width="100" height="4" fill="#ce1126"/>
+    <rect y="34" width="100" height="32" fill="#fff"/>
+    <rect y="66" width="100" height="4" fill="#ce1126"/>
+    <rect y="70" width="100" height="30" fill="#0099b5"/>
+    <!-- Crescent and stars -->
+    <circle cx="25" cy="17" r="7" fill="#fff"/>
+    <circle cx="27" cy="17" r="6" fill="#0099b5"/>
+  </g>
+</svg>

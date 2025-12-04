@@ -1,0 +1,905 @@
+// O'ZGARTIRILDI: getCategories import qo'shildi
+// O'ZGARTIRILDI: getSelectedCategory import qo'shildi
+import { getLang, getUser, isRegistered as isUserRegistered, getProducts, getCart, getProductById, isFavorite, getOrders, getBanners, getGuestTelegramUser, getFavorites, getCategories, getSelectedCategory } from './state.js';
+
+// XSS himoyasi uchun HTML escape funksiyasi
+function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+// Til sozlamalari va tarjimalar
+const translations = {
+    uz: {
+        loading: "Ma'lumotlar yuklanmoqda...",
+        error_telegram: "⚠️ Ilovani Telegram ichida oching.",
+        error_server: "⚠️ Server bilan aloqada xatolik.",
+        error_auth: "⚠️ Autentifikatsiya xatosi. Ilovani qayta oching.",
+        guest: "Mehmon",
+        home_greeting: "Salom, <strong>{name}</strong>!",
+        search_placeholder: "Mahsulotlarni toping",
+        categories_title: "Kategoriyalar",
+        no_categories: "Kategoriyalar hali qo'shilmagan",
+        products_not_loaded: "❌ Tovarlar yuklanmadi",
+        no_products_yet: "Hozircha mahsulotlar yo'q.",
+        product_details_not_ready: "Tovar #{id} tafsiloti hali tayyor emas.",
+        added_to_favorites: "Tovar #{id} sevimlilarga qo'shildi.",
+        removed_from_favorites: "Tovar #{id} sevimlilardan olib tashlandi.",
+        fill_profile_title: "Profilingizni to'ldiring",
+        first_name_label: "Ism (majburiy)",
+        last_name_label: "Familiya (ixtiyoriy)",
+        phone_label: "Telefon raqam",
+        phone_placeholder: "00 000 00 00",
+        save_button: "Saqlash",
+        cancel_button: "Bekor qilish",
+        // Navigatsiya
+        nav_home: "Uy",
+        nav_catalog: "Kategoriyalar",
+        nav_favorites: "Sevimlilar",
+        nav_cart: "Savatcha",
+        nav_profile: "Profil",
+        // Profil sahifasi
+        profile_title: "Profil",
+        profile_info: "Shaxsiy ma'lumotlar",
+        profile_language: "Ilova tili",
+        edit_button: "Tahrirlash",
+        please_fill_fields: "Iltimos, ism va 9 xonali telefon raqamini to'ldiring.",
+        profile_saved: "✅ Profilingiz muvaffaqiyatli saqlandi!",
+        error_saving: "Saqlashda xatolik",
+        error_auth: "⚠️ Autentifikatsiya xatosi. Ilovani qayta oching.",
+        page_not_ready: "{pageName} sahifasi hali tayyor emas.",
+        // Profil menyu elementlari
+        my_orders: "Buyurtmalarim",
+        my_points: "Ballarim",
+        my_reviews: "Sharhlarim",
+        settings: "Sozlamalar",
+        about_us: "Biz haqimizda",
+        contact_us: "Biz bilan bog'lanish",
+        logout: "Chiqish",
+        coming_soon: "Tez orada",
+        language_uz: "O'zbekcha",
+        language_ru: "Русский",
+        select_language: "Tilni tanlang",
+        // Sevimlilar
+        favorites_title: "Sevimlilar",
+        favorites_empty: "Sizda sevimlilar ro'yxati bo'sh.",
+        // Buyurtmalar
+        confirm_order: "Buyurtmani tasdiqlash",
+        active_orders: "Faol",
+        completed_orders: "Tugallangan",
+        no_active_orders: "Faol buyurtmalar yo'q",
+        no_active_orders_desc: "Bu erda buyurtmalar bo'ladi haydash yoki qabul qilishni kutish",
+        order_number: "Buyurtma №",
+        order_status: "Holati",
+        order_items_count: "Mahsulotlar soni",
+        order_total: "Umumiy summa",
+        order_details_not_ready: "Buyurtma #{order_number} tafsilotlari hali tayyor emas.",
+        no_orders_yet: "Sizda hali buyurtmalar yo'q.",
+        // Savatcha
+        cart_title: "Savat",
+        cart_empty: "Savatchangiz bo'sh.",
+        total_price: "Umumiy narx",
+        item: "ta",
+        payment_method: "To'lov usuli",
+        cash: "Naqd pul",
+        delivery_method: "Yetkazib berish usuli",
+        pickup: "Olib ketish",
+        delivery: "Pochta orqali",
+        order_success: "✅ Buyurtmangiz qabul qilindi! Raqami: {order_number}",
+        order_failed: "❌ Buyurtma yaratishda xatolik yuz berdi.",
+        added_to_cart: "{name} savatchaga qo'shildi",
+        buy_now: "Hozir sotib olish",
+        quantity_label: "Miqdor",
+        proceed_to_checkout: "Rasmiylashtirishga o'tish"
+    },
+    ru: {
+        loading: "Загрузка данных...",
+        error_telegram: "⚠️ Откройте приложение внутри Telegram.",
+        error_server: "⚠️ Ошибка соединения с сервером.",
+        error_auth: "⚠️ Ошибка аутентификации. Перезапустите приложение.",
+        guest: "Гость",
+        home_greeting: "Привет, <strong>{name}</strong>!",
+        search_placeholder: "Найти товары",
+        categories_title: "Категории",
+        no_categories: "Категории еще не добавлены",
+        products_not_loaded: "❌ Не удалось загрузить товары",
+        no_products_yet: "Товаров пока нет.",
+        product_details_not_ready: "Информация о товаре #{id} еще не готова.",
+        added_to_favorites: "Товар #{id} добавлен в избранное.",
+        removed_from_favorites: "Товар #{id} удален из избранного.",
+        fill_profile_title: "Заполните свой профиль",
+        first_name_label: "Имя (обязательно)",
+        last_name_label: "Фамилия (необязательно)",
+        phone_label: "Номер телефона",
+        phone_placeholder: "00 000 00 00",
+        save_button: "Сохранить",
+        cancel_button: "Отмена",
+        // Навигация
+        nav_home: "Дом",
+        nav_catalog: "Категории",
+        nav_favorites: "Избранное",
+        nav_cart: "Корзина",
+        nav_profile: "Профиль",
+        // Страница профиля
+        profile_title: "Профиль",
+        profile_info: "Личные данные",
+        profile_language: "Язык приложения",
+        edit_button: "Редактировать",
+        please_fill_fields: "Пожалуйста, введите имя и 9-значный номер телефона.",
+        profile_saved: "✅ Ваш профиль успешно сохранен!",
+        error_saving: "Ошибка сохранения",
+        page_not_ready: "Страница {pageName} еще не готова.",
+        // Элементы меню профиля
+        my_orders: "Мои заказы",
+        my_points: "Мои баллы",
+        my_reviews: "Мои отзывы",
+        settings: "Настройки",
+        about_us: "О нас",
+        contact_us: "Связаться с нами",
+        logout: "Выйти",
+        coming_soon: "Скоро",
+        language_uz: "O'zbekcha",
+        language_ru: "Русский",
+        select_language: "Выберите язык",
+        // Избранное
+        favorites_title: "Избранное",
+        favorites_empty: "Ваш список избранного пуст.",
+        // Заказы
+        confirm_order: "Подтвердить заказ",
+        active_orders: "Активные",
+        completed_orders: "Завершённые",
+        no_active_orders: "Активных заказов нет",
+        no_active_orders_desc: "Здесь будут заказы на доставку или ожидающие получения",
+        order_number: "Заказ №",
+        order_status: "Статус",
+        order_items_count: "Кол-во товаров",
+        order_total: "Итоговая сумма",
+        order_details_not_ready: "Детали заказа №{order_number} еще не готовы.",
+        no_orders_yet: "У вас еще нет заказов.",
+        // Корзина
+        cart_title: "Корзина",
+        cart_empty: "Ваша корзина пуста.",
+        total_price: "Итоговая цена",
+        item: "шт.",
+        payment_method: "Способ оплаты",
+        cash: "Наличными",
+        delivery_method: "Способ доставки",
+        pickup: "Самовывоз",
+        delivery: "Доставка почтой",
+        order_success: "✅ Ваш заказ принят! Номер: {order_number}",
+        order_failed: "❌ Произошла ошибка при создании заказа.",
+        added_to_cart: "{name} добавлен в корзину",
+        buy_now: "Купить сейчас",
+        quantity_label: "Количество",
+        proceed_to_checkout: "Перейти к оформлению"
+    }
+};
+
+export function t(key, params = {}) {
+    let text = translations[getLang()][key] || key;
+    for (const param in params) {
+        text = text.replace(`{${param}}`, params[param]);
+    }
+    return text;
+}
+
+const main = document.getElementById('main');
+const loading = document.getElementById('loading');
+const navbar = document.getElementById('navbar');
+const modal = document.getElementById('registerModal');
+
+export function showLoading(message) {
+    loading.innerText = message || t('loading');
+    loading.classList.remove('hidden');
+    main.classList.add('hidden');
+    navbar.classList.add('hidden');
+}
+
+export function hideLoading() {
+    loading.classList.add('hidden');
+    main.classList.remove('hidden');
+    navbar.classList.remove('hidden');
+}
+
+export function renderPage(pageName, attachEventListeners) {
+    hideLoading();
+    
+    // BackButton boshqaruvi main.js dagi navigateTo() da amalga oshiriladi
+    
+    let content = '';
+    switch (pageName) {
+        case 'home':
+            content = getHomeContent();
+            break;
+        case 'catalog':
+            content = getCatalogContent(); // O'ZGARTIRILDI: Katalog sahifasi qo'shildi
+            break;
+        case 'profile':
+            content = getProfileContent();
+            break;
+        case 'cart':
+            content = getCartContent();
+            break;
+        case 'favorites':
+            content = getFavoritesContent();
+            break;
+        default:
+            content = `<h2>${t('page_not_ready', { pageName })}</h2>`;
+    }
+    main.innerHTML = content;
+    updateNavbar(pageName);
+    attachEventListeners(pageName);
+}
+
+function getHomeContent() {
+    const user = getUser();
+    const rawName = isUserRegistered() ? (user.first_name || window.Telegram.WebApp.initDataUnsafe?.user?.first_name) : t('guest');
+    const displayName = escapeHtml(rawName);
+
+    // O'ZGARTIRILDI: Kategoriya filtri indikatori
+    const selectedCategoryId = getSelectedCategory();
+    const categories = getCategories();
+    const selectedCategory = selectedCategoryId ? categories.find(c => c.id === selectedCategoryId) : null;
+    
+    // Bannerlarni state'dan olish
+    const banners = getBanners();
+
+    // Bannerlar mavjud bo'lsa, dinamik karusel yaratish
+    const carouselHtml = banners && banners.length > 0 ? `
+      <div class="carousel" id="carousel">
+        ${banners.map((banner) => `
+          <a href="${banner.link_url || '#'}" class="slide">
+            <img src="${banner.image_url}" alt="${banner.title || 'Banner'}">
+          </a>
+        `).join('')}
+      </div>
+    ` : '';
+
+    return `
+      <div class="home-header">
+        <div class="brand-container">
+          <span class="brand-icon">🛒</span>
+          <span class="brand-name">Amazing Store</span>
+        </div>
+        <div class="search-container">
+          <span class="search-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="M21 21l-4.35-4.35"/>
+            </svg>
+          </span>
+          <input type="text" class="search-input" placeholder="${t('search_placeholder')}">
+        </div>
+        <div class="greeting-text">${t('home_greeting', { name: displayName })}</div>
+      </div>
+      ${carouselHtml}
+      <div class="categories-section">
+        <div class="categories-header" id="categories-btn">
+          <span class="categories-title">${t('categories_title')}</span>
+          <span class="categories-arrow">›</span>
+        </div>
+      </div>
+      ${selectedCategory ? `
+        <div class="category-filter-indicator">
+          <span class="filter-icon">${selectedCategory.icon}</span>
+          <span class="filter-text">${escapeHtml(selectedCategory.name)}</span>
+          <button class="filter-clear-btn" id="show-all-btn">✕</button>
+        </div>
+      ` : ''}
+      <div class="products-grid" id="products"></div>
+    `;
+}
+
+export function renderProducts() {
+    const productsContainer = document.getElementById('products');
+    if (!productsContainer) return;
+
+    const products = getProducts();
+    if (products.length === 0) {
+        productsContainer.innerHTML = `<p>${t('no_products_yet')}</p>`;
+        return;
+    }
+
+    productsContainer.innerHTML = products.map(p => {
+        const hasSale = p.sale_price && p.price > p.sale_price;
+        const salePercentage = hasSale ? Math.round(((p.price - p.sale_price) / p.price) * 100) : 0;
+        const safeName = escapeHtml(p.name);
+        const safeImage = escapeHtml(p.image) || 'https://via.placeholder.com/150';
+        const displayPrice = hasSale ? p.sale_price : p.price;
+
+        return `
+          <div class="product-card" data-id="${p.id}">
+            <div class="product-card-image-wrapper">
+              <img src="${safeImage}" alt="${safeName}">
+              <div class="like-btn ${isFavorite(p.id) ? 'liked' : ''}" data-id="${p.id}">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="${isFavorite(p.id) ? '#ff3b5c' : 'none'}" stroke="${isFavorite(p.id) ? '#ff3b5c' : '#999'}" stroke-width="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </div>
+              ${hasSale ? `<div class="sale-badge">-${salePercentage}%</div>` : ''}
+              <button class="add-to-cart-btn" data-id="${p.id}">
+                <i class="fas fa-shopping-cart"></i>
+              </button>
+            </div>
+            <div class="product-card-info">
+              <h4>${safeName}</h4>
+              <p class="price-line">
+                <span class="current-price">${Number(displayPrice).toLocaleString()} so'm</span>
+                ${hasSale ? `<span class="original-price">${p.price.toLocaleString()} so'm</span>` : ''}
+              </p>
+            </div>
+          </div>
+        `;
+    }).join('');
+}
+
+// O'ZGARTIRILDI: Katalog (kategoriyalar) sahifasi - backend'dan olinadi
+function getCatalogContent() {
+    const pageHeader = `
+        <div class="page-header simple-header">
+            <h2 class="page-title">${t('categories_title')}</h2>
+        </div>
+    `;
+    
+    // Backend'dan olingan kategoriyalar
+    const categories = getCategories();
+    
+    if (!categories || categories.length === 0) {
+        return `
+            ${pageHeader}
+            <div class="empty-state">
+                <p>${t('no_categories')}</p>
+            </div>
+        `;
+    }
+    
+    const categoriesHtml = categories.map(cat => {
+        return `
+            <div class="category-card" data-id="${cat.id}" style="background: ${cat.color}15; border-left: 4px solid ${cat.color};">
+                <span class="category-icon">${cat.icon}</span>
+                <span class="category-name">${escapeHtml(cat.name)}</span>
+                <span class="category-arrow">›</span>
+            </div>
+        `;
+    }).join('');
+    
+    return `
+        ${pageHeader}
+        <div class="page-content">
+            <div class="categories-grid">
+                ${categoriesHtml}
+            </div>
+        </div>
+    `;
+}
+
+function getProfileContent() {
+    const user = getUser() || {};
+    const { first_name = 'Guest', last_name = '', phone = '' } = user;
+    const displayName = escapeHtml(`${first_name} ${last_name}`.trim());
+    const displayPhone = phone ? `+${phone.replace(/\D/g, '')}` : '';
+
+    // Header - faqat sarlavha (back tugma Telegram tomonidan boshqariladi)
+    const header = `
+        <div class="page-header fixed-header" id="profile-header">
+            <h2 id="profile-header-title" class="page-title">${t('profile_title')}</h2>
+        </div>
+    `;
+
+    const menu = `
+        <div id="profile-menu" class="profile-container">
+            <div class="user-card">
+                <div class="user-avatar">👤</div>
+                <div class="user-info">
+                    <h4>${displayName}</h4>
+                    <p>${displayPhone}</p>
+                </div>
+                <button id="edit-profile-icon" class="edit-btn">✏️</button>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-item" id="menu-item-orders">
+                    <span class="menu-icon">🛍️</span>
+                    <span class="menu-text">${t('my_orders')}</span>
+                    <span class="menu-arrow">›</span>
+                </div>
+                <div class="menu-item disabled-item">
+                    <span class="menu-icon">💰</span>
+                    <span class="menu-text">${t('my_points')}</span>
+                    <span class="menu-badge">${t('coming_soon')}</span>
+                </div>
+                <div class="menu-item disabled-item">
+                    <span class="menu-icon">⭐</span>
+                    <span class="menu-text">${t('my_reviews')}</span>
+                    <span class="menu-badge">${t('coming_soon')}</span>
+                </div>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-item disabled-item">
+                    <span class="menu-icon">⚙️</span>
+                    <span class="menu-text">${t('settings')}</span>
+                    <span class="menu-badge">${t('coming_soon')}</span>
+                </div>
+                <div class="menu-item" id="menu-item-language">
+                    <span class="menu-icon lang-flag-icon">
+                        <img src="./assets/flags/${getLang() === 'uz' ? 'uzbekistan' : 'russia'}.svg" alt="${getLang().toUpperCase()}">
+                    </span>
+                    <span class="menu-text">${t('profile_language')}</span>
+                    <span class="menu-value">${getLang() === 'uz' ? t('language_uz') : t('language_ru')}</span>
+                    <span class="menu-arrow">›</span>
+                </div>
+                <div class="menu-item disabled-item" id="menu-item-about">
+                    <span class="menu-icon">ℹ️</span>
+                    <span class="menu-text">${t('about_us')}</span>
+                    <span class="menu-badge">${t('coming_soon')}</span>
+                </div>
+                <div class="menu-item disabled-item" id="menu-item-contact">
+                    <span class="menu-icon">✉️</span>
+                    <span class="menu-text">${t('contact_us')}</span>
+                    <span class="menu-badge">${t('coming_soon')}</span>
+                </div>
+            </div>
+            
+            <div class="logout-section">
+                <button id="logout-btn">${t('logout')}</button>
+            </div>
+        </div>
+    `;
+
+    const number = phone.startsWith('+998') ? phone.slice(4) : phone;
+    const editSection = `
+        <div id="profile-edit-section" class="profile-subpage hidden">
+             <form id="profile-form">
+                <div class="floating-input">
+                    <input type="text" id="firstName" value="${first_name}" placeholder=" ">
+                    <label for="firstName">${t('first_name_label')}</label>
+                </div>
+                <div class="floating-input">
+                    <input type="text" id="lastName" value="${last_name || ''}" placeholder=" ">
+                    <label for="lastName">${t('last_name_label')}</label>
+                </div>
+                <div class="phone-floating-input">
+                    <label for="phone">${t('phone_label')}</label>
+                    <div class="phone-input-wrapper">
+                        <span class="country-code">🇺🇿 +998</span>
+                        <span class="divider">|</span>
+                        <input type="tel" id="phone" value="${number}" placeholder="${t('phone_placeholder')}">
+                    </div>
+                </div>
+                <button type="button" id="save-profile-btn">${t('save_button')}</button>
+            </form>
+        </div>
+    `;
+
+    const ordersSection = `
+        <div id="orders-section" class="profile-subpage hidden">
+            <div class="orders-tabs">
+                <button class="orders-tab-button active" data-tab="active">${t('active_orders')}</button>
+                <button class="orders-tab-button" data-tab="completed">${t('completed_orders')}</button>
+            </div>
+            <div id="orders-list"></div>
+        </div>
+    `;
+
+    // Til tanlash bo'limi endi modal bo'lgani uchun bu yerdan olib tashlandi.
+    // const languageSection = ...
+
+    return `<div id="profile-page-wrapper">${header}${menu}${editSection}${ordersSection}</div>`;
+}
+
+export function renderOrders(filter = 'active') {
+    const ordersList = document.getElementById('orders-list');
+    if (!ordersList) return;
+
+    const allOrders = getOrders();
+    const filteredOrders = filter === 'active'
+        ? allOrders.filter(o => !['completed', 'cancelled'].includes(o.status))
+        : allOrders.filter(o => ['completed', 'cancelled'].includes(o.status));
+
+    if (filteredOrders.length === 0) {
+        ordersList.innerHTML = `
+            <div class="orders-empty-state">
+                <img src="./assets/images/empty-box.svg" alt="Empty" class="empty-image">
+                <h3>${t('no_active_orders')}</h3>
+                <p>${t('no_active_orders_desc')}</p>
+            </div>
+        `;
+        return;
+    }
+
+    ordersList.innerHTML = filteredOrders.map(order => `
+        <div class="order-card" data-id="${order.id}">
+            <h4>${t('order_number')} ${order.id}</h4>
+            <p><strong>${t('order_status')}:</strong> ${order.status}</p>
+            <p><strong>${t('order_items_count')}:</strong> ${order.items ? order.items.length : 0}</p>
+            <p><strong>${t('order_total')}:</strong> ${Number(order.total_amount).toLocaleString()} so'm</p>
+        </div>
+    `).join('');
+}
+
+// O'ZGARTIRILDI: Cart sahifasi - Uzum style dizayn
+function getCartContent() {
+    const cart = getCart();
+    const productIds = Object.keys(cart);
+
+    // Jami mahsulotlar soni
+    const totalItems = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
+
+    if (productIds.length === 0) {
+        return `
+            <div class="page-header simple-header">
+                <h2 class="page-title">${t('cart_title')}</h2>
+            </div>
+            <div class="empty-state"><p>${t('cart_empty')}</p></div>
+        `;
+    }
+
+    let totalPrice = 0;
+    const itemsHtml = productIds.map(id => {
+        const product = getProductById(parseInt(id));
+        if (!product) return '';
+        const quantity = cart[id];
+        const itemPrice = product.display_price || product.sale_price || product.price;
+        const itemTotal = itemPrice * quantity;
+        totalPrice += itemTotal;
+        
+        const safeName = escapeHtml(product.name);
+        const safeImage = escapeHtml(product.image) || 'https://via.placeholder.com/100';
+        const isFav = isFavorite(parseInt(id));
+        
+        return `
+            <div class="cart-item-new" data-id="${id}">
+                <div class="cart-item-checkbox-wrapper">
+                    <input type="checkbox" class="cart-item-checkbox" id="cart-check-${id}" checked>
+                    <label for="cart-check-${id}" class="cart-checkbox-label"></label>
+                </div>
+                <div class="cart-item-image-wrapper">
+                    <img src="${safeImage}" alt="${safeName}" class="cart-item-image">
+                </div>
+                <div class="cart-item-info">
+                    <h4 class="cart-item-name">${safeName}</h4>
+                    <p class="cart-item-stock">Qolgan ${Math.floor(Math.random() * 5) + 1} dona</p>
+                    <p class="cart-item-price">${Number(itemPrice).toLocaleString()} so'm</p>
+                </div>
+                <div class="cart-item-actions">
+                    <button class="cart-item-favorite ${isFav ? 'active' : ''}" data-id="${id}">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="${isFav ? '#ff3b5c' : 'none'}" stroke="${isFav ? '#ff3b5c' : '#999'}" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                    </button>
+                    <button class="cart-item-remove" data-id="${id}">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                    <div class="cart-item-quantity">
+                        <button class="cart-qty-btn cart-qty-minus" data-id="${id}" data-change="-1">−</button>
+                        <span class="cart-qty-value">${quantity}</span>
+                        <button class="cart-qty-btn cart-qty-plus" data-id="${id}" data-change="1">+</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    return `
+        <div class="cart-page-new">
+            <div class="cart-header-new">
+                <h2 class="cart-header-title">${totalItems} ta tovar</h2>
+            </div>
+            
+            <div class="cart-items-list">
+                ${itemsHtml}
+            </div>
+            
+            <div class="cart-bottom-bar">
+                <div class="cart-bar-left">
+                    <span class="cart-bar-items">${totalItems} ta tovar</span>
+                </div>
+                <button class="cart-bar-checkout-btn" id="confirm-order-btn">
+                    ${t('proceed_to_checkout') || 'Rasmiylashtirishga o\'tish'}
+                </button>
+                <div class="cart-bar-right">
+                    <span class="cart-bar-total">${Number(totalPrice).toLocaleString()} so'm</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function getFavoritesContent() {
+    const favorites = getFavorites();
+    const pageHeader = `
+        <div class="page-header simple-header">
+            <h2 class="page-title">${t('favorites_title')}</h2>
+        </div>
+    `;
+
+    if (favorites.length === 0) {
+        return `${pageHeader}<div class="empty-state"><p>${t('favorites_empty')}</p></div>`;
+    }
+    const products = getProducts();
+    const favoriteProducts = products.filter(p => favorites.includes(p.id));
+
+    return `
+        ${pageHeader}
+        <div class="page-content favorites-page">
+        <div class="products-grid" id="products">
+                ${favoriteProducts.map(p => {
+                    const hasSale = p.sale_price && p.price > p.sale_price;
+                    const salePercentage = hasSale ? Math.round(((p.price - p.sale_price) / p.price) * 100) : 0;
+                    const safeName = escapeHtml(p.name);
+                    const safeImage = escapeHtml(p.image) || 'https://via.placeholder.com/150';
+                    const displayPrice = hasSale ? p.sale_price : p.price;
+                    return `
+              <div class="product-card" data-id="${p.id}">
+                        <div class="product-card-image-wrapper">
+                          <img src="${safeImage}" alt="${safeName}">
+                          <div class="like-btn liked" data-id="${p.id}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#ff3b5c" stroke="#ff3b5c" stroke-width="2">
+                              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            </svg>
+                          </div>
+                          ${hasSale ? `<div class="sale-badge">-${salePercentage}%</div>` : ''}
+                        </div>
+                        <div class="product-card-info">
+                          <h4>${safeName}</h4>
+                          <p class="price-line">
+                            <span class="current-price">${Number(displayPrice).toLocaleString()} so'm</span>
+                            ${hasSale ? `<span class="original-price">${p.price.toLocaleString()} so'm</span>` : ''}
+                          </p>
+                        </div>
+                      </div>
+                    `;
+                }).join('')}
+              </div>
+        </div>
+    `;
+}
+
+export function renderLanguageModal() {
+    const currentLang = getLang();
+    const modalHtml = `
+        <div class="modal-overlay" id="language-modal-overlay">
+            <div class="language-modal-content">
+                <h3 class="language-modal-title">${t('select_language')}</h3>
+                <div class="language-options">
+                    <label for="lang-ru" class="language-option">
+                        <span class="radio-custom ${currentLang === 'ru' ? 'checked' : ''}"></span>
+                        <span class="lang-name">Русский</span>
+                        <span class="lang-flag">
+                            <img src="./assets/flags/russia.svg" alt="RU">
+                        </span>
+                        <input type="radio" id="lang-ru" name="language" value="ru" ${currentLang === 'ru' ? 'checked' : ''}>
+                    </label>
+                    <label for="lang-uz" class="language-option">
+                        <span class="radio-custom ${currentLang === 'uz' ? 'checked' : ''}"></span>
+                        <span class="lang-name">O'zbekcha</span>
+                        <span class="lang-flag">
+                            <img src="./assets/flags/uzbekistan.svg" alt="UZ">
+                        </span>
+                        <input type="radio" id="lang-uz" name="language" value="uz" ${currentLang === 'uz' ? 'checked' : ''}>
+                    </label>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+export function closeLanguageModal() {
+    const modal = document.getElementById('language-modal-overlay');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Profil ichki sahifalari uchun BackButton callback
+let profileBackButtonCallback = null;
+
+export function showProfileSection(sectionName, globalBackHandler = null) {
+    const title = document.getElementById('profile-header-title');
+    const menu = document.getElementById('profile-menu');
+    const editSection = document.getElementById('profile-edit-section');
+    const ordersSection = document.getElementById('orders-section');
+    
+    const sections = [menu, editSection, ordersSection];
+    sections.forEach(s => s?.classList.add('hidden'));
+    
+    const WebApp = window.Telegram?.WebApp;
+
+    if (sectionName === 'menu') {
+        menu?.classList.remove('hidden');
+        if (title) title.innerText = t('profile_title');
+        
+        // Profil menyusida - global BackButton ishlaydi (main.js da boshqariladi)
+        // Ichki callback ni tozalash
+        if (WebApp?.BackButton && profileBackButtonCallback) {
+            WebApp.BackButton.offClick(profileBackButtonCallback);
+            profileBackButtonCallback = null;
+        }
+    } else {
+        // Ichki sahifalarda (edit, orders) - menyuga qaytarish
+        if (WebApp?.BackButton) {
+            // Avvalgi callback ni olib tashlash
+            if (profileBackButtonCallback) {
+                WebApp.BackButton.offClick(profileBackButtonCallback);
+            }
+            
+            // Menyuga qaytaruvchi callback
+            profileBackButtonCallback = () => {
+                showProfileSection('menu');
+            };
+            WebApp.BackButton.onClick(profileBackButtonCallback);
+            WebApp.BackButton.show();
+        }
+        
+        if (sectionName === 'edit') {
+            editSection?.classList.remove('hidden');
+            if (title) title.innerText = t('profile_info');
+        } else if (sectionName === 'orders') {
+            ordersSection?.classList.remove('hidden');
+            if (title) title.innerText = t('my_orders');
+        }
+    }
+}
+
+export function updateNavbar(pageName) {
+    const navItems = [
+        { page: 'home', icon: 'fas fa-home', labelKey: 'nav_home' },
+        { page: 'catalog', icon: 'fas fa-bars', labelKey: 'nav_catalog' },
+        { page: 'favorites', icon: 'far fa-heart', labelKey: 'nav_favorites' },
+        { page: 'cart', icon: 'fas fa-shopping-cart', labelKey: 'nav_cart' },
+        { page: 'profile', icon: 'fas fa-user', labelKey: 'nav_profile' }
+    ];
+
+    navbar.innerHTML = navItems.map(item => `
+        <button data-page="${item.page}" class="${pageName === item.page ? 'active' : ''}">
+            <span class="nav-icon"><i class="${item.icon}"></i></span>
+            <span class="nav-label">${t(item.labelKey)}</span>
+        </button>
+    `).join('');
+}
+
+export function initCarousel() {
+    const carousel = document.getElementById('carousel');
+    if (!carousel) return;
+    
+    const slides = carousel.querySelectorAll('.slide');
+    if (slides.length === 0) {
+        carousel.style.display = 'none';
+        return;
+    }
+
+    let currentSlide = 0;
+    
+    // Har 4 sekundda keyingi bannerga scroll
+    setInterval(() => {
+        currentSlide = (currentSlide + 1) % slides.length;
+        const slide = slides[currentSlide];
+        if (slide) {
+            carousel.scrollTo({
+                left: slide.offsetLeft - 16,
+                behavior: 'smooth'
+            });
+        }
+    }, 4000);
+}
+
+export function openRegisterModal() {
+    // O'ZGARTIRILDI: Ma'lumotlar endi state'dan olinadi
+    const guestUser = getGuestTelegramUser();
+    const firstName = guestUser?.first_name || '';
+    const lastName = guestUser?.last_name || '';
+    modal.classList.remove('hidden');
+    modal.innerHTML = `
+      <div class="modal-content register-modal">
+        <h3>${t('fill_profile_title')}</h3>
+        <div class="floating-input">
+            <input type="text" id="regFirstName" value="${firstName}" placeholder=" " required>
+            <label for="regFirstName">${t('first_name_label')}</label>
+        </div>
+        <div class="floating-input">
+            <input type="text" id="regLastName" value="${lastName}" placeholder=" ">
+            <label for="regLastName">${t('last_name_label')}</label>
+        </div>
+        <div class="phone-floating-input">
+            <label for="regPhone">${t('phone_label')}</label>
+            <div class="phone-input-wrapper">
+          <span class="country-code">🇺🇿 +998</span>
+                <span class="divider">|</span>
+          <input type="tel" id="regPhone" placeholder="${t('phone_placeholder')}" required>
+            </div>
+        </div>
+        <button id="register-submit-btn">${t('save_button')}</button>
+        <button id="register-cancel-btn">${t('cancel_button')}</button>
+      </div>
+    `;
+}
+
+export function closeRegisterModal() {
+    modal.classList.add('hidden');
+    modal.innerHTML = '';
+}
+
+// Savatga qo'shish modali - Uzum style
+export function openCartModal(productId) {
+    const product = getProductById(productId);
+    if (!product) {
+        console.error('Product not found:', productId);
+        return;
+    }
+    
+    const safeImage = escapeHtml(product.image) || 'https://via.placeholder.com/150';
+    const safeName = escapeHtml(product.name);
+    const displayPrice = product.sale_price && product.price > product.sale_price 
+        ? product.sale_price 
+        : product.price;
+    
+    const hasSale = product.sale_price && product.price > product.sale_price;
+    
+    // O'ZGARTIRILDI: Joriy savatdagi miqdorni olish
+    const cart = getCart();
+    const currentQuantity = cart[productId] || 1;
+    
+    // O'ZGARTIRILDI: Modal HTML'ni body ga to'g'ridan-to'g'ri qo'shish
+    // registerModal ichiga emas, chunki u hidden bo'lsa ichidagi elementlar ham ko'rinmaydi
+    const modalHtml = `
+      <div class="cart-modal-overlay" id="cart-modal-overlay">
+        <div class="cart-modal-content slide-up">
+          <div class="cart-modal-header">
+            <div class="cart-modal-drag-handle"></div>
+          </div>
+          
+          <div class="cart-modal-product-section">
+            <div class="cart-modal-image-wrapper">
+              <img src="${safeImage}" alt="${safeName}" class="cart-modal-product-image">
+            </div>
+            <div class="cart-modal-product-details">
+              <h3 class="cart-modal-product-name">${safeName}</h3>
+            </div>
+          </div>
+          
+          <div class="cart-modal-footer">
+            <button class="cart-modal-buy-btn" data-id="${productId}">
+              <span>${t('buy_now')}</span>
+            </button>
+            <div class="cart-modal-quantity-controls">
+              <button class="qty-btn qty-minus" data-id="${productId}" data-change="-1">−</button>
+              <span class="qty-value" id="qty-value-${productId}">${currentQuantity}</span>
+              <button class="qty-btn qty-plus" data-id="${productId}" data-change="1">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Body ga to'g'ridan-to'g'ri qo'shish
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // O'ZGARTIRILDI: Animatsiya va event listenerlar uchun kechikish
+    setTimeout(() => {
+        const modalContent = document.querySelector('.cart-modal-content');
+        if (modalContent) {
+            modalContent.classList.add('show');
+        }
+    }, 10);
+}
+
+export function closeCartModal() {
+    // O'ZGARTIRILDI: Modal HTML'ni body dan olib tashlash
+    const overlay = document.getElementById('cart-modal-overlay');
+    if (overlay) {
+        const modalContent = overlay.querySelector('.cart-modal-content');
+        if (modalContent) {
+            modalContent.classList.remove('show');
+            setTimeout(() => {
+                overlay.remove();
+            }, 300); // Animatsiya tugashini kutish
+        } else {
+            overlay.remove();
+        }
+    }
+}
