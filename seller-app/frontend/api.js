@@ -9,11 +9,28 @@ if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
     tg = window.Telegram.WebApp;
     isTelegramContext = true;
     tg.ready();
-    tg.expand(); // Fullscreen rejim
-    tg.enableClosingConfirmation(); // Yopishdan oldin tasdiqlash
+    
+    // Fullscreen rejimini yoqish
+    tg.expand();
+    if (tg.requestFullscreen) {
+        tg.requestFullscreen();
+    }
+    
     // Viewport sozlamalari
-    tg.setHeaderColor('#030303');
-    tg.setBackgroundColor('#258de8');
+    if (tg.setHeaderColor) {
+        tg.setHeaderColor('#030303');
+    }
+    if (tg.setBackgroundColor) {
+        tg.setBackgroundColor('#258de8');
+    }
+    if (tg.setBottomBarColor) {
+        tg.setBottomBarColor('#181818');
+    }
+    
+    // Yopishdan oldin tasdiqlash
+    tg.enableClosingConfirmation();
+    
+    console.log('✅ Telegram Web App initialized in fullscreen mode');
 }
 
 // Get Telegram auth data
