@@ -5,6 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { initializeDatabase } = require('./utils/initDb');
+const { authenticate, isAdmin } = require('./middleware/auth');
 
 // Routes (keyinroq yaratiladi)
 // const marketplaceRoutes = require('./routes/marketplaces');
@@ -35,6 +36,8 @@ app.use(helmet({ contentSecurityPolicy: false }));
 // CORS sozlamalari
 const allowedOrigins = [
     'https://seller-app-frontend.vercel.app',
+    'https://web.telegram.org',
+    'https://telegram.org',
     'http://localhost:3001',
     process.env.FRONTEND_URL
 ].filter(Boolean);
@@ -66,13 +69,18 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 // app.use('/api/seller/products', productRoutes);
 // app.use('/api/seller/orders', orderRoutes);
 
-// Temporary test route
-app.get('/api/seller/test', (req, res) => {
-    res.json({ message: 'Seller App API is working!' });
+// Admin check endpoint
+app.get('/api/seller/check-admin', authenticate, isAdmin, (req, res) => {
+    res.json({ is_admin: true, user: req.telegramUser });
 });
 
-// Frontend routing (SPA uchun)
-app.get('*', (req, res) => {
+// Temporary test route (admin only)
+app.get('/api/seller/test', authenticate, isAdmin, (req, res) => {
+    res.json({ message: 'Seller App API is working!', user: req.telegramUser });
+});
+
+// Frontend routing (SPA uchun) - autentifikatsiya tekshiruvi
+app.get('*', authenticate, isAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 

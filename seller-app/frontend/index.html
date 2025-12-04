@@ -5,9 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seller App - Dashboard</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <!-- Authentication Check (hidden by default) -->
+    <div id="auth-error" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #fff; z-index: 10000; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 20px; text-align: center;">
+        <h2 style="color: #d32f2f; margin-bottom: 20px;">❌ Kirish rad etildi</h2>
+        <p style="color: #666; margin-bottom: 20px;">Seller App faqat admin'lar uchun.</p>
+        <p style="color: #999; font-size: 14px;">Iltimos, Telegram bot orqali kirishga urinib ko'ring.</p>
+    </div>
     <!-- Top Navigation Bar -->
     <nav class="top-nav">
         <div class="nav-left">
@@ -124,7 +131,20 @@
     </div>
 
 
+    <script src="api.js"></script>
     <script src="app.js"></script>
+    <script>
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            const isAdmin = await checkAdminStatus();
+            if (!isAdmin) {
+                // Error already shown by checkAdminStatus
+                return;
+            }
+            // If admin, continue with normal app initialization
+            // app.js will handle the rest
+        });
+    </script>
 </body>
 </html>
 

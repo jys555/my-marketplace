@@ -1,205 +1,103 @@
-// API Configuration
-const API_BASE_URL = window.location.origin; // Same origin as frontend
+// API configuration
+const API_BASE_URL = '/api/seller';
 
-// API Helper Functions
+// Telegram Web App initialization
+let tg = null;
+if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+    tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+}
+
+// Get Telegram auth data
+function getTelegramAuthData() {
+    if (!tg || !tg.initData) {
+        return null;
+    }
+    return tg.initData;
+}
+
+// API request with authentication
 async function apiRequest(endpoint, options = {}) {
-    const url = `${API_BASE_URL}/api${endpoint}`;
-    const config = {
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        },
-        ...options
+    const authData = getTelegramAuthData();
+    
+    if (!authData) {
+        throw new Error('Telegram authentication data not available');
+    }
+
+    const headers = {
+        'Content-Type': 'application/json',
+        'x-telegram-data': authData,
+        ...options.headers
     };
 
-    try {
-        const response = await fetch(url, config);
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.error || 'API request failed');
-        }
-        
-        return data;
-    } catch (error) {
-        console.error('API Error:', error);
-        throw error;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers
+    });
+
+    if (response.status === 401 || response.status === 403) {
+        // Authentication failed
+        showAuthError();
+        throw new Error('Authentication failed');
+    }
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(error.message || 'API request failed');
+    }
+
+    return response.json();
+}
+
+// Show authentication error
+function showAuthError() {
+    const authError = document.getElementById('auth-error');
+    if (authError) {
+        authError.style.display = 'flex';
+    }
+    // Hide main content
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+        mainContent.style.display = 'none';
     }
 }
 
-// Seller App API Functions
+// Check admin status on page load
+async function checkAdminStatus() {
+    try {
+        const authData = getTelegramAuthData();
+        if (!authData) {
+            showAuthError();
+            return false;
+        }
 
-// Marketplaces
-export async function getMarketplaces() {
-    return apiRequest('/seller/marketplaces');
+        const response = await fetch(`${API_BASE_URL}/check-admin`, {
+            headers: {
+                'x-telegram-data': authData
+            }
+        });
+
+        if (response.status === 401 || response.status === 403) {
+            showAuthError();
+            return false;
+        }
+
+        if (!response.ok) {
+            showAuthError();
+            return false;
+        }
+
+        const data = await response.json();
+        return data.is_admin === true;
+    } catch (error) {
+        console.error('Admin check failed:', error);
+        showAuthError();
+        return false;
+    }
 }
 
-export async function getMarketplace(id) {
-    return apiRequest(`/seller/marketplaces/${id}`);
+// Export functions
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { apiRequest, checkAdminStatus, getTelegramAuthData };
 }
-
-export async function createMarketplace(data) {
-    return apiRequest('/seller/marketplaces', {
-        method: 'POST',
-        body: JSON.stringify(data)
-    });
-}
-
-export async function updateMarketplace(id, data) {
-    return apiRequest(`/seller/marketplaces/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-    });
-}
-
-// Products (Amazing Store products)
-export async function getProducts(filters = {}) {
-    const params = new URLSearchParams(filters);
-    return apiRequest(`/seller/products?${params}`);
-}
-
-export async function getProduct(id) {
-    return apiRequest(`/seller/products/${id}`);
-}
-
-export async function createProduct(data) {
-    return apiRequest('/seller/products', {
-        method: 'POST',
-        body: JSON.stringify(data)
-    });
-}
-
-export async function updateProduct(id, data) {
-    return apiRequest(`/seller/products/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-    });
-}
-
-export async function deleteProduct(id) {
-    return apiRequest(`/seller/products/${id}`, {
-        method: 'DELETE'
-    });
-}
-
-// Prices
-export async function getPrices(marketplaceId = null) {
-    const params = marketplaceId ? `?marketplace_id=${marketplaceId}` : '';
-    return apiRequest(`/seller/prices${params}`);
-}
-
-export async function updatePrice(productId, marketplaceId, data) {
-    return apiRequest(`/seller/prices/${productId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ marketplace_id: marketplaceId, ...data })
-    });
-}
-
-// Purchases
-export async function getPurchases(filters = {}) {
-    const params = new URLSearchParams(filters);
-    return apiRequest(`/seller/purchases?${params}`);
-}
-
-export async function getPurchase(id) {
-    return apiRequest(`/seller/purchases/${id}`);
-}
-
-export async function createPurchase(data) {
-    return apiRequest('/seller/purchases', {
-        method: 'POST',
-        body: JSON.stringify(data)
-    });
-}
-
-export async function deletePurchase(id) {
-    return apiRequest(`/seller/purchases/${id}`, {
-        method: 'DELETE'
-    });
-}
-
-// Inventory
-export async function getInventory(filters = {}) {
-    const params = new URLSearchParams(filters);
-    return apiRequest(`/seller/inventory?${params}`);
-}
-
-export async function getInventoryByProduct(productId) {
-    return apiRequest(`/seller/inventory/${productId}`);
-}
-
-export async function adjustInventory(data) {
-    return apiRequest('/seller/inventory/adjust', {
-        method: 'POST',
-        body: JSON.stringify(data)
-    });
-}
-
-export async function getInventoryMovements(filters = {}) {
-    const params = new URLSearchParams(filters);
-    return apiRequest(`/seller/inventory/movements?${params}`);
-}
-
-// Orders
-export async function getOrders(filters = {}) {
-    const params = new URLSearchParams(filters);
-    return apiRequest(`/seller/orders?${params}`);
-}
-
-export async function getOrder(id) {
-    return apiRequest(`/seller/orders/${id}`);
-}
-
-export async function createOrder(data) {
-    return apiRequest('/seller/orders', {
-        method: 'POST',
-        body: JSON.stringify(data)
-    });
-}
-
-export async function updateOrderStatus(id, status) {
-    return apiRequest(`/seller/orders/${id}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({ status })
-    });
-}
-
-export async function getOrdersByProduct(filters = {}) {
-    const params = new URLSearchParams(filters);
-    return apiRequest(`/seller/orders/by-product?${params}`);
-}
-
-// Analytics
-export async function getDashboardData(marketplaceId = null) {
-    const params = marketplaceId ? `?marketplace_id=${marketplaceId}` : '';
-    return apiRequest(`/seller/analytics/dashboard${params}`);
-}
-
-export async function getDailyAnalytics(marketplaceId = null, filters = {}) {
-    const params = new URLSearchParams({ ...filters, ...(marketplaceId && { marketplace_id: marketplaceId }) });
-    return apiRequest(`/seller/analytics/daily?${params}`);
-}
-
-export async function getMonthlyAnalytics(marketplaceId = null, filters = {}) {
-    const params = new URLSearchParams({ ...filters, ...(marketplaceId && { marketplace_id: marketplaceId }) });
-    return apiRequest(`/seller/analytics/monthly?${params}`);
-}
-
-export async function getOverallAnalytics() {
-    return apiRequest('/seller/analytics/overall');
-}
-
-export async function getMarketplaceComparison() {
-    return apiRequest('/seller/analytics/marketplace-comparison');
-}
-
-export async function getProductAnalytics(filters = {}) {
-    const params = new URLSearchParams(filters);
-    return apiRequest(`/seller/analytics/by-product?${params}`);
-}
-
-export async function getChartData(marketplaceId = null, filters = {}) {
-    const params = new URLSearchParams({ ...filters, ...(marketplaceId && { marketplace_id: marketplaceId }) });
-    return apiRequest(`/seller/analytics/chart-data?${params}`);
-}
-
