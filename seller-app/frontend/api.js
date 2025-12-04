@@ -9,7 +9,11 @@ if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
     tg = window.Telegram.WebApp;
     isTelegramContext = true;
     tg.ready();
-    tg.expand();
+    tg.expand(); // Fullscreen rejim
+    tg.enableClosingConfirmation(); // Yopishdan oldin tasdiqlash
+    // Viewport sozlamalari
+    tg.setHeaderColor('#030303');
+    tg.setBackgroundColor('#258de8');
 }
 
 // Get Telegram auth data

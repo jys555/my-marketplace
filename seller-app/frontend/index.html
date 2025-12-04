@@ -145,9 +145,17 @@
             console.log('✅ Authentication successful, loading app...');
             // If admin, hide error and continue with normal app initialization
             hideAuthError();
+            
             // Load app.js after authentication is confirmed
             const script = document.createElement('script');
             script.src = 'app.js';
+            script.onload = () => {
+                console.log('✅ app.js loaded, initializing dashboard...');
+                // Ensure dashboard data is loaded after app.js is ready
+                if (typeof loadDashboardData === 'function') {
+                    loadDashboardData();
+                }
+            };
             document.body.appendChild(script);
         });
     </script>

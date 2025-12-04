@@ -308,24 +308,45 @@ function hideChartTooltip() {
     }
 }
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', () => {
-    loadDashboardData();
+// Initialize on page load (only if not already initialized)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    // DOM already loaded
+    initializeApp();
+}
+
+function initializeApp() {
+    console.log('📊 Initializing Seller App dashboard...');
+    
+    // Load dashboard data
+    if (typeof loadDashboardData === 'function') {
+        loadDashboardData();
+    } else {
+        console.warn('⚠️ loadDashboardData function not found');
+    }
     
     // Month selector change
-    document.getElementById('month-selector').addEventListener('change', (e) => {
-        loadChartData();
-        loadMonthlyStats();
-    });
+    const monthSelector = document.getElementById('month-selector');
+    if (monthSelector) {
+        monthSelector.addEventListener('change', (e) => {
+            if (typeof loadChartData === 'function') {
+                loadChartData();
+            }
+            if (typeof loadMonthlyStats === 'function') {
+                loadMonthlyStats();
+            }
+        });
+    }
     
     // Hide tooltip when mouse leaves chart (with delay)
-    document.querySelector('.chart-container').addEventListener('mouseleave', () => {
-        scheduleTooltipHide();
-    });
-    
-    // Show tooltip when mouse enters chart area (even if not on bar)
-    document.querySelector('.chart-container').addEventListener('mousemove', (e) => {
-        // This will be handled by Chart.js onHover
-    });
-});
+    const chartContainer = document.querySelector('.chart-container');
+    if (chartContainer) {
+        chartContainer.addEventListener('mouseleave', () => {
+            if (typeof scheduleTooltipHide === 'function') {
+                scheduleTooltipHide();
+            }
+        });
+    }
+}
 
