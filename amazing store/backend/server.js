@@ -5,6 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { initializeDatabase } = require('./utils/initDb');
+const botService = require('./services/bot');
 
 // Amazing Store routes
 const bannerRoutes = require('./routes/banners');
@@ -53,6 +54,21 @@ app.use(cors({
     credentials: true // Cookie'larni qo'llab-quvvatlash
 }));
 
+// Webhook endpoint (agar webhook ishlatilsa) - express.json() dan oldin
+app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    if (botService.bot) {
+        try {
+            await botService.bot.handleUpdate(req.body);
+            res.sendStatus(200);
+        } catch (error) {
+            console.error('Webhook error:', error);
+            res.sendStatus(200); // Telegram'ga 200 qaytarish kerak
+        }
+    } else {
+        res.sendStatus(200);
+    }
+});
+
 app.use(express.json());
 app.use('/api/', apiLimiter); // API endpointlariga rate limit qo'llash
 
@@ -77,10 +93,14 @@ async function startServer() {
         // Amazing Store database migration
         await initializeDatabase();
         
+        // Bot'ni ishga tushirish
+        await botService.initialize();
+        
         // Server ishga tushirish
         app.listen(PORT, () => {
             console.log(`✅ Amazing Store Server is running on port ${PORT}`);
             console.log(`📱 Frontend: http://localhost:${PORT}`);
+            console.log(`🤖 Telegram Bot: ${botService.bot ? 'Active' : 'Disabled'}`);
         });
     } catch (error) {
         console.error('❌ Failed to start server:', error);

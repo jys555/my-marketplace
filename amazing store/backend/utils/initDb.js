@@ -111,6 +111,22 @@ async function initializeDatabase() {
         `);
         console.log('✅ Users.updated_at column added/verified');
 
+        // 6.1. Users jadvaliga is_admin ustuni qo'shish (agar yo'q bo'lsa)
+        await pool.query(`
+            DO $$ 
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns 
+                    WHERE table_name='users' AND column_name='is_admin'
+                ) THEN
+                    ALTER TABLE users 
+                    ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
+                    RAISE NOTICE 'Users.is_admin column added';
+                END IF;
+            END $$;
+        `);
+        console.log('✅ Users.is_admin column added/verified');
+
         // 7. Products jadvaliga category_id ustuni qo'shish (agar yo'q bo'lsa)
         await pool.query(`
             DO $$ 

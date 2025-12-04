@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db');
 const { authenticate } = require('../middleware/auth');
+const botService = require('../services/bot');
 
 const router = express.Router();
 
@@ -87,6 +88,40 @@ router.post('/', authenticate, async (req, res) => {
         await Promise.all(itemInsertQueries);
 
         await client.query('COMMIT');
+        
+        // Bot xabarlarini yuborish (async, xatolik bo'lsa ham buyurtma yaratiladi)
+        try {
+            // Mijoz ma'lumotlarini olish
+            const { rows: userRows } = await client.query(
+                'SELECT first_name, last_name, phone, telegram_id FROM users WHERE id = $1',
+                [userId]
+            );
+            
+            if (userRows.length > 0) {
+                const user = userRows[0];
+                
+                // Admin'ga yangi buyurtma xabari
+                await botService.notifyAdminNewOrder({
+                    order_number: orderNumber,
+                    total_amount: totalAmount.toFixed(2),
+                    user_name: `${user.first_name} ${user.last_name || ''}`.trim(),
+                    user_phone: user.phone || 'N/A'
+                });
+                
+                // Mijozga tasdiqlash xabari
+                if (user.telegram_id) {
+                    await botService.notifyCustomerOrderStatus({
+                        order_number: orderNumber,
+                        status: 'new',
+                        total_amount: totalAmount.toFixed(2)
+                    }, user.telegram_id);
+                }
+            }
+        } catch (botError) {
+            // Bot xatoliklarini log qilish, lekin buyurtma yaratilgan bo'lishi kerak
+            console.error('Bot notification error (non-critical):', botError);
+        }
+        
         res.status(201).json({ id: orderId, status: 'new', total_amount: totalAmount });
     } catch (error) {
         await client.query('ROLLBACK');
