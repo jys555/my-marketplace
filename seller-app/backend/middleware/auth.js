@@ -45,6 +45,7 @@ async function authenticate(req, res, next) {
         req.telegramUser = user;
 
         // Foydalanuvchining ichki ID'sini va admin statusini topish
+        req.isAdmin = false; // Default: admin emas
         if (user && user.id) {
             const { rows: userRows } = await pool.query(
                 'SELECT id, is_admin FROM users WHERE telegram_id = $1',
@@ -55,7 +56,7 @@ async function authenticate(req, res, next) {
                 req.isAdmin = userRows[0].is_admin === true;
                 console.log(`✅ User authenticated: ${user.id}, is_admin: ${req.isAdmin}`);
             } else {
-                console.warn(`⚠️  User not found in database: ${user.id}`);
+                console.warn(`⚠️  User not found in database: ${user.id}. Please register user first.`);
                 req.isAdmin = false;
             }
         }
@@ -70,14 +71,22 @@ async function authenticate(req, res, next) {
 // Admin tekshiruvi - faqat is_admin = true bo'lgan userlar
 const isAdmin = async (req, res, next) => {
     if (!req.telegramUser) {
+        console.warn('❌ Admin check failed: No telegramUser');
         return res.status(401).json({ error: 'Authentication required' });
     }
 
-    if (!req.isAdmin) {
-        console.warn(`Forbidden access attempt by Telegram ID: ${req.telegramUser.id}`);
-        return res.status(403).json({ error: 'Forbidden: Admin access required' });
+    // req.isAdmin undefined bo'lishi mumkin, shuning uchun explicit tekshiramiz
+    const isAdminUser = req.isAdmin === true;
+    
+    if (!isAdminUser) {
+        console.warn(`❌ Forbidden access attempt by Telegram ID: ${req.telegramUser.id}, is_admin: ${req.isAdmin}`);
+        return res.status(403).json({ 
+            error: 'Forbidden: Admin access required',
+            message: 'User is not an admin. Please set is_admin = true in database for this user.'
+        });
     }
 
+    console.log(`✅ Admin access granted for Telegram ID: ${req.telegramUser.id}`);
     next();
 };
 
