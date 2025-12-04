@@ -56,9 +56,9 @@ class TelegramBotService {
             // Amazing Store Mini App button (barcha uchun)
             keyboard.webApp('🛒 Amazing Store', this.amazingStoreUrl).row();
             
-            // Admin button (faqat admin uchun)
+            // Seller App button (faqat admin uchun)
             if (isAdmin) {
-                keyboard.webApp('⚙️ Admin Panel', this.sellerAppUrl).row();
+                keyboard.webApp('📊 Seller App', this.sellerAppUrl).row();
             }
             
             await ctx.reply(
@@ -66,7 +66,7 @@ class TelegramBotService {
                 `Bu bot orqali:\n` +
                 `• 🛒 Mahsulotlar katalogini ko'rishingiz mumkin\n` +
                 `• 📦 Buyurtmalar berishingiz mumkin\n` +
-                `${isAdmin ? '• ⚙️ Admin panelga kirishingiz mumkin\n' : ''}` +
+                `${isAdmin ? '• 📊 Seller App'ga kirishingiz mumkin\n' : ''}` +
                 `\nQuyidagi tugmalardan birini tanlang:`,
                 { reply_markup: keyboard }
             );
@@ -129,7 +129,7 @@ class TelegramBotService {
             }
         });
 
-        // /admin - Admin panel (faqat admin uchun)
+        // /admin - Seller App (faqat admin uchun)
         this.bot.command('admin', async (ctx) => {
             const telegramId = ctx.from.id;
             const isAdmin = await this.checkIsAdmin(telegramId);
@@ -139,11 +139,11 @@ class TelegramBotService {
             }
             
             const keyboard = new InlineKeyboard();
-            keyboard.webApp('⚙️ Admin Panel', this.sellerAppUrl).row();
+            keyboard.webApp('📊 Seller App', this.sellerAppUrl).row();
             keyboard.webApp('🛒 Amazing Store', this.amazingStoreUrl);
             
             await ctx.reply(
-                `⚙️ Admin Panel\n\n` +
+                `📊 Seller App\n\n` +
                 `Quyidagi tugmalardan birini tanlang:`,
                 { reply_markup: keyboard }
             );
@@ -167,7 +167,7 @@ class TelegramBotService {
             keyboard.webApp('🛒 Amazing Store', this.amazingStoreUrl).row();
             
             if (isAdmin) {
-                keyboard.webApp('⚙️ Admin Panel', this.sellerAppUrl).row();
+                keyboard.webApp('📊 Seller App', this.sellerAppUrl).row();
             }
             
             await ctx.reply(
