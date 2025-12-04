@@ -53,6 +53,10 @@ async function authenticate(req, res, next) {
             if (userRows.length > 0) {
                 req.userId = userRows[0].id;
                 req.isAdmin = userRows[0].is_admin === true;
+                console.log(`✅ User authenticated: ${user.id}, is_admin: ${req.isAdmin}`);
+            } else {
+                console.warn(`⚠️  User not found in database: ${user.id}`);
+                req.isAdmin = false;
             }
         }
 

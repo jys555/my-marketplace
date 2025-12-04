@@ -71,6 +71,7 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Admin check endpoint
 app.get('/api/seller/check-admin', authenticate, isAdmin, (req, res) => {
+    console.log('✅ Admin check passed for user:', req.telegramUser.id);
     res.json({ is_admin: true, user: req.telegramUser });
 });
 

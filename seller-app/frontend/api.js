@@ -75,6 +75,7 @@ function showAuthError() {
 async function checkAdminStatus() {
     // Agar Telegram Web App kontekstida bo'lmasa, to'g'ridan-to'g'ri URL orqali kirilgan
     if (!isInTelegramContext()) {
+        console.log('❌ Not in Telegram context');
         showAuthError();
         return false;
     }
@@ -82,30 +83,47 @@ async function checkAdminStatus() {
     try {
         const authData = getTelegramAuthData();
         if (!authData) {
+            console.log('❌ No Telegram auth data');
             showAuthError();
             return false;
         }
 
+        console.log('✅ Checking admin status...');
         const response = await fetch(`${API_BASE_URL}/check-admin`, {
             headers: {
                 'x-telegram-data': authData
             }
         });
 
+        console.log('Response status:', response.status);
+
         if (response.status === 401 || response.status === 403) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('❌ Admin check failed:', errorData);
             showAuthError();
             return false;
         }
 
         if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('❌ Response not OK:', errorData);
             showAuthError();
             return false;
         }
 
         const data = await response.json();
-        return data.is_admin === true;
+        console.log('✅ Admin check result:', data);
+        
+        if (data.is_admin === true) {
+            console.log('✅ Admin access granted');
+            return true;
+        } else {
+            console.log('❌ User is not admin');
+            showAuthError();
+            return false;
+        }
     } catch (error) {
-        console.error('Admin check failed:', error);
+        console.error('❌ Admin check error:', error);
         showAuthError();
         return false;
     }
