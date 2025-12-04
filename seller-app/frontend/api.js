@@ -3,8 +3,11 @@ const API_BASE_URL = '/api/seller';
 
 // Telegram Web App initialization
 let tg = null;
+let isTelegramContext = false;
+
 if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
     tg = window.Telegram.WebApp;
+    isTelegramContext = true;
     tg.ready();
     tg.expand();
 }
@@ -15,6 +18,11 @@ function getTelegramAuthData() {
         return null;
     }
     return tg.initData;
+}
+
+// Check if running in Telegram Web App context
+function isInTelegramContext() {
+    return isTelegramContext && tg !== null;
 }
 
 // API request with authentication
@@ -65,6 +73,12 @@ function showAuthError() {
 
 // Check admin status on page load
 async function checkAdminStatus() {
+    // Agar Telegram Web App kontekstida bo'lmasa, to'g'ridan-to'g'ri URL orqali kirilgan
+    if (!isInTelegramContext()) {
+        showAuthError();
+        return false;
+    }
+
     try {
         const authData = getTelegramAuthData();
         if (!authData) {
@@ -99,5 +113,5 @@ async function checkAdminStatus() {
 
 // Export functions
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { apiRequest, checkAdminStatus, getTelegramAuthData };
+    module.exports = { apiRequest, checkAdminStatus, getTelegramAuthData, isInTelegramContext };
 }
