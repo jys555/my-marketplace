@@ -66,7 +66,7 @@ class TelegramBotService {
                 `Bu bot orqali:\n` +
                 `• 🛒 Mahsulotlar katalogini ko'rishingiz mumkin\n` +
                 `• 📦 Buyurtmalar berishingiz mumkin\n` +
-                `${isAdmin ? '• 📊 Seller App'ga kirishingiz mumkin\n' : ''}` +
+                `${isAdmin ? '• 📊 Seller App ga kirishingiz mumkin\n' : ''}` +
                 `\nQuyidagi tugmalardan birini tanlang:`,
                 { reply_markup: keyboard }
             );
