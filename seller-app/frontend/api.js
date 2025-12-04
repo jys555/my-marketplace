@@ -69,6 +69,29 @@ function showAuthError() {
     if (mainContent) {
         mainContent.style.display = 'none';
     }
+    // Hide navigation
+    const nav = document.querySelector('nav');
+    if (nav) {
+        nav.style.display = 'none';
+    }
+}
+
+// Hide authentication error (when admin access granted)
+function hideAuthError() {
+    const authError = document.getElementById('auth-error');
+    if (authError) {
+        authError.style.display = 'none';
+    }
+    // Show main content
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+        mainContent.style.display = 'block';
+    }
+    // Show navigation
+    const nav = document.querySelector('nav');
+    if (nav) {
+        nav.style.display = 'flex';
+    }
 }
 
 // Check admin status on page load
@@ -116,6 +139,7 @@ async function checkAdminStatus() {
         
         if (data.is_admin === true) {
             console.log('✅ Admin access granted');
+            hideAuthError(); // Xatolik ko'rsatilgan bo'lsa, yashirish
             return true;
         } else {
             console.log('❌ User is not admin');
