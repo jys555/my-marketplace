@@ -35,8 +35,7 @@ app.use(helmet({ contentSecurityPolicy: false })); // Xavfsizlik headerlari
 const allowedOrigins = [
     'https://web.telegram.org',
     'https://telegram.org',
-    'https://amazing-store-frontend.vercel.app', // Amazing Store Vercel URL (eski)
-    'https://my-marketplace-frontend.vercel.app', // Amazing Store Vercel URL (yangi)
+    'https://amazing-store-frontend.vercel.app', // Amazing Store Vercel URL
     process.env.FRONTEND_URL // Railway'da o'rnatilgan frontend URL
 ].filter(Boolean); // null/undefined qiymatlarni tozalash
 
