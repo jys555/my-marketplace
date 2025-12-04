@@ -56,18 +56,19 @@ app.use(cors({
 
 // Webhook endpoint (agar webhook ishlatilsa) - express.json() dan oldin
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-    if (botService.bot) {
-        try {
-            // express.raw() Buffer qaytaradi, Grammy JSON object kutadi
-            const update = JSON.parse(req.body.toString());
-            await botService.bot.handleUpdate(update);
-            res.sendStatus(200);
-        } catch (error) {
-            console.error('Webhook error:', error);
-            res.sendStatus(200); // Telegram'ga 200 qaytarish kerak
-        }
-    } else {
+    if (!botService.bot) {
+        // Bot hali initialize bo'lmagan yoki disabled
+        return res.sendStatus(200); // Telegram'ga 200 qaytarish kerak
+    }
+    
+    try {
+        // express.raw() Buffer qaytaradi, Grammy JSON object kutadi
+        const update = JSON.parse(req.body.toString());
+        await botService.bot.handleUpdate(update);
         res.sendStatus(200);
+    } catch (error) {
+        console.error('Webhook error:', error);
+        res.sendStatus(200); // Telegram'ga 200 qaytarish kerak
     }
 });
 

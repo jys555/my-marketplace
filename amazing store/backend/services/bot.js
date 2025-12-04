@@ -17,6 +17,17 @@ class TelegramBotService {
         }
 
         this.bot = new Bot(token);
+        
+        // Bot'ni initialize qilish (bot ma'lumotlarini Telegram API'dan olish)
+        try {
+            await this.bot.init();
+            console.log('✅ Bot initialized');
+        } catch (error) {
+            console.error('❌ Bot initialization failed:', error);
+            this.bot = null;
+            return;
+        }
+        
         this.setupCommands();
         this.setupHandlers();
         
