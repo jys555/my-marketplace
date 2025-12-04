@@ -25,7 +25,11 @@ class TelegramBotService {
             await this.bot.api.setWebhook(process.env.WEBHOOK_URL);
             console.log('✅ Bot webhook set:', process.env.WEBHOOK_URL);
         } else {
-            this.bot.start();
+            // bot.start() Promise qaytaradi va hech qachon resolve qilmaydi (polling loop)
+            // Shuning uchun await qilmaymiz, background'da ishlaydi
+            this.bot.start().catch((error) => {
+                console.error('❌ Bot polling error:', error);
+            });
             console.log('✅ Bot started with polling');
         }
     }

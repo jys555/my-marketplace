@@ -58,7 +58,9 @@ app.use(cors({
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
     if (botService.bot) {
         try {
-            await botService.bot.handleUpdate(req.body);
+            // express.raw() Buffer qaytaradi, Grammy JSON object kutadi
+            const update = JSON.parse(req.body.toString());
+            await botService.bot.handleUpdate(update);
             res.sendStatus(200);
         } catch (error) {
             console.error('Webhook error:', error);

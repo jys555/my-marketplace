@@ -89,6 +89,9 @@ router.post('/', authenticate, async (req, res) => {
 
         await client.query('COMMIT');
         
+        // Database'dan saqlangan total_amount'ni olish (string formatda)
+        const savedTotalAmount = totalAmount.toFixed(2);
+        
         // Bot xabarlarini yuborish (async, xatolik bo'lsa ham buyurtma yaratiladi)
         try {
             // Mijoz ma'lumotlarini olish
@@ -103,7 +106,7 @@ router.post('/', authenticate, async (req, res) => {
                 // Admin'ga yangi buyurtma xabari
                 await botService.notifyAdminNewOrder({
                     order_number: orderNumber,
-                    total_amount: totalAmount.toFixed(2),
+                    total_amount: savedTotalAmount,
                     user_name: `${user.first_name} ${user.last_name || ''}`.trim(),
                     user_phone: user.phone || 'N/A'
                 });
@@ -113,7 +116,7 @@ router.post('/', authenticate, async (req, res) => {
                     await botService.notifyCustomerOrderStatus({
                         order_number: orderNumber,
                         status: 'new',
-                        total_amount: totalAmount.toFixed(2)
+                        total_amount: savedTotalAmount
                     }, user.telegram_id);
                 }
             }
@@ -122,7 +125,13 @@ router.post('/', authenticate, async (req, res) => {
             console.error('Bot notification error (non-critical):', botError);
         }
         
-        res.status(201).json({ id: orderId, status: 'new', total_amount: totalAmount });
+        // Response'da ham database'dagi format bilan mos keladigan string qaytaramiz
+        // yoki parseFloat qilib number qaytarish mumkin, lekin formatni saqlash uchun string qaytaramiz
+        res.status(201).json({ 
+            id: orderId, 
+            status: 'new', 
+            total_amount: parseFloat(savedTotalAmount) // Number formatda, lekin database'dagi qiymat bilan mos
+        });
     } catch (error) {
         await client.query('ROLLBACK');
         console.error('Error creating order:', error);
