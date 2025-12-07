@@ -290,8 +290,11 @@ function showChartTooltip(event, data, bar, chart) {
     const tooltipHeight = tooltip.offsetHeight;
     const tooltipWidth = tooltip.offsetWidth;
     
-    // Mobile'da ham tooltip'ni 3 soniyada yopish
-    scheduleTooltipHide();
+    // Tooltip ko'rsatilganda timeout'ni to'xtatish (yangi tooltip ko'rsatilganda)
+    if (tooltipHideTimeout) {
+        clearTimeout(tooltipHideTimeout);
+        tooltipHideTimeout = null;
+    }
 
     const tooltipX = barX + 2;
     const tooltipY = barY - (tooltipHeight / 2);
@@ -381,14 +384,17 @@ function setupEventListeners() {
 
     const chartContainer = document.querySelector('.chart-container');
     if (chartContainer) {
-        // Mouse leave event (desktop)
+        // Mouse leave event (desktop) - tooltip'ni 3 soniyada yopish
         chartContainer.addEventListener('mouseleave', () => {
             scheduleTooltipHide();
         });
         
         // Touch end event (mobile) - tooltip'ni 3 soniyada yopish
-        chartContainer.addEventListener('touchend', () => {
-            scheduleTooltipHide();
+        chartContainer.addEventListener('touchend', (e) => {
+            // Faqat chart container'ga touch bo'lsa
+            if (e.target.closest('.chart-container')) {
+                scheduleTooltipHide();
+            }
         });
     }
 

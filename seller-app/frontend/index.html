@@ -168,8 +168,10 @@
             // Dashboard'da back button'ni yashirish
             if (isDashboard && backButton) {
                 backButton.style.display = 'none';
+                backButton.classList.remove('show');
             } else if (backButton) {
                 // Boshqa sahifalarda back button'ni ko'rsatish
+                backButton.style.display = 'flex';
                 backButton.classList.add('show');
             }
             

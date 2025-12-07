@@ -105,11 +105,11 @@ body {
     height: 40px;
     min-width: 40px;
     min-height: 40px;
-    background: none;
+    background: none !important;
     color: var(--text-color);
     border: none;
     border-radius: 8px;
-    display: none;
+    display: none !important;
     align-items: center;
     justify-content: center;
     cursor: pointer;
@@ -119,7 +119,7 @@ body {
 }
 
 .back-button.show {
-    display: flex;
+    display: flex !important;
 }
 
 .back-button:hover {
