@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#030303">
+    <title>Seller App - Omborga kirim</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <!-- Authentication Error -->
+    <div id="auth-error" class="auth-error">
+        <h2>❌ Kirish rad etildi</h2>
+        <p>Seller App faqat admin'lar uchun.</p>
+        <p>Iltimos, Telegram bot orqali kirishga urinib ko'ring.</p>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="back-button" id="back-button" aria-label="Go back">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <div class="nav-links">
+                <a href="catalog.html" class="nav-link">Katalog</a>
+                <a href="orders.html" class="nav-link">Buyurtmalar</a>
+                <a href="inventory.html" class="nav-link">Ombor</a>
+            </div>
+            <button class="hamburger-menu" id="hamburger-menu" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobile-menu-overlay"></div>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobile-menu">
+        <a href="catalog.html" class="nav-link">Katalog</a>
+        <a href="orders.html" class="nav-link">Buyurtmalar</a>
+        <a href="inventory.html" class="nav-link">Ombor</a>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Page Title -->
+        <h1 class="page-title">Omborga kirim</h1>
+
+        <!-- Purchase Form -->
+        <form id="purchase-form" class="purchase-form">
+            <!-- Purchase Date -->
+            <div class="form-group">
+                <label for="purchase-date">Sana *</label>
+                <input type="date" id="purchase-date" class="form-input" required>
+            </div>
+
+            <!-- Products List -->
+            <div class="form-group">
+                <label>Tovarlar *</label>
+                <div class="products-list" id="products-list">
+                    <!-- Products will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="form-group">
+                <label for="purchase-notes">Izoh</label>
+                <textarea id="purchase-notes" class="form-input" rows="3" placeholder="Qo'shimcha ma'lumotlar..."></textarea>
+            </div>
+
+            <!-- Total Amount -->
+            <div class="purchase-total">
+                <div class="total-label">Jami summa:</div>
+                <div class="total-value" id="total-amount">0 so'm</div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="cancel-btn">Bekor qilish</button>
+                <button type="submit" class="btn btn-primary">Saqlash</button>
+            </div>
+        </form>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="loading-state">
+            <div class="spinner"></div>
+            <p>Yuklanmoqda...</p>
+        </div>
+    </main>
+
+    <script src="api.js"></script>
+    <script src="inventory-purchase.js"></script>
+    <script>
+        // Back button handler
+        (function() {
+            const backButton = document.getElementById('back-button');
+            if (backButton) {
+                backButton.style.display = 'flex';
+                backButton.classList.add('show');
+                backButton.addEventListener('click', () => {
+                    window.location.href = 'inventory.html';
+                });
+            }
+        })();
+
+        // Mobile menu toggle
+        (function() {
+            const hamburger = document.getElementById('hamburger-menu');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const overlay = document.getElementById('mobile-menu-overlay');
+            
+            function toggleMenu() {
+                mobileMenu.classList.toggle('open');
+                hamburger.classList.toggle('active');
+                overlay.classList.toggle('show');
+                document.body.style.overflow = mobileMenu.classList.contains('open') ? 'hidden' : '';
+            }
+            
+            if (hamburger) hamburger.addEventListener('click', toggleMenu);
+            if (overlay) overlay.addEventListener('click', toggleMenu);
+            
+            const mobileLinks = mobileMenu.querySelectorAll('.nav-link');
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.remove('open');
+                    hamburger.classList.remove('active');
+                    overlay.classList.remove('show');
+                    document.body.style.overflow = '';
+                });
+            });
+        })();
+
+        // Cancel button
+        document.getElementById('cancel-btn')?.addEventListener('click', () => {
+            if (confirm('Barcha kiritilgan ma\'lumotlar yo\'qoladi. Davom etasizmi?')) {
+                window.location.href = 'inventory.html';
+            }
+        });
+
+        // Set today's date as default
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateInput = document.getElementById('purchase-date');
+            if (dateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+            }
+        });
+
+        // Check authentication
+        document.addEventListener('DOMContentLoaded', async () => {
+            const isAdmin = await checkAdminStatus();
+            if (!isAdmin) {
+                return;
+            }
+            hideAuthError();
+        });
+    </script>
+</body>
+</html>
+

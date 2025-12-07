@@ -7,14 +7,14 @@ const rateLimit = require('express-rate-limit');
 const { initializeDatabase } = require('./utils/initDb');
 const { authenticate, isAdmin } = require('./middleware/auth');
 
-// Routes (keyinroq yaratiladi)
-// const marketplaceRoutes = require('./routes/marketplaces');
-// const priceRoutes = require('./routes/prices');
-// const purchaseRoutes = require('./routes/purchases');
-// const inventoryRoutes = require('./routes/inventory');
-// const analyticsRoutes = require('./routes/analytics');
-// const productRoutes = require('./routes/products');
-// const orderRoutes = require('./routes/orders');
+// Routes
+const marketplaceRoutes = require('./routes/marketplaces');
+const productRoutes = require('./routes/products');
+const priceRoutes = require('./routes/prices');
+const purchaseRoutes = require('./routes/purchases');
+const inventoryRoutes = require('./routes/inventory');
+const orderRoutes = require('./routes/orders');
+const analyticsRoutes = require('./routes/analytics');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -60,14 +60,14 @@ app.use('/api/', apiLimiter);
 // Static files: Seller App frontend
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// API routes (keyinroq qo'shiladi)
-// app.use('/api/seller/marketplaces', marketplaceRoutes);
-// app.use('/api/seller/prices', priceRoutes);
-// app.use('/api/seller/purchases', purchaseRoutes);
-// app.use('/api/seller/inventory', inventoryRoutes);
-// app.use('/api/seller/analytics', analyticsRoutes);
-// app.use('/api/seller/products', productRoutes);
-// app.use('/api/seller/orders', orderRoutes);
+// API routes
+app.use('/api/seller/marketplaces', authenticate, isAdmin, marketplaceRoutes);
+app.use('/api/seller/products', authenticate, isAdmin, productRoutes);
+app.use('/api/seller/prices', authenticate, isAdmin, priceRoutes);
+app.use('/api/seller/purchases', authenticate, isAdmin, purchaseRoutes);
+app.use('/api/seller/inventory', authenticate, isAdmin, inventoryRoutes);
+app.use('/api/seller/orders', authenticate, isAdmin, orderRoutes);
+app.use('/api/seller/analytics', authenticate, isAdmin, analyticsRoutes);
 
 // Admin check endpoint
 app.get('/api/seller/check-admin', authenticate, isAdmin, (req, res) => {

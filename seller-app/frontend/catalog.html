@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#030303">
+    <title>Seller App - Katalog</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <!-- Authentication Error -->
+    <div id="auth-error" class="auth-error">
+        <h2>❌ Kirish rad etildi</h2>
+        <p>Seller App faqat admin'lar uchun.</p>
+        <p>Iltimos, Telegram bot orqali kirishga urinib ko'ring.</p>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="back-button" id="back-button" aria-label="Go back">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <div class="nav-links">
+                <a href="catalog.html" class="nav-link active">Katalog</a>
+                <a href="orders.html" class="nav-link">Buyurtmalar</a>
+                <a href="inventory.html" class="nav-link">Ombor</a>
+            </div>
+            <button class="hamburger-menu" id="hamburger-menu" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobile-menu-overlay"></div>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobile-menu">
+        <a href="catalog.html" class="nav-link">Katalog</a>
+        <a href="orders.html" class="nav-link">Buyurtmalar</a>
+        <a href="inventory.html" class="nav-link">Ombor</a>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Marketplace Selector -->
+        <div class="marketplace-selector-container">
+            <button class="marketplace-selector-btn" id="marketplace-selector-btn">
+                <span id="selected-marketplace">AMAZING_STORE</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Page Title -->
+        <h1 class="page-title">Katalog</h1>
+
+        <!-- Search and Filters -->
+        <div class="catalog-controls">
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Tovarlarni qidirish..." class="search-input">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Products Table -->
+        <div class="table-container">
+            <table class="data-table" id="products-table">
+                <thead>
+                    <tr>
+                        <th>Tovar</th>
+                        <th>Tannarx</th>
+                        <th>Sotish narxi</th>
+                        <th>Komissiya</th>
+                        <th>Rentabillik</th>
+                        <th>Chizilgan narx</th>
+                        <th>Amallar</th>
+                    </tr>
+                </thead>
+                <tbody id="products-tbody">
+                    <!-- Products will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="loading-state">
+            <div class="spinner"></div>
+            <p>Yuklanmoqda...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="empty-state" style="display: none;">
+            <p>Tovarlar topilmadi</p>
+        </div>
+    </main>
+
+    <!-- Edit Price Modal -->
+    <div id="edit-price-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Narxni tahrirlash</h2>
+                <button class="modal-close" id="close-edit-modal">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-price-form">
+                    <input type="hidden" id="edit-product-id">
+                    <input type="hidden" id="edit-marketplace-id">
+                    
+                    <div class="form-group">
+                        <label for="edit-cost-price">Tannarx (so'm)</label>
+                        <input type="number" id="edit-cost-price" class="form-input" step="0.01" min="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-selling-price">Sotish narxi (so'm)</label>
+                        <input type="number" id="edit-selling-price" class="form-input" step="0.01" min="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-commission-rate">Komissiya (%)</label>
+                        <input type="number" id="edit-commission-rate" class="form-input" step="0.01" min="0" max="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-strikethrough-price">Chizilgan narx (so'm)</label>
+                        <input type="number" id="edit-strikethrough-price" class="form-input" step="0.01" min="0">
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-edit-btn">Bekor qilish</button>
+                        <button type="submit" class="btn btn-primary">Saqlash</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Marketplace Selector Modal -->
+    <div id="marketplace-modal" class="modal-overlay">
+        <div class="modal-content marketplace-modal">
+            <div class="modal-header">
+                <div class="modal-title-left">Ofis va do'konlar</div>
+                <div class="modal-title-right">
+                    <a href="marketplaces.html" class="settings-link">Sozlamalar</a>
+                    <button class="modal-close" id="modal-close">×</button>
+                </div>
+            </div>
+            <div class="marketplace-list" id="marketplace-list">
+                <!-- Marketplaces will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="api.js"></script>
+    <script src="catalog.js"></script>
+    <script>
+        // Back button handler
+        (function() {
+            const backButton = document.getElementById('back-button');
+            if (backButton) {
+                backButton.style.display = 'flex';
+                backButton.classList.add('show');
+                backButton.addEventListener('click', () => {
+                    window.location.href = 'index.html';
+                });
+            }
+        })();
+
+        // Mobile menu toggle
+        (function() {
+            const hamburger = document.getElementById('hamburger-menu');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const overlay = document.getElementById('mobile-menu-overlay');
+            
+            function toggleMenu() {
+                mobileMenu.classList.toggle('open');
+                hamburger.classList.toggle('active');
+                overlay.classList.toggle('show');
+                document.body.style.overflow = mobileMenu.classList.contains('open') ? 'hidden' : '';
+            }
+            
+            if (hamburger) hamburger.addEventListener('click', toggleMenu);
+            if (overlay) overlay.addEventListener('click', toggleMenu);
+            
+            const mobileLinks = mobileMenu.querySelectorAll('.nav-link');
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.remove('open');
+                    hamburger.classList.remove('active');
+                    overlay.classList.remove('show');
+                    document.body.style.overflow = '';
+                });
+            });
+        })();
+
+        // Check authentication
+        document.addEventListener('DOMContentLoaded', async () => {
+            const isAdmin = await checkAdminStatus();
+            if (!isAdmin) {
+                return;
+            }
+            hideAuthError();
+        });
+    </script>
+</body>
+</html>
+
