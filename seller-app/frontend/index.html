@@ -3,18 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#030303">
+    <meta name="description" content="Multi-marketplace seller management system">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Seller App">
     <title>Seller App - Dashboard</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icon-192.png">
     <link rel="stylesheet" href="style.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <!-- Authentication Check (hidden by default) -->
-    <div id="auth-error" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #fff; z-index: 10000; align-items: center; justify-content: center; flex-direction: column; padding: 20px; text-align: center;">
-        <h2 style="color: #d32f2f; margin-bottom: 20px;">❌ Kirish rad etildi</h2>
-        <p style="color: #666; margin-bottom: 20px;">Seller App faqat admin'lar uchun.</p>
-        <p style="color: #999; font-size: 14px;">Iltimos, Telegram bot orqali kirishga urinib ko'ring.</p>
+    <!-- Authentication Error -->
+    <div id="auth-error" class="auth-error">
+        <h2>❌ Kirish rad etildi</h2>
+        <p>Seller App faqat admin'lar uchun.</p>
+        <p>Iltimos, Telegram bot orqali kirishga urinib ko'ring.</p>
     </div>
+
     <!-- Top Navigation Bar -->
     <nav class="top-nav">
         <div class="nav-left">
@@ -24,16 +32,31 @@
                 <a href="orders.html" class="nav-link">Buyurtmalar</a>
                 <a href="inventory.html" class="nav-link">Ombor</a>
             </div>
+            <button class="hamburger-menu" id="hamburger-menu" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </div>
     </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobile-menu-overlay"></div>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobile-menu">
+        <a href="prices.html" class="nav-link">Narxlar</a>
+        <a href="orders.html" class="nav-link">Buyurtmalar</a>
+        <a href="inventory.html" class="nav-link">Ombor</a>
+    </div>
 
     <!-- Main Content -->
     <main class="main-content">
         <!-- Marketplace Selector -->
         <div class="marketplace-selector-container">
-            <button class="marketplace-selector-btn" onclick="openMarketplaceSelector()">
+            <button class="marketplace-selector-btn" id="marketplace-selector-btn" aria-label="Select marketplace">
                 <span id="selected-marketplace">AMAZING_STORE</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="6 9 12 15 18 9"/>
                 </svg>
             </button>
@@ -49,7 +72,7 @@
                 <div class="chart-header">
                     <h2 class="chart-title">Buyurtmalar dinamikasi</h2>
                     <div class="chart-controls">
-                        <select class="month-selector" id="month-selector">
+                        <select class="month-selector" id="month-selector" aria-label="Select month">
                             <option value="current">Dekabr</option>
                             <option value="previous">Noyabr</option>
                         </select>
@@ -57,13 +80,13 @@
                 </div>
                 <div class="chart-legend">
                     <div class="legend-item">
-                        <span class="legend-color" style="background: #FFC107;"></span>
+                        <span class="legend-color"></span>
                         <span>Buyurtmalar summasi</span>
                     </div>
                 </div>
                 <div class="chart-container">
-                    <canvas id="analytics-chart"></canvas>
-                    <div id="chart-tooltip-modal" class="chart-tooltip-modal">
+                    <canvas id="analytics-chart" aria-label="Orders analytics chart"></canvas>
+                    <div id="chart-tooltip-modal" class="chart-tooltip-modal" role="tooltip" aria-hidden="true">
                         <div class="tooltip-date" id="tooltip-date"></div>
                         <div class="tooltip-content">
                             <div class="tooltip-item">
@@ -101,28 +124,28 @@
     </main>
 
     <!-- Marketplace Selector Modal -->
-    <div id="marketplace-modal" class="modal-overlay" onclick="closeMarketplaceSelector(event)">
+    <div id="marketplace-modal" class="modal-overlay" role="dialog" aria-labelledby="modal-title" aria-hidden="true">
         <div class="modal-content marketplace-modal" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <div class="modal-title-left">Ofis va do'konlar</div>
+                <div class="modal-title-left" id="modal-title">Ofis va do'konlar</div>
                 <div class="modal-title-right">
                     <a href="marketplaces.html" class="settings-link">Sozlamalar</a>
-                    <button class="modal-close" onclick="closeMarketplaceSelector()">×</button>
+                    <button class="modal-close" id="modal-close" aria-label="Close modal">×</button>
                 </div>
             </div>
             <div class="marketplace-list">
-                <div class="marketplace-item active" onclick="selectMarketplace('amazing_store', 'AMAZING_STORE')">
+                <div class="marketplace-item active" data-marketplace-id="amazing_store" data-marketplace-name="AMAZING_STORE">
                     <div class="marketplace-name">AMAZING_STORE</div>
                     <div class="marketplace-code">202049831</div>
                 </div>
-                <div class="marketplace-item active" onclick="selectMarketplace('all', 'Barcha do\'konlar')">
+                <div class="marketplace-item active" data-marketplace-id="all" data-marketplace-name="Barcha do'konlar">
                     <div class="marketplace-name">Barcha do'konlar</div>
                 </div>
-                <div class="marketplace-item" onclick="selectMarketplace('fby', 'FBY · Amazing Store')">
+                <div class="marketplace-item" data-marketplace-id="fby" data-marketplace-name="FBY · Amazing Store">
                     <div class="marketplace-name">FBY · Amazing Store</div>
                     <div class="marketplace-code">202144267</div>
                 </div>
-                <div class="marketplace-item" onclick="selectMarketplace('fbs', 'FBS · Amazing Store FBS')">
+                <div class="marketplace-item" data-marketplace-id="fbs" data-marketplace-name="FBS · Amazing Store FBS">
                     <div class="marketplace-name">FBS · Amazing Store FBS</div>
                     <div class="marketplace-code">216531205</div>
                 </div>
@@ -130,20 +153,98 @@
         </div>
     </div>
 
-
     <script src="api.js"></script>
     <script>
+        // Mobile menu toggle
+        (function() {
+            const hamburger = document.getElementById('hamburger-menu');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const overlay = document.getElementById('mobile-menu-overlay');
+            
+            function toggleMenu() {
+                const isOpen = mobileMenu.classList.contains('open');
+                mobileMenu.classList.toggle('open');
+                hamburger.classList.toggle('active');
+                overlay.classList.toggle('show');
+                document.body.style.overflow = isOpen ? '' : 'hidden';
+            }
+            
+            function closeMenu() {
+                mobileMenu.classList.remove('open');
+                hamburger.classList.remove('active');
+                overlay.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+            
+            if (hamburger) {
+                hamburger.addEventListener('click', toggleMenu);
+            }
+            
+            if (overlay) {
+                overlay.addEventListener('click', closeMenu);
+            }
+            
+            // Close menu when clicking on a link
+            const mobileLinks = mobileMenu.querySelectorAll('.nav-link');
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', closeMenu);
+            });
+        })();
+
+        // Marketplace modal handlers
+        (function() {
+            const modal = document.getElementById('marketplace-modal');
+            const openBtn = document.getElementById('marketplace-selector-btn');
+            const closeBtn = document.getElementById('modal-close');
+            const items = modal.querySelectorAll('.marketplace-item');
+            
+            function openModal() {
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+            }
+            
+            function closeModal() {
+                modal.classList.remove('active');
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            }
+            
+            if (openBtn) {
+                openBtn.addEventListener('click', openModal);
+            }
+            
+            if (closeBtn) {
+                closeBtn.addEventListener('click', closeModal);
+            }
+            
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+            
+            items.forEach(item => {
+                item.addEventListener('click', function() {
+                    const id = this.dataset.marketplaceId;
+                    const name = this.dataset.marketplaceName;
+                    if (typeof selectMarketplace === 'function') {
+                        selectMarketplace(id, name);
+                    }
+                    closeModal();
+                });
+            });
+        })();
+
         // Check authentication FIRST, before loading app.js
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('🔐 Starting authentication check...');
             const isAdmin = await checkAdminStatus();
             if (!isAdmin) {
                 console.log('❌ Authentication failed, stopping app initialization');
-                // Error already shown by checkAdminStatus
                 return;
             }
             console.log('✅ Authentication successful, loading app...');
-            // If admin, hide error and continue with normal app initialization
             hideAuthError();
             
             // Load app.js after authentication is confirmed
@@ -151,14 +252,25 @@
             script.src = 'app.js';
             script.onload = () => {
                 console.log('✅ app.js loaded, initializing dashboard...');
-                // Ensure dashboard data is loaded after app.js is ready
                 if (typeof loadDashboardData === 'function') {
                     loadDashboardData();
                 }
             };
             document.body.appendChild(script);
         });
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker registered:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.warn('⚠️ Service Worker registration failed:', error);
+                    });
+            });
+        }
     </script>
 </body>
 </html>
-

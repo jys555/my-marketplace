@@ -1,57 +1,115 @@
-// Marketplace Selector
-let selectedMarketplace = {
-    id: 'amazing_store',
-    name: 'AMAZING_STORE'
+// ============================================
+// Chart Manager Class
+// ============================================
+class ChartManager {
+    constructor() {
+        this.chart = null;
+        this.fullDates = [];
+    }
+
+    destroy() {
+        if (this.chart) {
+            this.chart.destroy();
+            this.chart = null;
+        }
+    }
+
+    create(ctx, config) {
+        this.destroy();
+        this.chart = new Chart(ctx, config);
+        return this.chart;
+    }
+
+    getChart() {
+        return this.chart;
+    }
+}
+
+// ============================================
+// App State
+// ============================================
+const AppState = {
+    selectedMarketplace: {
+        id: 'amazing_store',
+        name: 'AMAZING_STORE'
+    },
+    chartManager: new ChartManager(),
+    isInitialized: false,
+    eventListeners: {
+        initialized: false
+    }
 };
 
+// ============================================
+// Marketplace Selector Functions
+// ============================================
 function openMarketplaceSelector() {
     const modal = document.getElementById('marketplace-modal');
-    modal.classList.add('active');
+    if (modal) {
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
 }
 
 function closeMarketplaceSelector(event) {
     if (event && event.target !== event.currentTarget) return;
     const modal = document.getElementById('marketplace-modal');
-    modal.classList.remove('active');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
 }
 
 function selectMarketplace(id, name) {
-    selectedMarketplace = { id, name };
-    document.getElementById('selected-marketplace').textContent = name;
+    AppState.selectedMarketplace = { id, name };
+    const selectedElement = document.getElementById('selected-marketplace');
+    if (selectedElement) {
+        selectedElement.textContent = name;
+    }
     closeMarketplaceSelector();
-    loadDashboardData();
+    if (typeof loadDashboardData === 'function') {
+        loadDashboardData();
+    }
 }
 
+// ============================================
 // Dashboard Data Loading
+// ============================================
 async function loadDashboardData() {
-    // Load chart data
-    loadChartData();
-    
-    // Load monthly stats
-    loadMonthlyStats();
+    try {
+        loadChartData();
+        loadMonthlyStats();
+    } catch (error) {
+        console.error('Error loading dashboard data:', error);
+    }
 }
 
+// ============================================
+// Chart Data Loading
+// ============================================
 function loadChartData() {
     const ctx = document.getElementById('analytics-chart');
-    if (!ctx) return;
-    
-    // Destroy existing chart if any
-    if (window.analyticsChart) {
-        window.analyticsChart.destroy();
+    if (!ctx) {
+        console.warn('Chart canvas not found');
+        return;
     }
-    
+
     const monthSelector = document.getElementById('month-selector');
+    if (!monthSelector) {
+        console.warn('Month selector not found');
+        return;
+    }
+
     const selectedMonth = monthSelector.value;
-    
-    // Generate daily data for the entire month
     const now = new Date();
     let year, month;
-    
+
     if (selectedMonth === 'current') {
         year = now.getFullYear();
         month = now.getMonth();
     } else {
-        // Previous month
         year = now.getFullYear();
         month = now.getMonth() - 1;
         if (month < 0) {
@@ -59,28 +117,21 @@ function loadChartData() {
             year--;
         }
     }
-    
-    // Get number of days in the month
+
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    
-    // Day names in Uzbek
     const dayNames = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
-    const monthNames = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 
-                       'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
-    
-    // Generate data for each day of the month
+    const monthNames = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
+        'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
+
     const fullDates = [];
     for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
         const dayName = dayNames[date.getDay()];
         const monthName = monthNames[month];
-        
-        // Generate random data (will be replaced with API call)
-        // More realistic data distribution
-        const ordersCount = Math.floor(Math.random() * 20) + 5; // 5-25 orders
-        // Orders sum between 300k-900k so'm (like in the image)
+
+        const ordersCount = Math.floor(Math.random() * 20) + 5;
         const ordersSum = Math.floor(Math.random() * 600000) + 300000;
-        
+
         fullDates.push({
             short: `${day}.${month + 1}`,
             full: `${day} ${monthName}, ${dayName}`,
@@ -89,22 +140,22 @@ function loadChartData() {
             ordersSum: ordersSum
         });
     }
-    
+
+    AppState.chartManager.fullDates = fullDates;
     const dates = fullDates.map(d => d.short);
     const ordersSum = fullDates.map(d => d.ordersSum);
-    
-    window.analyticsChart = new Chart(ctx, {
+
+    const isMobile = window.innerWidth <= 768;
+    const chartConfig = {
         type: 'bar',
         data: {
             labels: dates,
-            datasets: [
-                {
-                    label: 'Buyurtmalar summasi',
-                    data: ordersSum,
-                    backgroundColor: '#FFC107',
-                    yAxisID: 'y',
-                }
-            ]
+            datasets: [{
+                label: 'Buyurtmalar summasi',
+                data: ordersSum,
+                backgroundColor: '#FFC107',
+                yAxisID: 'y',
+            }]
         },
         options: {
             responsive: true,
@@ -121,16 +172,15 @@ function loadChartData() {
                     const bar = chart.getDatasetMeta(0).data[index];
                     showChartTooltip(event, data, bar, chart);
                 } else {
-                    // Don't hide immediately, use delay
                     scheduleTooltipHide();
                 }
             },
             plugins: {
                 legend: {
-                    display: false
+                    display: !isMobile
                 },
                 tooltip: {
-                    enabled: false // Disable default tooltip
+                    enabled: false
                 }
             },
             scales: {
@@ -139,12 +189,12 @@ function loadChartData() {
                         display: false
                     },
                     ticks: {
-                        maxRotation: 0,
+                        maxRotation: isMobile ? 45 : 0,
+                        minRotation: isMobile ? 45 : 0,
                         autoSkip: true,
-                        maxTicksLimit: 15, // Show approximately 15 dates
+                        maxTicksLimit: isMobile ? 10 : 15,
                         callback: function(value, index) {
-                            // Show every few days to avoid crowding
-                            const skip = Math.ceil(dates.length / 15);
+                            const skip = Math.ceil(dates.length / (isMobile ? 10 : 15));
                             if (index % skip === 0 || index === dates.length - 1) {
                                 return dates[index];
                             }
@@ -157,8 +207,8 @@ function loadChartData() {
                     position: 'left',
                     beginAtZero: true,
                     ticks: {
-                        stepSize: 200000, // 200k increments like in the image
-                        maxTicksLimit: 6, // Show 6 ticks (0, 200k, 400k, 600k, 800k, 1M)
+                        stepSize: 200000,
+                        maxTicksLimit: 6,
                         callback: function(value) {
                             if (value === 0) {
                                 return 'O so\'m';
@@ -172,95 +222,89 @@ function loadChartData() {
                     grid: {
                         color: '#f0f0f0'
                     },
-                    max: 1000000 // 1 million so'm max like in the image
+                    max: 1000000
                 }
             }
         }
-    });
-    
-    // Store full dates for tooltip
-    window.chartFullDates = fullDates;
+    };
+
+    AppState.chartManager.create(ctx, chartConfig);
 }
 
+// ============================================
+// Monthly Stats Loading
+// ============================================
 function loadMonthlyStats() {
     const monthSelector = document.getElementById('month-selector');
+    if (!monthSelector) return;
+
     const selectedMonth = monthSelector.value;
-    
-    // Mock data - will be replaced with API call
+    const revenueEl = document.getElementById('monthly-revenue');
+    const ordersEl = document.getElementById('monthly-orders');
+    const profitEl = document.getElementById('monthly-profit');
+
     if (selectedMonth === 'current') {
-        document.getElementById('monthly-revenue').textContent = '2.3 million so\'m';
-        document.getElementById('monthly-orders').textContent = '34';
-        document.getElementById('monthly-profit').textContent = '450,000 so\'m';
+        if (revenueEl) revenueEl.textContent = '2.3 million so\'m';
+        if (ordersEl) ordersEl.textContent = '34';
+        if (profitEl) profitEl.textContent = '450,000 so\'m';
     } else {
-        document.getElementById('monthly-revenue').textContent = '2.1 million so\'m';
-        document.getElementById('monthly-orders').textContent = '31';
-        document.getElementById('monthly-profit').textContent = '420,000 so\'m';
+        if (revenueEl) revenueEl.textContent = '2.1 million so\'m';
+        if (ordersEl) ordersEl.textContent = '31';
+        if (profitEl) profitEl.textContent = '420,000 so\'m';
     }
 }
 
+// ============================================
 // Chart Tooltip Functions
+// ============================================
 let tooltipHideTimeout = null;
 
 function showChartTooltip(event, data, bar, chart) {
-    // Clear any pending hide timeout
     if (tooltipHideTimeout) {
         clearTimeout(tooltipHideTimeout);
         tooltipHideTimeout = null;
     }
-    
+
     const tooltip = document.getElementById('chart-tooltip-modal');
     const chartContainer = document.querySelector('.chart-container');
-    const chartCanvas = document.getElementById('analytics-chart');
-    const chartRect = chartCanvas.getBoundingClientRect();
-    const containerRect = chartContainer.getBoundingClientRect();
-    
-    // Get chart scales to find top of chart area (where Y-axis max is)
+    if (!tooltip || !chartContainer) return;
+
     const chartArea = chart.chartArea;
-    const topY = chartArea.top; // Top of chart area (where max Y value is)
-    const bottomY = chartArea.bottom; // Bottom of chart area (where Y=0 is)
-    
-    // Get bar position
+    const topY = chartArea.top;
     const barX = bar.x;
-    const barY = bar.y; // This is the top of the bar
+    const barY = bar.y;
     const barHeight = bar.height;
-    
-    // Update tooltip content
-    document.getElementById('tooltip-date').textContent = data.full;
-    document.getElementById('tooltip-orders-count').textContent = data.ordersCount;
-    document.getElementById('tooltip-orders-sum').textContent = data.ordersSum.toLocaleString() + ' so\'m';
-    
-    // Make tooltip visible first to get accurate height
+
+    const dateEl = document.getElementById('tooltip-date');
+    const countEl = document.getElementById('tooltip-orders-count');
+    const sumEl = document.getElementById('tooltip-orders-sum');
+
+    if (dateEl) dateEl.textContent = data.full;
+    if (countEl) countEl.textContent = data.ordersCount;
+    if (sumEl) sumEl.textContent = data.ordersSum.toLocaleString() + ' so\'m';
+
     tooltip.style.display = 'block';
-    const tooltipHeight = tooltip.offsetHeight; // Get actual height
-    const tooltipWidth = tooltip.offsetWidth; // Get actual width
-    
-    // Position tooltip on the right side of the bar
-    // Tooltip's half height should be at the top of the bar (barY)
-    const tooltipX = barX + 2; // Right side of the bar, 2px from vertical line
-    const tooltipY = barY - (tooltipHeight / 2); // Tooltip's half height at bar top
-    
-    // Set tooltip position - always relative to bar, never adjust for container bounds
+    tooltip.classList.add('show');
+    const tooltipHeight = tooltip.offsetHeight;
+    const tooltipWidth = tooltip.offsetWidth;
+
+    const tooltipX = barX + 2;
+    const tooltipY = barY - (tooltipHeight / 2);
+
     tooltip.style.left = tooltipX + 'px';
     tooltip.style.top = tooltipY + 'px';
-    
-    // Show vertical line from top of chart area (topY) to bottom of bar (barBottom)
+
     const barBottom = barY + barHeight;
     const lineHeight = barBottom - topY;
     showVerticalLine(barX, topY, lineHeight, chartContainer);
-    
-    // Check if tooltip goes outside right edge, if so show on left side
-    // But keep vertical position fixed (barY - tooltipHeight/2)
+
     const tooltipRect = tooltip.getBoundingClientRect();
+    const containerRect = chartContainer.getBoundingClientRect();
     if (tooltipRect.right > containerRect.right) {
         tooltip.style.left = (barX - tooltipWidth - 2) + 'px';
     }
-    
-    // IMPORTANT: Tooltip vertical position is ALWAYS FIXED at barY - tooltipHeight/2
-    // Never adjust it, even if it goes outside container bounds
-    // This ensures tooltip's half height is always exactly at bar top
-    // Re-apply the position to ensure it's correct
+
     tooltip.style.top = (barY - tooltipHeight / 2) + 'px';
-    // If it would go outside, adjust horizontally but keep at top
 }
 
 function showVerticalLine(x, startY, height, container) {
@@ -271,27 +315,25 @@ function showVerticalLine(x, startY, height, container) {
         line.className = 'chart-vertical-line';
         container.appendChild(line);
     }
-    // Position line at bar X position, starting from top of chart area
     line.style.left = x + 'px';
     line.style.top = startY + 'px';
     line.style.height = height + 'px';
     line.style.display = 'block';
+    line.classList.add('show');
 }
 
 function hideVerticalLine() {
     const line = document.getElementById('chart-vertical-line');
     if (line) {
         line.style.display = 'none';
+        line.classList.remove('show');
     }
 }
 
 function scheduleTooltipHide() {
-    // Clear existing timeout
     if (tooltipHideTimeout) {
         clearTimeout(tooltipHideTimeout);
     }
-    
-    // Schedule hide after 3-4 seconds
     tooltipHideTimeout = setTimeout(() => {
         hideChartTooltip();
     }, 3000);
@@ -299,54 +341,81 @@ function scheduleTooltipHide() {
 
 function hideChartTooltip() {
     const tooltip = document.getElementById('chart-tooltip-modal');
-    tooltip.style.display = 'none';
+    if (tooltip) {
+        tooltip.style.display = 'none';
+        tooltip.classList.remove('show');
+    }
     hideVerticalLine();
-    
+
     if (tooltipHideTimeout) {
         clearTimeout(tooltipHideTimeout);
         tooltipHideTimeout = null;
     }
 }
 
-// Initialize on page load (only if not already initialized)
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeApp);
-} else {
-    // DOM already loaded
-    initializeApp();
-}
-
-function initializeApp() {
-    console.log('📊 Initializing Seller App dashboard...');
-    
-    // Load dashboard data
-    if (typeof loadDashboardData === 'function') {
-        loadDashboardData();
-    } else {
-        console.warn('⚠️ loadDashboardData function not found');
+// ============================================
+// Event Listeners Setup
+// ============================================
+function setupEventListeners() {
+    if (AppState.eventListeners.initialized) {
+        return;
     }
-    
-    // Month selector change
+    AppState.eventListeners.initialized = true;
+
     const monthSelector = document.getElementById('month-selector');
     if (monthSelector) {
-        monthSelector.addEventListener('change', (e) => {
-            if (typeof loadChartData === 'function') {
-                loadChartData();
-            }
-            if (typeof loadMonthlyStats === 'function') {
-                loadMonthlyStats();
-            }
+        monthSelector.addEventListener('change', () => {
+            loadChartData();
+            loadMonthlyStats();
         });
     }
-    
-    // Hide tooltip when mouse leaves chart (with delay)
+
     const chartContainer = document.querySelector('.chart-container');
     if (chartContainer) {
         chartContainer.addEventListener('mouseleave', () => {
-            if (typeof scheduleTooltipHide === 'function') {
-                scheduleTooltipHide();
-            }
+            scheduleTooltipHide();
         });
     }
+
+    window.addEventListener('resize', () => {
+        const chart = AppState.chartManager.getChart();
+        if (chart) {
+            chart.resize();
+        }
+    });
 }
 
+// ============================================
+// App Initialization
+// ============================================
+function initializeApp() {
+    if (AppState.isInitialized) {
+        console.warn('⚠️ App already initialized');
+        return;
+    }
+
+    console.log('📊 Initializing Seller App dashboard...');
+    AppState.isInitialized = true;
+
+    setupEventListeners();
+    loadDashboardData();
+}
+
+// ============================================
+// Auto-initialize when DOM is ready
+// ============================================
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    initializeApp();
+}
+
+// ============================================
+// Export functions for global access
+// ============================================
+window.openMarketplaceSelector = openMarketplaceSelector;
+window.closeMarketplaceSelector = closeMarketplaceSelector;
+window.selectMarketplace = selectMarketplace;
+window.loadDashboardData = loadDashboardData;
+window.loadChartData = loadChartData;
+window.loadMonthlyStats = loadMonthlyStats;

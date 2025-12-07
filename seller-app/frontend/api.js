@@ -83,7 +83,7 @@ async function apiRequest(endpoint, options = {}) {
 function showAuthError() {
     const authError = document.getElementById('auth-error');
     if (authError) {
-        authError.style.display = 'flex';
+        authError.classList.add('show');
     }
     // Hide main content
     const mainContent = document.querySelector('main');
@@ -101,7 +101,7 @@ function showAuthError() {
 function hideAuthError() {
     const authError = document.getElementById('auth-error');
     if (authError) {
-        authError.style.display = 'none';
+        authError.classList.remove('show');
     }
     // Show main content
     const mainContent = document.querySelector('main');
