@@ -1,7 +1,7 @@
 // Service Worker for Seller App
-// Version: 1.0.0
+// Version: 1.0.1
 
-const CACHE_NAME = 'seller-app-v1';
+const CACHE_NAME = 'seller-app-v1.0.1';
 const urlsToCache = [
     '/',
     '/index.html',
