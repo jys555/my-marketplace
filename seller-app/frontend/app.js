@@ -261,6 +261,7 @@ function loadMonthlyStats() {
 let tooltipHideTimeout = null;
 
 function showChartTooltip(event, data, bar, chart) {
+    // Clear any pending hide timeout
     if (tooltipHideTimeout) {
         clearTimeout(tooltipHideTimeout);
         tooltipHideTimeout = null;
@@ -288,6 +289,9 @@ function showChartTooltip(event, data, bar, chart) {
     tooltip.classList.add('show');
     const tooltipHeight = tooltip.offsetHeight;
     const tooltipWidth = tooltip.offsetWidth;
+    
+    // Mobile'da ham tooltip'ni 3 soniyada yopish
+    scheduleTooltipHide();
 
     const tooltipX = barX + 2;
     const tooltipY = barY - (tooltipHeight / 2);
