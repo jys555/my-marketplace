@@ -164,12 +164,32 @@
             const backButton = document.getElementById('back-button');
             
             function handleBack() {
-                // Agar history'da sahifa bo'lsa, orqaga qaytish
-                if (window.history.length > 1) {
-                    window.history.back();
+                // Telegram Web App kontekstida bot'ga qaytish
+                if (window.Telegram?.WebApp) {
+                    const tg = window.Telegram.WebApp;
+                    if (tg.BackButton && tg.BackButton.isVisible) {
+                        // Telegram BackButton API'dan foydalanish
+                        tg.BackButton.onClick(() => {
+                            tg.close();
+                        });
+                        tg.BackButton.show();
+                    } else {
+                        // Agar BackButton API mavjud bo'lmasa, history.back() ishlatish
+                        if (window.history.length > 1) {
+                            window.history.back();
+                        } else {
+                            // Agar history'da sahifa bo'lmasa, bot'ga qaytish
+                            tg.close();
+                        }
+                    }
                 } else {
-                    // Agar history'da sahifa bo'lmasa, bosh sahifaga qaytish
-                    window.location.href = '/';
+                    // Oddiy browser'da history.back() ishlatish
+                    if (window.history.length > 1) {
+                        window.history.back();
+                    } else {
+                        // Agar history'da sahifa bo'lmasa, bosh sahifaga qaytish
+                        window.location.href = '/';
+                    }
                 }
             }
             
