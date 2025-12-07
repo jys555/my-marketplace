@@ -49,6 +49,21 @@
 
     <!-- Main Content -->
     <main class="main-content">
+        <!-- Page Header -->
+        <div class="catalog-header">
+            <h1 class="catalog-page-title">Katalog</h1>
+            <div class="catalog-header-actions">
+                <button class="btn-upload-products" id="upload-products-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Tovarlarni yuklash
+                </button>
+            </div>
+        </div>
+
         <!-- Marketplace Selector -->
         <div class="marketplace-selector-container">
             <button class="marketplace-selector-btn" id="marketplace-selector-btn">
@@ -59,10 +74,7 @@
             </button>
         </div>
 
-        <!-- Page Title -->
-        <h1 class="page-title">Katalog</h1>
-
-        <!-- Search and Filters -->
+        <!-- Search -->
         <div class="catalog-controls">
             <div class="search-box">
                 <input type="text" id="search-input" placeholder="Tovarlarni qidirish..." class="search-input">
@@ -73,24 +85,9 @@
             </div>
         </div>
 
-        <!-- Products Table -->
-        <div class="table-container">
-            <table class="data-table" id="products-table">
-                <thead>
-                    <tr>
-                        <th>Tovar</th>
-                        <th>Tannarx</th>
-                        <th>Sotish narxi</th>
-                        <th>Komissiya</th>
-                        <th>Rentabillik</th>
-                        <th>Chizilgan narx</th>
-                        <th>Amallar</th>
-                    </tr>
-                </thead>
-                <tbody id="products-tbody">
-                    <!-- Products will be loaded here -->
-                </tbody>
-            </table>
+        <!-- Products List -->
+        <div class="products-list-container" id="products-list-container">
+            <!-- Products will be loaded here -->
         </div>
 
         <!-- Loading State -->
@@ -124,17 +121,17 @@
 
                     <div class="form-group">
                         <label for="edit-selling-price">Sotish narxi (so'm)</label>
-                        <input type="number" id="edit-selling-price" class="form-input" step="0.01" min="0">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="edit-commission-rate">Komissiya (%)</label>
-                        <input type="number" id="edit-commission-rate" class="form-input" step="0.01" min="0" max="100">
+                        <input type="number" id="edit-selling-price" class="form-input" step="0.01" min="0" required>
                     </div>
 
                     <div class="form-group">
                         <label for="edit-strikethrough-price">Chizilgan narx (so'm)</label>
                         <input type="number" id="edit-strikethrough-price" class="form-input" step="0.01" min="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-commission-rate">Komissiya (%)</label>
+                        <input type="number" id="edit-commission-rate" class="form-input" step="0.01" min="0" max="100">
                     </div>
 
                     <div class="form-actions">
@@ -204,6 +201,12 @@
             });
         })();
 
+        // Upload products button
+        document.getElementById('upload-products-btn')?.addEventListener('click', () => {
+            // TODO: Implement product upload functionality
+            alert('Tovarlarni yuklash funksiyasi keyinroq qo\'shiladi');
+        });
+
         // Check authentication
         document.addEventListener('DOMContentLoaded', async () => {
             const isAdmin = await checkAdminStatus();
@@ -215,4 +218,3 @@
     </script>
 </body>
 </html>
-

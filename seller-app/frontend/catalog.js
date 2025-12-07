@@ -3,6 +3,7 @@ let currentMarketplaceId = null;
 let currentMarketplaceName = 'AMAZING_STORE';
 let products = [];
 let prices = [];
+let inventory = [];
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -25,9 +26,7 @@ async function loadMarketplaces() {
         allItem.className = 'marketplace-item active';
         allItem.dataset.marketplaceId = 'all';
         allItem.dataset.marketplaceName = "Barcha do'konlar";
-        allItem.innerHTML = `
-            <div class="marketplace-name">Barcha do'konlar</div>
-        `;
+        allItem.innerHTML = `<div class="marketplace-name">Barcha do'konlar</div>`;
         allItem.addEventListener('click', () => selectMarketplace('all', "Barcha do'konlar"));
         marketplaceList.appendChild(allItem);
 
@@ -60,7 +59,6 @@ function selectMarketplace(id, name) {
     document.getElementById('selected-marketplace').textContent = name;
     document.getElementById('marketplace-modal').classList.remove('active');
     
-    // Update active state
     document.querySelectorAll('.marketplace-item').forEach(item => {
         item.classList.remove('active');
         if (item.dataset.marketplaceName === name) {
@@ -73,16 +71,15 @@ function selectMarketplace(id, name) {
 
 // Load Products
 async function loadProducts() {
-    const tbody = document.getElementById('products-tbody');
+    const container = document.getElementById('products-list-container');
     const loadingState = document.getElementById('loading-state');
     const emptyState = document.getElementById('empty-state');
-    const table = document.getElementById('products-table');
 
-    if (!tbody) return;
+    if (!container) return;
 
     try {
         loadingState.style.display = 'flex';
-        table.style.display = 'none';
+        container.style.display = 'none';
         emptyState.style.display = 'none';
 
         // Load products
@@ -92,37 +89,31 @@ async function loadProducts() {
         const pricesParams = currentMarketplaceId ? `?marketplace_id=${currentMarketplaceId}` : '';
         prices = await apiRequest(`/prices${pricesParams}`);
 
-        // Combine products with prices
-        const productsWithPrices = products.map(product => {
-            const price = prices.find(p => p.product_id === product.id);
-            return {
-                ...product,
-                price_data: price || null
-            };
-        });
+        // Load inventory
+        inventory = await apiRequest('/inventory');
 
         // Filter by search
         const searchTerm = document.getElementById('search-input')?.value.toLowerCase() || '';
-        const filteredProducts = productsWithPrices.filter(p => {
+        const filteredProducts = products.filter(p => {
             const name = (p.name_uz || p.name_ru || '').toLowerCase();
             return name.includes(searchTerm);
         });
 
-        // Render
-        tbody.innerHTML = '';
         if (filteredProducts.length === 0) {
             loadingState.style.display = 'none';
             emptyState.style.display = 'block';
             return;
         }
 
+        // Render products
+        container.innerHTML = '';
         filteredProducts.forEach(product => {
-            const row = createProductRow(product);
-            tbody.appendChild(row);
+            const productCard = createProductCard(product);
+            container.appendChild(productCard);
         });
 
         loadingState.style.display = 'none';
-        table.style.display = 'table';
+        container.style.display = 'block';
     } catch (error) {
         console.error('Error loading products:', error);
         loadingState.style.display = 'none';
@@ -130,79 +121,139 @@ async function loadProducts() {
     }
 }
 
-// Create Product Row
-function createProductRow(product) {
-    const row = document.createElement('tr');
-    const priceData = product.price_data;
-
-    row.innerHTML = `
-        <td>
-            <div class="product-info">
-                ${product.image_url ? `<img src="${product.image_url}" alt="${product.name_uz}" class="product-image">` : ''}
-                <div>
-                    <div class="product-name">${product.name_uz || product.name_ru || 'Nomsiz'}</div>
-                    ${product.category_name_uz ? `<div class="product-category">${product.category_name_uz}</div>` : ''}
+// Create Product Card
+function createProductCard(product) {
+    const card = document.createElement('div');
+    card.className = 'product-card';
+    
+    const priceData = prices.find(p => p.product_id === product.id);
+    const invData = inventory.find(i => i.product_id === product.id);
+    
+    const quantity = invData?.quantity || 0;
+    const costPrice = priceData?.cost_price || null;
+    const sellingPrice = priceData?.selling_price || null;
+    const strikethroughPrice = priceData?.strikethrough_price || null;
+    const commissionRate = priceData?.commission_rate || null;
+    const profitability = priceData?.profitability || null;
+    
+    // Calculate discount percentage
+    let discountPercent = null;
+    if (strikethroughPrice && sellingPrice) {
+        discountPercent = Math.round(((strikethroughPrice - sellingPrice) / strikethroughPrice) * 100);
+    }
+    
+    // Calculate commission amount
+    let commissionAmount = null;
+    if (sellingPrice && commissionRate) {
+        commissionAmount = (sellingPrice * commissionRate) / 100;
+    }
+    
+    // Determine product status based on quantity
+    const isActive = quantity > 0;
+    
+    card.innerHTML = `
+        <div class="product-card-image">
+            ${product.image_url ? `<img src="${product.image_url}" alt="${product.name_uz}" class="product-image-large">` : 
+              `<div class="product-image-placeholder">Rasm yo'q</div>`}
+        </div>
+        <div class="product-card-content">
+            <div class="product-card-name">${product.name_uz || product.name_ru || 'Nomsiz'}</div>
+            
+            <div class="product-card-details">
+                <div class="product-detail-row">
+                    <span class="detail-label">Qoldiq:</span>
+                    <input type="number" 
+                           class="product-quantity-input" 
+                           data-product-id="${product.id}"
+                           value="${quantity}" 
+                           min="0"
+                           onchange="updateProductQuantity(${product.id}, this.value)">
+                    <span class="product-status ${isActive ? 'active' : 'inactive'}">
+                        ${isActive ? 'Active' : 'Noactive'}
+                    </span>
+                </div>
+                
+                <div class="product-detail-row">
+                    <span class="detail-label">Tannarx:</span>
+                    <span class="detail-value">${costPrice ? formatPrice(costPrice) : '-'}</span>
+                </div>
+                
+                <div class="product-detail-row price-row">
+                    <span class="detail-label">Sotish narxi:</span>
+                    <div class="price-container">
+                        <span class="selling-price" onclick="openEditPriceModal(${product.id})">
+                            ${sellingPrice ? formatPrice(sellingPrice) : '-'}
+                        </span>
+                        ${strikethroughPrice ? `
+                            <div class="strikethrough-price-container">
+                                <span class="strikethrough-price">${formatPrice(strikethroughPrice)}</span>
+                                ${discountPercent ? `<span class="discount-percent">-${discountPercent}%</span>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <div class="product-detail-row">
+                    <span class="detail-label">Xizmatlar narxi:</span>
+                    <div class="service-price-container">
+                        ${commissionRate ? `<span class="commission-rate">${commissionRate}%</span>` : ''}
+                        ${commissionAmount ? `<span class="commission-amount">${formatPrice(commissionAmount)}</span>` : '-'}
+                    </div>
+                </div>
+                
+                <div class="product-detail-row">
+                    <span class="detail-label">Rentabillik:</span>
+                    <span class="profitability ${profitability >= 0 ? 'positive' : 'negative'}">
+                        ${profitability !== null && profitability !== undefined ? formatPrice(profitability) : '-'}
+                    </span>
                 </div>
             </div>
-        </td>
-        <td>
-            <span class="editable-field" data-field="cost_price" data-product-id="${product.id}">
-                ${priceData?.cost_price ? formatPrice(priceData.cost_price) : '-'}
-            </span>
-        </td>
-        <td>
-            <span class="editable-field" data-field="selling_price" data-product-id="${product.id}">
-                ${priceData?.selling_price ? formatPrice(priceData.selling_price) : '-'}
-            </span>
-        </td>
-        <td>
-            <span class="editable-field" data-field="commission_rate" data-product-id="${product.id}">
-                ${priceData?.commission_rate ? `${priceData.commission_rate}%` : '-'}
-            </span>
-        </td>
-        <td>
-            <span class="profitability ${priceData?.profitability >= 0 ? 'positive' : 'negative'}">
-                ${priceData?.profitability !== null && priceData?.profitability !== undefined ? formatPrice(priceData.profitability) : '-'}
-            </span>
-        </td>
-        <td>
-            <span class="editable-field" data-field="strikethrough_price" data-product-id="${product.id}">
-                ${priceData?.strikethrough_price ? formatPrice(priceData.strikethrough_price) : '-'}
-            </span>
-        </td>
-        <td>
-            <button class="btn-icon edit-price-btn" data-product-id="${product.id}" title="Tahrirlash">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-            </button>
-        </td>
+        </div>
     `;
 
-    // Edit button click
-    const editBtn = row.querySelector('.edit-price-btn');
-    editBtn.addEventListener('click', () => openEditModal(product, priceData));
-
-    return row;
+    return card;
 }
 
-// Format Price
-function formatPrice(price) {
-    return new Intl.NumberFormat('uz-UZ').format(parseFloat(price)) + ' so\'m';
+// Update Product Quantity
+async function updateProductQuantity(productId, quantity) {
+    const qty = parseInt(quantity) || 0;
+    
+    try {
+        // Update inventory
+        await apiRequest(`/inventory/${productId}/adjust`, {
+            method: 'PUT',
+            body: JSON.stringify({ 
+                quantity: qty,
+                notes: 'Qoldiq yangilandi'
+            })
+        });
+
+        // Update product status in Amazing Store based on quantity
+        // If quantity > 0, product should be active, else inactive
+        // This will be handled by backend when we update inventory
+        
+        // Reload products to reflect changes
+        await loadProducts();
+    } catch (error) {
+        console.error('Error updating product quantity:', error);
+        alert('Xatolik yuz berdi. Iltimos, qayta urinib ko\'ring.');
+        // Reload to reset input
+        await loadProducts();
+    }
 }
 
-// Open Edit Modal
-function openEditModal(product, priceData) {
+// Open Edit Price Modal
+function openEditPriceModal(productId) {
+    const product = products.find(p => p.id === productId);
+    const priceData = prices.find(p => p.product_id === productId);
     const modal = document.getElementById('edit-price-modal');
-    const form = document.getElementById('edit-price-form');
 
-    document.getElementById('edit-product-id').value = product.id;
+    document.getElementById('edit-product-id').value = productId;
     document.getElementById('edit-marketplace-id').value = currentMarketplaceId || '';
     document.getElementById('edit-cost-price').value = priceData?.cost_price || '';
     document.getElementById('edit-selling-price').value = priceData?.selling_price || '';
-    document.getElementById('edit-commission-rate').value = priceData?.commission_rate || '';
     document.getElementById('edit-strikethrough-price').value = priceData?.strikethrough_price || '';
+    document.getElementById('edit-commission-rate').value = priceData?.commission_rate || '';
 
     modal.classList.add('active');
 }
@@ -210,6 +261,11 @@ function openEditModal(product, priceData) {
 // Close Edit Modal
 function closeEditModal() {
     document.getElementById('edit-price-modal').classList.remove('active');
+}
+
+// Format Price
+function formatPrice(price) {
+    return new Intl.NumberFormat('uz-UZ').format(parseFloat(price || 0)) + ' so\'m';
 }
 
 // Setup Event Listeners
@@ -267,7 +323,6 @@ function setupEventListeners() {
 
 // Save Price
 async function savePrice() {
-    const form = document.getElementById('edit-price-form');
     const productId = document.getElementById('edit-product-id').value;
     const marketplaceId = document.getElementById('edit-marketplace-id').value || null;
 
@@ -281,10 +336,22 @@ async function savePrice() {
     };
 
     try {
+        // Save price
         await apiRequest('/prices', {
             method: 'POST',
             body: JSON.stringify(priceData)
         });
+
+        // Update product in Amazing Store if marketplace is Amazing Store
+        if (!marketplaceId || currentMarketplaceName === 'AMAZING_STORE') {
+            await apiRequest(`/products/${productId}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    price: priceData.strikethrough_price || priceData.selling_price,
+                    sale_price: priceData.selling_price
+                })
+            });
+        }
 
         closeEditModal();
         await loadProducts();
@@ -296,4 +363,5 @@ async function savePrice() {
 
 // Export for global access
 window.selectMarketplace = selectMarketplace;
-
+window.updateProductQuantity = updateProductQuantity;
+window.openEditPriceModal = openEditPriceModal;

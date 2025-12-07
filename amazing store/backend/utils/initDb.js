@@ -33,10 +33,27 @@ async function initializeDatabase() {
                 price NUMERIC(10,2) NOT NULL,
                 sale_price NUMERIC(10,2),
                 image_url TEXT,
+                is_active BOOLEAN DEFAULT TRUE,
                 created_at TIMESTAMP DEFAULT NOW()
             )
         `);
         console.log('✅ Products table created/verified');
+        
+        // Products jadvaliga is_active ustunini qo'shish (agar yo'q bo'lsa)
+        await pool.query(`
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='products' AND column_name='is_active'
+                ) THEN
+                    ALTER TABLE products
+                    ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
+                    RAISE NOTICE 'Products.is_active column added';
+                END IF;
+            END $$;
+        `);
+        console.log('✅ Products.is_active column added/verified');
 
         // 2. Kategoriyalar jadvali yaratish
         await pool.query(`

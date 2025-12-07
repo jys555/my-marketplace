@@ -97,6 +97,15 @@ router.put('/:product_id/adjust', async (req, res) => {
             VALUES ($1, 'adjustment', $2, $3, $4, $5)
         `, [product_id, quantityChange, quantityBefore, quantity, notes || 'Manual adjustment']);
 
+        // Product status'ni yangilash (Amazing Store'da)
+        // Agar qoldiq > 0 bo'lsa, product active bo'ladi
+        // Agar qoldiq = 0 bo'lsa, product noactive bo'ladi
+        await client.query(`
+            UPDATE products
+            SET is_active = $1
+            WHERE id = $2
+        `, [quantity > 0, product_id]);
+
         await client.query('COMMIT');
         res.json(rows[0]);
     } catch (error) {
