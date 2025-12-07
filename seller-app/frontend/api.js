@@ -10,11 +10,8 @@ if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
     isTelegramContext = true;
     tg.ready();
     
-    // Fullscreen rejimini yoqish
-    tg.expand();
-    if (tg.requestFullscreen) {
-        tg.requestFullscreen();
-    }
+    // Mobile'da fullsize rejimida qoladi (bot lentalari ko'rinib turadi)
+    // tg.expand() chaqirilmaydi, chunki bu fullscreen rejimini yoqadi
     
     // Viewport sozlamalari
     if (tg.setHeaderColor) {
@@ -30,7 +27,7 @@ if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
     // Yopishdan oldin tasdiqlash
     tg.enableClosingConfirmation();
     
-    console.log('✅ Telegram Web App initialized in fullscreen mode');
+    console.log('✅ Telegram Web App initialized in fullsize mode (bot lentalari ko\'rinib turadi)');
 }
 
 // Get Telegram auth data
