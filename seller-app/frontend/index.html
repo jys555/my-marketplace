@@ -159,9 +159,19 @@
 
     <script src="api.js"></script>
     <script>
-        // Back button handler
+        // Back button handler - faqat dashboard'da emas, boshqa sahifalarda ko'rinadi
         (function() {
             const backButton = document.getElementById('back-button');
+            const currentPage = window.location.pathname;
+            const isDashboard = currentPage === '/' || currentPage === '/index.html' || currentPage.endsWith('/');
+            
+            // Dashboard'da back button'ni yashirish
+            if (isDashboard && backButton) {
+                backButton.style.display = 'none';
+            } else if (backButton) {
+                // Boshqa sahifalarda back button'ni ko'rsatish
+                backButton.classList.add('show');
+            }
             
             function handleBack() {
                 // Telegram Web App kontekstida bot'ga qaytish

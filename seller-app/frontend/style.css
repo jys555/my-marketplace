@@ -105,11 +105,11 @@ body {
     height: 40px;
     min-width: 40px;
     min-height: 40px;
-    background: var(--primary-gradient);
-    color: white;
+    background: none;
+    color: var(--text-color);
     border: none;
     border-radius: 8px;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     cursor: pointer;
@@ -118,19 +118,24 @@ body {
     padding: 0;
 }
 
+.back-button.show {
+    display: flex;
+}
+
 .back-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    background: #f0f0f0;
 }
 
 .back-button:active {
+    background: #e0e0e0;
     transform: scale(0.95);
 }
 
 .back-button svg {
-    width: 20px;
-    height: 20px;
-    stroke: white;
+    width: 24px;
+    height: 24px;
+    stroke: var(--text-color);
+    stroke-width: 2;
 }
 
 .nav-links {

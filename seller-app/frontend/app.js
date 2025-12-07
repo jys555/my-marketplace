@@ -172,6 +172,7 @@ function loadChartData() {
                     const bar = chart.getDatasetMeta(0).data[index];
                     showChartTooltip(event, data, bar, chart);
                 } else {
+                    // Mobile'da ham tooltip'ni 3 soniyada yopish
                     scheduleTooltipHide();
                 }
             },
@@ -331,9 +332,13 @@ function hideVerticalLine() {
 }
 
 function scheduleTooltipHide() {
+    // Clear existing timeout
     if (tooltipHideTimeout) {
         clearTimeout(tooltipHideTimeout);
+        tooltipHideTimeout = null;
     }
+    
+    // Schedule hide after 3 seconds (both mobile and desktop)
     tooltipHideTimeout = setTimeout(() => {
         hideChartTooltip();
     }, 3000);
@@ -372,7 +377,13 @@ function setupEventListeners() {
 
     const chartContainer = document.querySelector('.chart-container');
     if (chartContainer) {
+        // Mouse leave event (desktop)
         chartContainer.addEventListener('mouseleave', () => {
+            scheduleTooltipHide();
+        });
+        
+        // Touch end event (mobile) - tooltip'ni 3 soniyada yopish
+        chartContainer.addEventListener('touchend', () => {
             scheduleTooltipHide();
         });
     }
