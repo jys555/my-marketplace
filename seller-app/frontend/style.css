@@ -870,113 +870,83 @@ body {
 /* Products Table Container */
 .products-table-container {
     background: white;
-    border-radius: 0;
-    box-shadow: none;
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
     overflow-x: auto;
     margin-top: 24px;
     width: 100%;
-    border: 1px solid #e0e0e0;
 }
 
 .products-table {
     width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
+    border-collapse: collapse;
     font-size: 14px;
 }
 
 .products-table thead {
-    background: #fafafa;
-    border-bottom: 1px solid #e0e0e0;
+    background: #f8f9fa;
+    border-bottom: 2px solid var(--border-color);
 }
 
 .products-table th {
-    padding: 14px 16px;
+    padding: 12px 16px;
     text-align: left;
     font-weight: 600;
-    color: #666;
-    font-size: 12px;
+    color: var(--text-secondary);
+    font-size: 13px;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.5px;
     white-space: nowrap;
-    border-right: 1px solid #e0e0e0;
-}
-
-.products-table th:last-child {
-    border-right: none;
 }
 
 .products-table td {
     padding: 16px;
-    border-bottom: 1px solid #e0e0e0;
-    border-right: 1px solid #e0e0e0;
+    border-bottom: 1px solid #f0f0f0;
     vertical-align: middle;
-    background: white;
-}
-
-.products-table td:last-child {
-    border-right: none;
-}
-
-.products-table tbody tr {
-    border-bottom: 1px solid #e0e0e0;
-    transition: background-color 0.15s ease;
 }
 
 .products-table tbody tr:hover {
-    background: #f5f5f5;
+    background: #f8f9fa;
 }
 
 .products-table tbody tr:last-child td {
     border-bottom: none;
 }
 
-.products-table tbody tr:last-child {
-    border-bottom: none;
-}
-
 /* Table Columns */
 .checkbox-col {
-    width: 60px;
+    width: 50px;
     text-align: center;
-    padding: 16px 12px !important;
 }
 
 .product-col {
-    min-width: 350px;
-    width: auto;
-    max-width: none;
+    min-width: 300px;
+    width: 35%;
 }
 
 .warehouse-col {
-    width: 160px;
-    min-width: 160px;
+    width: 140px;
 }
 
 .cost-col {
-    width: 130px;
-    min-width: 130px;
+    width: 120px;
 }
 
 .price-col {
-    min-width: 180px;
-    width: auto;
+    min-width: 150px;
 }
 
 .service-col {
-    min-width: 160px;
-    width: auto;
-}
-
-.profitability-col {
-    width: 140px;
     min-width: 140px;
 }
 
+.profitability-col {
+    width: 120px;
+}
+
 .actions-col {
-    width: 60px;
+    width: 50px;
     text-align: center;
-    padding: 16px 12px !important;
 }
 
 /* Checkbox */
@@ -997,8 +967,8 @@ body {
 
 .product-image-small {
     flex-shrink: 0;
-    width: 70px;
-    height: 70px;
+    width: 60px;
+    height: 60px;
 }
 
 .product-img {
