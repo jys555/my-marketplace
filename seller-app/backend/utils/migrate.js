@@ -42,27 +42,36 @@ function createInlineRunner() {
                 // Railway'da working directory har xil bo'lishi mumkin
                 const possibleMigrationDirs = [
                     // 1. Centralized migrations (monorepo root) - asosiy path
+                    // seller-app/backend/utils/migrate.js -> ../../../database/migrations
                     path.join(__dirname, '../../../database/migrations'),
                     path.join(__dirname, '../../../../database/migrations'),
                     path.join(__dirname, '../../../../../database/migrations'),
                     path.join(__dirname, '../../../../../../database/migrations'),
                     // 2. process.cwd() orqali (Railway'da working directory)
+                    // Railway'da working directory: /app (seller-app/backend)
+                    // Monorepo root: /app/../.. (agar Railway root directory = monorepo root bo'lsa)
                     path.join(process.cwd(), '../../database/migrations'),
                     path.join(process.cwd(), '../../../database/migrations'),
                     path.join(process.cwd(), '../../../../database/migrations'),
-                    // 3. Local migrations (fallback, agar copy qilingan bo'lsa)
+                    // 3. Absolute path (Railway'da /app/database/migrations)
+                    '/app/database/migrations',
+                    '/app/../database/migrations',
+                    // 4. Local migrations (fallback, agar copy qilingan bo'lsa)
                     path.join(__dirname, '../migrations/centralized'),
                     path.join(__dirname, '../migrations'),
                 ];
                 
                 let migrationsDir = null;
+                let maxFiles = 0;
                 for (const dir of possibleMigrationDirs) {
                     if (fs.existsSync(dir)) {
                         const files = fs.readdirSync(dir).filter(f => f.endsWith('.sql'));
-                        if (files.length > 0) {
+                        // Eng ko'p migration fayllari bo'lgan papkani tanlash
+                        // Bu markazlashtirilgan database/migrations papkasini topish uchun
+                        if (files.length > maxFiles) {
+                            maxFiles = files.length;
                             migrationsDir = dir;
                             console.log(`📁 Found migrations directory: ${migrationsDir} (${files.length} files)`);
-                            break;
                         }
                     }
                 }

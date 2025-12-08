@@ -39,28 +39,36 @@ async function runMigrations() {
         // Real-world approach: Check multiple possible locations
         const possibleMigrationDirs = [
             // 1. Standard centralized location (monorepo root) - asosiy path
+            // database/migrate.js -> migrations/
             path.join(__dirname, 'migrations'),
             // 2. Alternative paths (Railway deployment)
             path.join(__dirname, '../database/migrations'),
             path.join(__dirname, '../../database/migrations'),
             path.join(__dirname, '../../../database/migrations'),
             // 3. process.cwd() orqali (Railway'da working directory)
+            // Railway'da working directory: /app (agar root directory = monorepo root bo'lsa)
             path.join(process.cwd(), 'database/migrations'),
             path.join(process.cwd(), '../database/migrations'),
             path.join(process.cwd(), '../../database/migrations'),
-            // 4. Backend-specific copies (fallback, agar copy qilingan bo'lsa)
+            // 4. Absolute path (Railway'da /app/database/migrations)
+            '/app/database/migrations',
+            '/app/../database/migrations',
+            // 5. Backend-specific copies (fallback, agar copy qilingan bo'lsa)
             path.join(__dirname, '../../seller-app/backend/migrations/centralized'),
             path.join(__dirname, '../../amazing store/backend/migrations/centralized'),
         ];
         
         let migrationsDir = null;
+        let maxFiles = 0;
         for (const dir of possibleMigrationDirs) {
             if (fs.existsSync(dir)) {
                 const files = fs.readdirSync(dir).filter(f => f.endsWith('.sql'));
-                if (files.length > 0) {
+                // Eng ko'p migration fayllari bo'lgan papkani tanlash
+                // Bu markazlashtirilgan database/migrations papkasini topish uchun
+                if (files.length > maxFiles) {
+                    maxFiles = files.length;
                     migrationsDir = dir;
                     console.log(`📁 Found migrations directory: ${migrationsDir} (${files.length} files)`);
-                    break;
                 }
             }
         }
