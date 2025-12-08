@@ -78,10 +78,10 @@ router.get('/:id', async (req, res) => {
         }
 
         // ID'ni yashirish (frontend uchun SKU asosiy identifier)
-        const { id, ...rest } = rows[0];
+        const { id: productId, ...rest } = rows[0];
         res.json({
             ...rest,
-            _id: id  // Yashirilgan ID (ichki ishlatish uchun)
+            _id: productId  // Yashirilgan ID (ichki ishlatish uchun)
         });
     } catch (error) {
         console.error('Error fetching product:', error);
@@ -170,7 +170,7 @@ router.put('/:id', async (req, res) => {
                 sku = COALESCE($9, sku)
             WHERE id = $10 OR sku = $10
             RETURNING id, name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, is_active, sku, created_at
-        `, [name_uz, name_ru, description_ru, description_uz, price, sale_price, image_url, category_id, sku, id]);
+        `, [name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, sku, id]);
 
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Product not found' });
