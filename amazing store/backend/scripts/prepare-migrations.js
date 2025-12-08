@@ -1,6 +1,7 @@
 // scripts/prepare-migrations.js
 // This script copies centralized migrations to backend directory before deployment
 // Run this during Railway build process
+// Migration runner lazy loading orqali ishlaydi, copy qilish shart emas
 
 const fs = require('fs');
 const path = require('path');
@@ -9,8 +10,8 @@ const rootMigrationsDir = path.join(__dirname, '../../../database/migrations');
 const targetMigrationsDir = path.join(__dirname, '../migrations/centralized');
 
 console.log('🔄 Preparing migrations for deployment...');
-console.log(`📁 Source: ${rootMigrationsDir}`);
-console.log(`📁 Target: ${targetMigrationsDir}`);
+console.log(`📁 Source migrations: ${rootMigrationsDir}`);
+console.log(`📁 Target migrations: ${targetMigrationsDir}`);
 
 // Create target directory if it doesn't exist
 if (!fs.existsSync(targetMigrationsDir)) {
@@ -27,7 +28,7 @@ if (fs.existsSync(rootMigrationsDir)) {
         const targetPath = path.join(targetMigrationsDir, file);
         
         fs.copyFileSync(sourcePath, targetPath);
-        console.log(`✅ Copied: ${file}`);
+        console.log(`✅ Copied migration: ${file}`);
     });
     
     console.log(`🎉 Copied ${files.length} migration files`);
