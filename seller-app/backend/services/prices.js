@@ -12,7 +12,28 @@ class PriceService {
         try {
             console.log('🔄 Syncing Amazing Store prices...');
 
-            // 1. Amazing Store'dagi barcha tovarlarni olish
+            // 1. Amazing Store marketplace ID'sini olish
+            const { rows: marketplaceRows } = await pool.query(`
+                SELECT id FROM marketplaces WHERE name = 'AMAZING_STORE' LIMIT 1
+            `);
+
+            let marketplaceId;
+            if (marketplaceRows.length === 0) {
+                console.warn('⚠️  Amazing Store marketplace not found. Creating it...');
+                // Amazing Store marketplace yaratish
+                const { rows: newMarketplace } = await pool.query(`
+                    INSERT INTO marketplaces (name, api_type, marketplace_code, is_active)
+                    VALUES ('AMAZING_STORE', 'amazing_store', '202049831', true)
+                    RETURNING id
+                `);
+                marketplaceId = newMarketplace[0].id;
+                console.log(`✅ Created Amazing Store marketplace with ID: ${marketplaceId}`);
+            } else {
+                marketplaceId = marketplaceRows[0].id;
+                console.log(`✅ Found Amazing Store marketplace ID: ${marketplaceId}`);
+            }
+
+            // 2. Amazing Store'dagi barcha tovarlarni olish
             const { rows: products } = await pool.query(`
                 SELECT id, price, sale_price, sku, name_uz
                 FROM products
@@ -25,7 +46,7 @@ class PriceService {
             let updated = 0;
             let skipped = 0;
 
-            // 2. Har bir tovar uchun product_prices da yozuv yaratish/yangilash
+            // 3. Har bir tovar uchun product_prices da yozuv yaratish/yangilash
             for (const product of products) {
                 // Mapping:
                 // - sale_price mavjud bo'lsa: selling_price = sale_price, strikethrough_price = price
@@ -33,11 +54,11 @@ class PriceService {
                 const sellingPrice = product.sale_price || product.price;
                 const strikethroughPrice = product.sale_price ? product.price : null;
 
-                // 3. product_prices da yozuv bor-yo'qligini tekshirish
+                // 4. product_prices da yozuv bor-yo'qligini tekshirish (marketplace_id bilan)
                 const { rows: existing } = await pool.query(`
                     SELECT id FROM product_prices
-                    WHERE product_id = $1 AND marketplace_id IS NULL
-                `, [product.id]);
+                    WHERE product_id = $1 AND marketplace_id = $2
+                `, [product.id, marketplaceId]);
 
                 if (existing.length === 0) {
                     // Yangi yozuv yaratish
@@ -51,8 +72,8 @@ class PriceService {
                             commission_rate,
                             profitability
                         )
-                        VALUES ($1, NULL, $2, $3, NULL, NULL, NULL)
-                    `, [product.id, sellingPrice, strikethroughPrice]);
+                        VALUES ($1, $2, $3, $4, NULL, NULL, NULL)
+                    `, [product.id, marketplaceId, sellingPrice, strikethroughPrice]);
                     created++;
                 } else {
                     // Mavjud yozuvni yangilash (faqat Amazing Store narxlari)
@@ -63,8 +84,8 @@ class PriceService {
                             selling_price = $1,
                             strikethrough_price = $2,
                             updated_at = NOW()
-                        WHERE product_id = $3 AND marketplace_id IS NULL
-                    `, [sellingPrice, strikethroughPrice, product.id]);
+                        WHERE product_id = $3 AND marketplace_id = $4
+                    `, [sellingPrice, strikethroughPrice, product.id, marketplaceId]);
                     updated++;
                 }
             }
@@ -82,6 +103,17 @@ class PriceService {
      */
     async syncProductPrice(productId) {
         try {
+            // Amazing Store marketplace ID'sini olish
+            const { rows: marketplaceRows } = await pool.query(`
+                SELECT id FROM marketplaces WHERE name = 'AMAZING_STORE' LIMIT 1
+            `);
+
+            if (marketplaceRows.length === 0) {
+                throw new Error('AMAZING_STORE marketplace not found');
+            }
+
+            const marketplaceId = marketplaceRows[0].id;
+
             const { rows: products } = await pool.query(`
                 SELECT id, price, sale_price
                 FROM products
@@ -103,13 +135,13 @@ class PriceService {
                     selling_price, 
                     strikethrough_price
                 )
-                VALUES ($1, NULL, $2, $3)
+                VALUES ($1, $2, $3, $4)
                 ON CONFLICT (product_id, marketplace_id) 
                 DO UPDATE SET
                     selling_price = EXCLUDED.selling_price,
                     strikethrough_price = EXCLUDED.strikethrough_price,
                     updated_at = NOW()
-            `, [productId, sellingPrice, strikethroughPrice]);
+            `, [productId, marketplaceId, sellingPrice, strikethroughPrice]);
 
             return { success: true, productId, sellingPrice, strikethroughPrice };
         } catch (error) {
