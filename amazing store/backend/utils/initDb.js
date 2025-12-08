@@ -169,12 +169,76 @@ async function initializeDatabase() {
                     WHERE table_name='products' AND column_name='sku'
                 ) THEN
                     ALTER TABLE products 
-                    ADD COLUMN sku VARCHAR(100) UNIQUE;
+                    ADD COLUMN sku VARCHAR(100);
                     RAISE NOTICE 'Products.sku column added';
                 END IF;
             END $$;
         `);
         console.log('✅ Products.sku column added/verified');
+
+        // 7.2. Mavjud SKU'siz tovarlar uchun avtomatik SKU generatsiya qilish
+        await pool.query(`
+            DO $$
+            DECLARE
+                product_record RECORD;
+                new_sku VARCHAR(100);
+                sku_counter INTEGER := 1;
+            BEGIN
+                FOR product_record IN 
+                    SELECT id FROM products WHERE sku IS NULL OR sku = ''
+                LOOP
+                    new_sku := 'PROD-' || LPAD(product_record.id::text, 6, '0');
+                    
+                    WHILE EXISTS (SELECT 1 FROM products WHERE sku = new_sku AND id != product_record.id)
+                    LOOP
+                        new_sku := 'PROD-' || LPAD(product_record.id::text, 6, '0') || '-' || sku_counter;
+                        sku_counter := sku_counter + 1;
+                    END LOOP;
+                    
+                    UPDATE products SET sku = new_sku WHERE id = product_record.id;
+                    sku_counter := 1;
+                END LOOP;
+            END $$;
+        `);
+        console.log('✅ Auto-generated SKU for existing products');
+
+        // 7.3. SKU'ni UNIQUE qilish (agar constraint yo'q bo'lsa)
+        await pool.query(`
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint 
+                    WHERE conname = 'products_sku_unique' 
+                    AND conrelid = 'products'::regclass
+                ) THEN
+                    ALTER TABLE products 
+                    ADD CONSTRAINT products_sku_unique UNIQUE (sku);
+                    RAISE NOTICE 'products_sku_unique constraint added';
+                END IF;
+            END $$;
+        `);
+        console.log('✅ Products.sku UNIQUE constraint added/verified');
+
+        // 7.4. SKU'ni NOT NULL qilish
+        await pool.query(`
+            DO $$
+            BEGIN
+                ALTER TABLE products 
+                ALTER COLUMN sku SET NOT NULL;
+                RAISE NOTICE 'SKU is now NOT NULL';
+            EXCEPTION
+                WHEN OTHERS THEN
+                    -- Agar allaqachon NOT NULL bo'lsa, xatolikni e'tiborsiz qoldirish
+                    NULL;
+            END $$;
+        `);
+        console.log('✅ Products.sku NOT NULL constraint added/verified');
+
+        // 7.5. SKU uchun index qo'shish
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_products_sku ON products(sku)
+        `);
+        console.log('✅ Products.sku index added/verified');
 
         // 8. Indexlar qo'shish
         await pool.query(`

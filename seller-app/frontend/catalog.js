@@ -86,7 +86,16 @@ async function loadProducts() {
         emptyState.style.display = 'none';
 
         // Load products
+        // API response'da ID yashirilgan (_id), SKU asosiy identifier
         products = await apiRequest('/products');
+        
+        // Backend compatibility: agar _id bo'lsa, id'ga o'zgartirish (ichki ishlatish)
+        products = products.map(p => {
+            if (p._id && !p.id) {
+                p.id = p._id; // Backend foreign keys uchun
+            }
+            return p;
+        });
 
         // Load prices
         const pricesParams = currentMarketplaceId ? `?marketplace_id=${currentMarketplaceId}` : '';
@@ -131,7 +140,9 @@ async function loadProducts() {
 function createProductRow(product) {
     const row = document.createElement('tr');
     row.className = 'product-row';
-    row.dataset.productId = product.id;
+    // SKU'ni asosiy identifier sifatida ishlatish (ID yashiriladi)
+    row.dataset.productSku = product.sku;
+    row.dataset.productId = product.id; // Ichki ishlatish uchun (yashirilgan)
     
     const priceData = prices.find(p => p.product_id === product.id);
     const invData = inventory.find(i => i.product_id === product.id);
@@ -154,15 +165,15 @@ function createProductRow(product) {
                        invData?.updated_at ? new Date(invData.updated_at) : null;
     const lastUpdateStr = lastUpdate ? formatDate(lastUpdate) : '';
     
-    // Product SKU (use sku field if available, otherwise use ID)
-    const sku = product.sku || product.display_sku || `ID-${product.id}`;
+    // Product SKU (majburiy, har doim mavjud)
+    const sku = product.sku;
     
     // Calculate profitability
     const profitability = priceData?.profitability || null;
     
     row.innerHTML = `
         <td class="checkbox-col">
-            <input type="checkbox" class="product-checkbox" data-product-id="${product.id}" aria-label="Select product">
+            <input type="checkbox" class="product-checkbox" data-product-sku="${product.sku}" data-product-id="${product.id}" aria-label="Select product">
         </td>
         <td class="product-col">
             <div class="product-info">
@@ -191,7 +202,7 @@ function createProductRow(product) {
         </td>
         <td class="price-col">
             <div class="price-info">
-                <div class="current-price" data-product-id="${product.id}">
+                <div class="current-price" data-product-sku="${product.sku}" data-product-id="${product.id}">
                     ${sellingPrice ? formatPrice(sellingPrice) : '-'}
                 </div>
                 ${strikethroughPrice ? `
@@ -216,7 +227,7 @@ function createProductRow(product) {
             </div>
         </td>
         <td class="actions-col">
-            <button class="actions-btn" data-product-id="${product.id}" aria-label="More actions">
+            <button class="actions-btn" data-product-sku="${product.sku}" data-product-id="${product.id}" aria-label="More actions">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="5" r="1"></circle>
                     <circle cx="12" cy="12" r="1"></circle>
@@ -230,10 +241,11 @@ function createProductRow(product) {
     const checkbox = row.querySelector('.product-checkbox');
     if (checkbox) {
         checkbox.addEventListener('change', (e) => {
+            // SKU orqali saqlash (ID yashirilgan)
             if (e.target.checked) {
-                selectedProducts.add(product.id);
+                selectedProducts.add(product.sku);
             } else {
-                selectedProducts.delete(product.id);
+                selectedProducts.delete(product.sku);
             }
             updateSelectAllCheckbox();
         });
@@ -244,7 +256,7 @@ function createProductRow(product) {
     if (priceEl && sellingPrice) {
         priceEl.style.cursor = 'pointer';
         priceEl.addEventListener('click', () => {
-            openEditPriceModal(product.id);
+            openEditPriceModal(product.sku);
         });
     }
 
@@ -254,7 +266,7 @@ function createProductRow(product) {
         actionsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             // TODO: Show actions menu
-            console.log('Actions for product:', product.id);
+            console.log('Actions for product SKU:', product.sku);
         });
     }
 
@@ -283,13 +295,19 @@ function formatDate(date) {
     return `${day} ${month}, ${hours}:${minutes}`;
 }
 
-// Update Product Quantity
-async function updateProductQuantity(productId, quantity) {
+// Update Product Quantity (SKU orqali)
+async function updateProductQuantity(productSku, quantity) {
     const qty = parseInt(quantity) || 0;
     
     try {
-        // Update inventory
-        await apiRequest(`/inventory/${productId}/adjust`, {
+        // SKU orqali product ID'ni topish
+        const product = products.find(p => p.sku === productSku);
+        if (!product) {
+            throw new Error('Product not found');
+        }
+        
+        // Update inventory (ID orqali - backend ichki ishlatish)
+        await apiRequest(`/inventory/${product.id}/adjust`, {
             method: 'PUT',
             body: JSON.stringify({ 
                 quantity: qty,
@@ -307,15 +325,18 @@ async function updateProductQuantity(productId, quantity) {
     }
 }
 
-// Open Edit Price Modal
-function openEditPriceModal(productId) {
-    const product = products.find(p => p.id === productId);
-    const priceData = prices.find(p => p.product_id === productId);
+// Open Edit Price Modal (SKU orqali)
+function openEditPriceModal(productSku) {
+    const product = products.find(p => p.sku === productSku);
+    if (!product) return;
+    
+    const priceData = prices.find(p => p.product_id === product.id);
     const modal = document.getElementById('edit-price-modal');
     
-    if (!modal || !product) return;
+    if (!modal) return;
     
-    document.getElementById('edit-product-id').value = productId;
+    // ID'ni yashirilgan holda saqlash (backend uchun)
+    document.getElementById('edit-product-id').value = product.id;
     document.getElementById('edit-marketplace-id').value = currentMarketplaceId || '';
     document.getElementById('edit-cost-price').value = priceData?.cost_price || '';
     document.getElementById('edit-selling-price').value = priceData?.selling_price || '';
@@ -373,11 +394,11 @@ function setupEventListeners() {
             const checkboxes = document.querySelectorAll('.product-checkbox');
             checkboxes.forEach(checkbox => {
                 checkbox.checked = e.target.checked;
-                const productId = parseInt(checkbox.dataset.productId);
+                const productSku = checkbox.dataset.productSku;
                 if (e.target.checked) {
-                    selectedProducts.add(productId);
+                    selectedProducts.add(productSku);
                 } else {
-                    selectedProducts.delete(productId);
+                    selectedProducts.delete(productSku);
                 }
             });
         });
