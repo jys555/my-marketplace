@@ -1,21 +1,15 @@
 // backend/utils/initDb.js
-const pool = require('../db');
-const fs = require('fs');
 const path = require('path');
+const { runMigrations } = require(path.join(__dirname, '../../../database/migrate'));
 
 async function initializeDatabase() {
     console.log('🔄 Seller App Database initialization started...');
     
     try {
-        // Migration faylini o'qish va bajarish
-        const migrationPath = path.join(__dirname, '../migrations/001_initial_schema.sql');
-        const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+        // Markazlashtirilgan migration'lar ni bajarish
+        await runMigrations();
         
-        // Migration'ni bajarish
-        await pool.query(migrationSQL);
-        
-        console.log('✅ Seller App tables created/verified');
-        console.log('🎉 Seller App Database initialization completed successfully!');
+        console.log('✅ Seller App Database initialization completed successfully!');
         return true;
         
     } catch (error) {

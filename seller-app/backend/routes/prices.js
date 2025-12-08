@@ -1,5 +1,6 @@
 const express = require('express');
 const pool = require('../db');
+const priceService = require('../services/prices');
 const router = express.Router();
 
 // GET /api/seller/prices - Barcha narxlar
@@ -104,6 +105,11 @@ router.post('/', async (req, res) => {
             RETURNING id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, updated_at
         `, [product_id, marketplace_id || null, cost_price || null, selling_price || null, commission_rate || null, strikethrough_price || null, profitability]);
 
+        // Rentabillikni qayta hisoblash (agar kerak bo'lsa)
+        if (rows.length > 0) {
+            await priceService.recalculateProfitability(product_id, marketplace_id || null);
+        }
+
         res.status(201).json(rows[0]);
     } catch (error) {
         if (error.code === '23503') {
@@ -140,6 +146,18 @@ router.put('/:id', async (req, res) => {
             WHERE id = $6
             RETURNING id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, updated_at
         `, [cost_price, selling_price, commission_rate, strikethrough_price, profitability, id]);
+
+        // Rentabillikni qayta hisoblash (agar kerak bo'lsa)
+        if (rows.length > 0) {
+            await priceService.recalculateProfitability(rows[0].product_id, rows[0].marketplace_id);
+            // Yangilangan ma'lumotlarni qayta olish
+            const { rows: updatedRows } = await pool.query(`
+                SELECT * FROM product_prices WHERE id = $1
+            `, [id]);
+            if (updatedRows.length > 0) {
+                return res.json(updatedRows[0]);
+            }
+        }
 
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Price not found' });

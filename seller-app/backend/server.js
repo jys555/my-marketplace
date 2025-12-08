@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { initializeDatabase } = require('./utils/initDb');
 const { authenticate, isAdmin } = require('./middleware/auth');
+const priceService = require('./services/prices');
 
 // Routes
 const marketplaceRoutes = require('./routes/marketplaces');
@@ -90,6 +91,15 @@ async function startServer() {
     try {
         // Seller App database migration
         await initializeDatabase();
+        
+        // Amazing Store narxlarini sync qilish
+        try {
+            const syncResult = await priceService.syncAmazingStorePrices();
+            console.log(`✅ Amazing Store prices synced: ${syncResult.created} created, ${syncResult.updated} updated`);
+        } catch (error) {
+            console.warn('⚠️  Warning: Could not sync Amazing Store prices:', error.message);
+            // Server yaxshi ishlashi uchun xatoni e'tiborsiz qoldiramiz
+        }
         
         // Server ishga tushirish
         app.listen(PORT, () => {
