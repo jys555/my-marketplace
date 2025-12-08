@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
         let query = `
             SELECT 
                 p.id, p.name_uz, p.name_ru, p.description_uz, p.description_ru,
-                p.price, p.sale_price, p.image_url, p.category_id,
+                p.price, p.sale_price, p.image_url, p.category_id, p.is_active,
                 c.name_uz as category_name_uz, c.name_ru as category_name_ru,
                 p.created_at
             FROM products p
@@ -49,7 +49,7 @@ router.get('/:id', async (req, res) => {
         const { rows } = await pool.query(`
             SELECT 
                 p.id, p.name_uz, p.name_ru, p.description_uz, p.description_ru,
-                p.price, p.sale_price, p.image_url, p.category_id,
+                p.price, p.sale_price, p.image_url, p.category_id, p.is_active,
                 c.name_uz as category_name_uz, c.name_ru as category_name_ru,
                 p.created_at
             FROM products p
@@ -78,10 +78,10 @@ router.post('/', async (req, res) => {
         }
 
         const { rows } = await pool.query(`
-            INSERT INTO products (name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            RETURNING id, name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, created_at
-        `, [name_uz, name_ru || null, description_uz || null, description_ru || null, price, sale_price || null, image_url || null, category_id || null]);
+            INSERT INTO products (name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, is_active)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING id, name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, is_active, created_at
+        `, [name_uz, name_ru || null, description_uz || null, description_ru || null, price, sale_price || null, image_url || null, category_id || null, true]);
 
         res.status(201).json(rows[0]);
     } catch (error) {
@@ -108,7 +108,7 @@ router.put('/:id', async (req, res) => {
                 image_url = COALESCE($7, image_url),
                 category_id = COALESCE($8, category_id)
             WHERE id = $9
-            RETURNING id, name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, created_at
+            RETURNING id, name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, is_active, created_at
         `, [name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, id]);
 
         if (rows.length === 0) {

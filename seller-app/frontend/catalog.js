@@ -107,6 +107,12 @@ async function loadProducts() {
 
         // Render products
         container.innerHTML = '';
+        if (filteredProducts.length === 0) {
+            loadingState.style.display = 'none';
+            emptyState.style.display = 'block';
+            return;
+        }
+        
         filteredProducts.forEach(product => {
             const productCard = createProductCard(product);
             container.appendChild(productCard);
@@ -114,6 +120,7 @@ async function loadProducts() {
 
         loadingState.style.display = 'none';
         container.style.display = 'block';
+        emptyState.style.display = 'none';
     } catch (error) {
         console.error('Error loading products:', error);
         loadingState.style.display = 'none';
@@ -166,8 +173,7 @@ function createProductCard(product) {
                            class="product-quantity-input" 
                            data-product-id="${product.id}"
                            value="${quantity}" 
-                           min="0"
-                           onchange="updateProductQuantity(${product.id}, this.value)">
+                           min="0">
                     <span class="product-status ${isActive ? 'active' : 'inactive'}">
                         ${isActive ? 'Active' : 'Noactive'}
                     </span>
@@ -181,7 +187,7 @@ function createProductCard(product) {
                 <div class="product-detail-row price-row">
                     <span class="detail-label">Sotish narxi:</span>
                     <div class="price-container">
-                        <span class="selling-price" onclick="openEditPriceModal(${product.id})">
+                        <span class="selling-price" data-product-id="${product.id}">
                             ${sellingPrice ? formatPrice(sellingPrice) : '-'}
                         </span>
                         ${strikethroughPrice ? `
@@ -210,6 +216,28 @@ function createProductCard(product) {
             </div>
         </div>
     `;
+
+    // Add event listeners
+    const quantityInput = card.querySelector('.product-quantity-input');
+    if (quantityInput) {
+        let quantityTimeout;
+        quantityInput.addEventListener('change', () => {
+            clearTimeout(quantityTimeout);
+            const newQuantity = parseInt(quantityInput.value) || 0;
+            quantityTimeout = setTimeout(() => {
+                updateProductQuantity(product.id, newQuantity);
+            }, 500);
+        });
+    }
+
+    // Add click listener for selling price
+    const sellingPriceEl = card.querySelector('.selling-price');
+    if (sellingPriceEl) {
+        sellingPriceEl.style.cursor = 'pointer';
+        sellingPriceEl.addEventListener('click', () => {
+            openEditPriceModal(product.id);
+        });
+    }
 
     return card;
 }

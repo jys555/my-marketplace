@@ -1,13 +1,21 @@
 // Service Worker for Seller App
-// Version: 1.0.1
+// Version: 2.0.0 - Updated after catalog redesign
 
-const CACHE_NAME = 'seller-app-v1.0.1';
+const CACHE_NAME = 'seller-app-v2.0.0';
 const urlsToCache = [
     '/',
     '/index.html',
+    '/catalog.html',
+    '/orders.html',
+    '/inventory.html',
+    '/inventory-purchase.html',
     '/style.css',
     '/api.js',
     '/app.js',
+    '/catalog.js',
+    '/orders.js',
+    '/inventory.js',
+    '/inventory-purchase.js',
     '/ui.js',
     '/manifest.json'
 ];
@@ -41,9 +49,11 @@ self.addEventListener('activate', (event) => {
                     }
                 })
             );
+        }).then(() => {
+            // Force update all clients
+            return self.clients.claim();
         })
     );
-    return self.clients.claim();
 });
 
 // Fetch event - serve from cache, fallback to network
