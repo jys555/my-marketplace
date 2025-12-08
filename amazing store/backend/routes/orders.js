@@ -121,7 +121,6 @@ router.post('/', authenticate, async (req, res) => {
                 }
             }
         } catch (botError) {
-            // Bot xatoliklarini log qilish, lekin buyurtma yaratilgan bo'lishi kerak
             console.error('Bot notification error (non-critical):', botError);
         }
         
