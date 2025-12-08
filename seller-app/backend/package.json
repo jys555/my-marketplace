@@ -4,6 +4,8 @@
   "description": "Backend for the Seller App - Multi-marketplace management system",
   "main": "server.js",
   "scripts": {
+    "prebuild": "node scripts/copy-migrations.js",
+    "build": "npm install",
     "start": "node server.js",
     "dev": "nodemon server.js"
   },

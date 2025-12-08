@@ -54,26 +54,45 @@ function createInlineRunner() {
                     path.join(process.cwd(), '../../../database/migrations'),
                     path.join(process.cwd(), '../../../../database/migrations'),
                     // 3. Absolute path (Railway'da /app/database/migrations)
+                    // Railway'da root directory = monorepo root bo'lsa
                     '/app/database/migrations',
                     '/app/../database/migrations',
-                    // 4. Local migrations (fallback, agar copy qilingan bo'lsa)
+                    // 4. Railway'da root directory = amazing store/backend bo'lsa
+                    // Working directory: /app, root: /app
+                    path.join(process.cwd(), 'database/migrations'),
+                    // 5. Local migrations (fallback, agar copy qilingan bo'lsa)
+                    // Bu eng oxirgi variant, chunki faqat 3 ta fayl bor
                     path.join(__dirname, '../migrations/centralized'),
                     path.join(__dirname, '../migrations'),
                 ];
                 
                 let migrationsDir = null;
                 let maxFiles = 0;
+                const foundDirs = [];
+                
                 for (const dir of possibleMigrationDirs) {
                     if (fs.existsSync(dir)) {
                         const files = fs.readdirSync(dir).filter(f => f.endsWith('.sql'));
+                        foundDirs.push({ dir, files: files.length });
                         // Eng ko'p migration fayllari bo'lgan papkani tanlash
                         // Bu markazlashtirilgan database/migrations papkasini topish uchun
                         if (files.length > maxFiles) {
                             maxFiles = files.length;
                             migrationsDir = dir;
-                            console.log(`📁 Found migrations directory: ${migrationsDir} (${files.length} files)`);
                         }
                     }
+                }
+                
+                // Debug: Barcha topilgan papkalarni ko'rsatish
+                if (foundDirs.length > 0) {
+                    console.log('📂 Found migration directories:');
+                    foundDirs.forEach(({ dir, files }) => {
+                        console.log(`   - ${dir} (${files} files)`);
+                    });
+                }
+                
+                if (migrationsDir) {
+                    console.log(`📁 Selected migrations directory: ${migrationsDir} (${maxFiles} files)`);
                 }
                 
                 if (!migrationsDir) {
@@ -200,3 +219,4 @@ module.exports = {
         return await runner.runMigrations();
     }
 };
+
