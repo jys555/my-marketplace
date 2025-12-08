@@ -68,6 +68,8 @@ function selectMarketplace(id, name) {
     if (selectedElement) {
         selectedElement.textContent = name;
     }
+    // Save to localStorage for other pages
+    localStorage.setItem('selectedMarketplace', JSON.stringify({ id, name }));
     closeMarketplaceSelector();
     if (typeof loadDashboardData === 'function') {
         loadDashboardData();

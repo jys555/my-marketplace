@@ -867,105 +867,262 @@ body {
     pointer-events: none;
 }
 
-/* Products List Container */
-.products-list-container {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.product-card {
+/* Products Table Container */
+.products-table-container {
     background: white;
     border-radius: 12px;
     box-shadow: var(--shadow-md);
-    padding: 20px;
-    display: flex;
-    gap: 20px;
-    transition: all 0.2s;
+    overflow-x: auto;
+    margin-top: 24px;
 }
 
-.product-card:hover {
-    box-shadow: var(--shadow-lg);
+.products-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
 }
 
-.product-card-image {
-    flex-shrink: 0;
+.products-table thead {
+    background: #f8f9fa;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.products-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.products-table td {
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+}
+
+.products-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.products-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Table Columns */
+.checkbox-col {
+    width: 50px;
+    text-align: center;
+}
+
+.product-col {
+    min-width: 300px;
+    width: 35%;
+}
+
+.warehouse-col {
+    width: 140px;
+}
+
+.cost-col {
     width: 120px;
-    height: 120px;
 }
 
-.product-image-large {
+.price-col {
+    min-width: 150px;
+}
+
+.service-col {
+    min-width: 140px;
+}
+
+.profitability-col {
+    width: 120px;
+}
+
+.actions-col {
+    width: 50px;
+    text-align: center;
+}
+
+/* Checkbox */
+.product-checkbox,
+#select-all-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
+/* Product Info */
+.product-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.product-image-small {
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+}
+
+.product-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: 6px;
     background: #f0f0f0;
 }
 
-.product-image-placeholder {
+.product-img-placeholder {
     width: 100%;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     background: #f0f0f0;
-    border-radius: 8px;
+    border-radius: 6px;
     color: var(--text-muted);
+    font-size: 11px;
+    text-align: center;
+    padding: 4px;
+}
+
+.product-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.product-name {
+    font-weight: 500;
+    color: var(--text-color);
+    margin-bottom: 4px;
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+.product-sku {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Warehouse Info */
+.warehouse-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.warehouse-quantity {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 15px;
+}
+
+.warehouse-date {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Cost Price */
+.cost-price {
+    font-weight: 500;
+    color: var(--text-color);
+    font-size: 14px;
+}
+
+/* Price Info */
+.price-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.current-price {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 15px;
+}
+
+.current-price:hover {
+    color: var(--primary-color);
+}
+
+.strikethrough-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.strikethrough-price {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-decoration: line-through;
+}
+
+.discount-badge {
+    font-size: 11px;
+    color: #d32f2f;
+    font-weight: 600;
+    background: #ffebee;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* Service Price */
+.service-price-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+}
+
+.service-rate {
+    color: var(--text-secondary);
     font-size: 12px;
 }
 
-.product-card-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.product-card-name {
-    font-size: 18px;
-    font-weight: 600;
+.service-amount {
     color: var(--text-color);
-    line-height: 1.4;
+    font-weight: 500;
+    font-size: 14px;
 }
 
-.product-card-details {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+/* Profitability */
+.profitability-info {
+    font-weight: 600;
+    font-size: 14px;
 }
 
-.product-detail-row {
+.profitability-info.positive {
+    color: #10b981;
+}
+
+.profitability-info.negative {
+    color: #ef4444;
+}
+
+/* Actions Button */
+.actions-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 8px 0;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
 }
 
-.detail-label {
-    font-weight: 500;
-    color: var(--text-secondary);
-    min-width: 120px;
-    font-size: 14px;
-}
-
-.detail-value {
+.actions-btn:hover {
+    background: #f0f0f0;
     color: var(--text-color);
-    font-size: 14px;
-}
-
-.product-quantity-input {
-    padding: 6px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    font-size: 14px;
-    width: 80px;
-    text-align: center;
-}
-
-.product-quantity-input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .product-status {

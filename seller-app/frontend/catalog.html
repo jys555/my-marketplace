@@ -64,16 +64,6 @@
             </div>
         </div>
 
-        <!-- Marketplace Selector -->
-        <div class="marketplace-selector-container">
-            <button class="marketplace-selector-btn" id="marketplace-selector-btn">
-                <span id="selected-marketplace">AMAZING_STORE</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="6 9 12 15 18 9"/>
-                </svg>
-            </button>
-        </div>
-
         <!-- Search -->
         <div class="catalog-controls">
             <div class="search-box">
@@ -85,9 +75,27 @@
             </div>
         </div>
 
-        <!-- Products List -->
-        <div class="products-list-container" id="products-list-container">
-            <!-- Products will be loaded here -->
+        <!-- Products Table -->
+        <div class="products-table-container">
+            <table class="products-table" id="products-table">
+                <thead>
+                    <tr>
+                        <th class="checkbox-col">
+                            <input type="checkbox" id="select-all-checkbox" aria-label="Select all products">
+                        </th>
+                        <th class="product-col">Tovar</th>
+                        <th class="warehouse-col">Sizning omboringizda</th>
+                        <th class="cost-col">Tannarx</th>
+                        <th class="price-col">Sizning narxingiz</th>
+                        <th class="service-col">Xizmatlar narxi</th>
+                        <th class="profitability-col">Rentabillik</th>
+                        <th class="actions-col"></th>
+                    </tr>
+                </thead>
+                <tbody id="products-table-body">
+                    <!-- Products will be loaded here -->
+                </tbody>
+            </table>
         </div>
 
         <!-- Loading State -->
@@ -143,21 +151,6 @@
         </div>
     </div>
 
-    <!-- Marketplace Selector Modal -->
-    <div id="marketplace-modal" class="modal-overlay">
-        <div class="modal-content marketplace-modal">
-            <div class="modal-header">
-                <div class="modal-title-left">Ofis va do'konlar</div>
-                <div class="modal-title-right">
-                    <a href="marketplaces.html" class="settings-link">Sozlamalar</a>
-                    <button class="modal-close" id="modal-close">×</button>
-                </div>
-            </div>
-            <div class="marketplace-list" id="marketplace-list">
-                <!-- Marketplaces will be loaded here -->
-            </div>
-        </div>
-    </div>
 
     <script src="api.js"></script>
     <script src="catalog.js"></script>

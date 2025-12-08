@@ -4,82 +4,38 @@ let currentMarketplaceName = 'AMAZING_STORE';
 let products = [];
 let prices = [];
 let inventory = [];
+let selectedProducts = new Set();
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    await loadMarketplaces();
+    // Get marketplace from localStorage (set by dashboard)
+    const savedMarketplace = localStorage.getItem('selectedMarketplace');
+    if (savedMarketplace) {
+        try {
+            const marketplace = JSON.parse(savedMarketplace);
+            currentMarketplaceId = marketplace.id === 'all' ? null : marketplace.id;
+            currentMarketplaceName = marketplace.name || 'AMAZING_STORE';
+        } catch (e) {
+            console.error('Error parsing marketplace:', e);
+        }
+    }
+    
     await loadProducts();
     setupEventListeners();
 });
 
-// Load Marketplaces
-async function loadMarketplaces() {
-    try {
-        const data = await apiRequest('/marketplaces');
-        const marketplaceList = document.getElementById('marketplace-list');
-        if (!marketplaceList) return;
-
-        marketplaceList.innerHTML = '';
-
-        // "Barcha do'konlar" option
-        const allItem = document.createElement('div');
-        allItem.className = 'marketplace-item active';
-        allItem.dataset.marketplaceId = 'all';
-        allItem.dataset.marketplaceName = "Barcha do'konlar";
-        allItem.innerHTML = `<div class="marketplace-name">Barcha do'konlar</div>`;
-        allItem.addEventListener('click', () => selectMarketplace('all', "Barcha do'konlar"));
-        marketplaceList.appendChild(allItem);
-
-        // Marketplaces
-        data.forEach(mp => {
-            const item = document.createElement('div');
-            item.className = 'marketplace-item';
-            if (mp.name === currentMarketplaceName) {
-                item.classList.add('active');
-            }
-            item.dataset.marketplaceId = mp.id;
-            item.dataset.marketplaceName = mp.name;
-            item.innerHTML = `
-                <div class="marketplace-name">${mp.name}</div>
-                ${mp.marketplace_code ? `<div class="marketplace-code">${mp.marketplace_code}</div>` : ''}
-            `;
-            item.addEventListener('click', () => selectMarketplace(mp.id, mp.name));
-            marketplaceList.appendChild(item);
-        });
-    } catch (error) {
-        console.error('Error loading marketplaces:', error);
-    }
-}
-
-// Select Marketplace
-function selectMarketplace(id, name) {
-    currentMarketplaceId = id === 'all' ? null : id;
-    currentMarketplaceName = name;
-    
-    document.getElementById('selected-marketplace').textContent = name;
-    document.getElementById('marketplace-modal').classList.remove('active');
-    
-    document.querySelectorAll('.marketplace-item').forEach(item => {
-        item.classList.remove('active');
-        if (item.dataset.marketplaceName === name) {
-            item.classList.add('active');
-        }
-    });
-
-    loadProducts();
-}
-
 // Load Products
 async function loadProducts() {
-    const container = document.getElementById('products-list-container');
+    const tableBody = document.getElementById('products-table-body');
     const loadingState = document.getElementById('loading-state');
     const emptyState = document.getElementById('empty-state');
+    const table = document.getElementById('products-table');
 
-    if (!container) return;
+    if (!tableBody) return;
 
     try {
         loadingState.style.display = 'flex';
-        container.style.display = 'none';
+        table.style.display = 'none';
         emptyState.style.display = 'none';
 
         // Load products
@@ -102,36 +58,33 @@ async function loadProducts() {
         if (filteredProducts.length === 0) {
             loadingState.style.display = 'none';
             emptyState.style.display = 'block';
+            table.style.display = 'none';
             return;
         }
 
-        // Render products
-        container.innerHTML = '';
-        if (filteredProducts.length === 0) {
-            loadingState.style.display = 'none';
-            emptyState.style.display = 'block';
-            return;
-        }
-        
+        // Render products as table rows
+        tableBody.innerHTML = '';
         filteredProducts.forEach(product => {
-            const productCard = createProductCard(product);
-            container.appendChild(productCard);
+            const row = createProductRow(product);
+            tableBody.appendChild(row);
         });
 
         loadingState.style.display = 'none';
-        container.style.display = 'block';
+        table.style.display = 'table';
         emptyState.style.display = 'none';
     } catch (error) {
         console.error('Error loading products:', error);
         loadingState.style.display = 'none';
         emptyState.style.display = 'block';
+        table.style.display = 'none';
     }
 }
 
-// Create Product Card
-function createProductCard(product) {
-    const card = document.createElement('div');
-    card.className = 'product-card';
+// Create Product Table Row
+function createProductRow(product) {
+    const row = document.createElement('tr');
+    row.className = 'product-row';
+    row.dataset.productId = product.id;
     
     const priceData = prices.find(p => p.product_id === product.id);
     const invData = inventory.find(i => i.product_id === product.id);
@@ -141,7 +94,7 @@ function createProductCard(product) {
     const sellingPrice = priceData?.selling_price || null;
     const strikethroughPrice = priceData?.strikethrough_price || null;
     const commissionRate = priceData?.commission_rate || null;
-    const profitability = priceData?.profitability || null;
+    const commissionAmount = commissionRate && sellingPrice ? (sellingPrice * commissionRate) / 100 : null;
     
     // Calculate discount percentage
     let discountPercent = null;
@@ -149,97 +102,137 @@ function createProductCard(product) {
         discountPercent = Math.round(((strikethroughPrice - sellingPrice) / strikethroughPrice) * 100);
     }
     
-    // Calculate commission amount
-    let commissionAmount = null;
-    if (sellingPrice && commissionRate) {
-        commissionAmount = (sellingPrice * commissionRate) / 100;
-    }
+    // Get last inventory update date
+    const lastUpdate = invData?.updated_at ? new Date(invData.updated_at) : null;
+    const lastUpdateStr = lastUpdate ? formatDate(lastUpdate) : '';
     
-    // Determine product status based on quantity
-    const isActive = quantity > 0;
+    // Product SKU (using product ID as SKU for now)
+    const sku = `ID: ${product.id}`;
     
-    card.innerHTML = `
-        <div class="product-card-image">
-            ${product.image_url ? `<img src="${product.image_url}" alt="${product.name_uz}" class="product-image-large">` : 
-              `<div class="product-image-placeholder">Rasm yo'q</div>`}
-        </div>
-        <div class="product-card-content">
-            <div class="product-card-name">${product.name_uz || product.name_ru || 'Nomsiz'}</div>
-            
-            <div class="product-card-details">
-                <div class="product-detail-row">
-                    <span class="detail-label">Qoldiq:</span>
-                    <input type="number" 
-                           class="product-quantity-input" 
-                           data-product-id="${product.id}"
-                           value="${quantity}" 
-                           min="0">
-                    <span class="product-status ${isActive ? 'active' : 'inactive'}">
-                        ${isActive ? 'Active' : 'Noactive'}
-                    </span>
+    // Calculate profitability
+    const profitability = priceData?.profitability || null;
+    
+    row.innerHTML = `
+        <td class="checkbox-col">
+            <input type="checkbox" class="product-checkbox" data-product-id="${product.id}" aria-label="Select product">
+        </td>
+        <td class="product-col">
+            <div class="product-info">
+                <div class="product-image-small">
+                    ${product.image_url ? 
+                        `<img src="${product.image_url}" alt="${product.name_uz || product.name_ru}" class="product-img">` : 
+                        `<div class="product-img-placeholder">Rasm yo'q</div>`
+                    }
                 </div>
-                
-                <div class="product-detail-row">
-                    <span class="detail-label">Tannarx:</span>
-                    <span class="detail-value">${costPrice ? formatPrice(costPrice) : '-'}</span>
-                </div>
-                
-                <div class="product-detail-row price-row">
-                    <span class="detail-label">Sotish narxi:</span>
-                    <div class="price-container">
-                        <span class="selling-price" data-product-id="${product.id}">
-                            ${sellingPrice ? formatPrice(sellingPrice) : '-'}
-                        </span>
-                        ${strikethroughPrice ? `
-                            <div class="strikethrough-price-container">
-                                <span class="strikethrough-price">${formatPrice(strikethroughPrice)}</span>
-                                ${discountPercent ? `<span class="discount-percent">-${discountPercent}%</span>` : ''}
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-                
-                <div class="product-detail-row">
-                    <span class="detail-label">Xizmatlar narxi:</span>
-                    <div class="service-price-container">
-                        ${commissionRate ? `<span class="commission-rate">${commissionRate}%</span>` : ''}
-                        ${commissionAmount ? `<span class="commission-amount">${formatPrice(commissionAmount)}</span>` : '-'}
-                    </div>
-                </div>
-                
-                <div class="product-detail-row">
-                    <span class="detail-label">Rentabillik:</span>
-                    <span class="profitability ${profitability >= 0 ? 'positive' : 'negative'}">
-                        ${profitability !== null && profitability !== undefined ? formatPrice(profitability) : '-'}
-                    </span>
+                <div class="product-details">
+                    <div class="product-name">${product.name_uz || product.name_ru || 'Nomsiz'}</div>
+                    <div class="product-sku">${sku}</div>
                 </div>
             </div>
-        </div>
+        </td>
+        <td class="warehouse-col">
+            <div class="warehouse-info">
+                <div class="warehouse-quantity">${quantity}</div>
+                ${lastUpdateStr ? `<div class="warehouse-date">${lastUpdateStr}</div>` : ''}
+            </div>
+        </td>
+        <td class="cost-col">
+            <div class="cost-price">
+                ${costPrice ? formatPrice(costPrice) : '-'}
+            </div>
+        </td>
+        <td class="price-col">
+            <div class="price-info">
+                <div class="current-price" data-product-id="${product.id}">
+                    ${sellingPrice ? formatPrice(sellingPrice) : '-'}
+                </div>
+                ${strikethroughPrice ? `
+                    <div class="strikethrough-info">
+                        <span class="strikethrough-price">${formatPrice(strikethroughPrice)}</span>
+                        ${discountPercent ? `<span class="discount-badge">-${discountPercent}%</span>` : ''}
+                    </div>
+                ` : ''}
+            </div>
+        </td>
+        <td class="service-col">
+            <div class="service-price-info">
+                ${commissionRate && commissionAmount ? `
+                    <div class="service-rate">${commissionRate}%</div>
+                    <div class="service-amount">${formatPrice(commissionAmount)}</div>
+                ` : '-'}
+            </div>
+        </td>
+        <td class="profitability-col">
+            <div class="profitability-info ${profitability !== null && profitability !== undefined ? (profitability >= 0 ? 'positive' : 'negative') : ''}">
+                ${profitability !== null && profitability !== undefined ? formatPrice(profitability) : '-'}
+            </div>
+        </td>
+        <td class="actions-col">
+            <button class="actions-btn" data-product-id="${product.id}" aria-label="More actions">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="5" r="1"></circle>
+                    <circle cx="12" cy="12" r="1"></circle>
+                    <circle cx="12" cy="19" r="1"></circle>
+                </svg>
+            </button>
+        </td>
     `;
 
     // Add event listeners
-    const quantityInput = card.querySelector('.product-quantity-input');
-    if (quantityInput) {
-        let quantityTimeout;
-        quantityInput.addEventListener('change', () => {
-            clearTimeout(quantityTimeout);
-            const newQuantity = parseInt(quantityInput.value) || 0;
-            quantityTimeout = setTimeout(() => {
-                updateProductQuantity(product.id, newQuantity);
-            }, 500);
+    const checkbox = row.querySelector('.product-checkbox');
+    if (checkbox) {
+        checkbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                selectedProducts.add(product.id);
+            } else {
+                selectedProducts.delete(product.id);
+            }
+            updateSelectAllCheckbox();
         });
     }
 
     // Add click listener for selling price
-    const sellingPriceEl = card.querySelector('.selling-price');
-    if (sellingPriceEl) {
-        sellingPriceEl.style.cursor = 'pointer';
-        sellingPriceEl.addEventListener('click', () => {
+    const priceEl = row.querySelector('.current-price');
+    if (priceEl && sellingPrice) {
+        priceEl.style.cursor = 'pointer';
+        priceEl.addEventListener('click', () => {
             openEditPriceModal(product.id);
         });
     }
 
-    return card;
+    // Actions button
+    const actionsBtn = row.querySelector('.actions-btn');
+    if (actionsBtn) {
+        actionsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // TODO: Show actions menu
+            console.log('Actions for product:', product.id);
+        });
+    }
+
+    return row;
+}
+
+// Format Price
+function formatPrice(price) {
+    if (!price && price !== 0) return '-';
+    return new Intl.NumberFormat('uz-UZ', {
+        style: 'currency',
+        currency: 'UZS',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(price).replace('UZS', 'so\'m');
+}
+
+// Format Date
+function formatDate(date) {
+    const months = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 
+                    'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${day} ${month}, ${hours}:${minutes}`;
 }
 
 // Update Product Quantity
@@ -255,10 +248,6 @@ async function updateProductQuantity(productId, quantity) {
                 notes: 'Qoldiq yangilandi'
             })
         });
-
-        // Update product status in Amazing Store based on quantity
-        // If quantity > 0, product should be active, else inactive
-        // This will be handled by backend when we update inventory
         
         // Reload products to reflect changes
         await loadProducts();
@@ -275,67 +264,48 @@ function openEditPriceModal(productId) {
     const product = products.find(p => p.id === productId);
     const priceData = prices.find(p => p.product_id === productId);
     const modal = document.getElementById('edit-price-modal');
-
+    
+    if (!modal || !product) return;
+    
     document.getElementById('edit-product-id').value = productId;
     document.getElementById('edit-marketplace-id').value = currentMarketplaceId || '';
     document.getElementById('edit-cost-price').value = priceData?.cost_price || '';
     document.getElementById('edit-selling-price').value = priceData?.selling_price || '';
     document.getElementById('edit-strikethrough-price').value = priceData?.strikethrough_price || '';
     document.getElementById('edit-commission-rate').value = priceData?.commission_rate || '';
-
+    
     modal.classList.add('active');
 }
 
-// Close Edit Modal
+// Close Edit Price Modal
 function closeEditModal() {
-    document.getElementById('edit-price-modal').classList.remove('active');
+    const modal = document.getElementById('edit-price-modal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
 }
 
-// Format Price
-function formatPrice(price) {
-    return new Intl.NumberFormat('uz-UZ').format(parseFloat(price || 0)) + ' so\'m';
+// Update Select All Checkbox
+function updateSelectAllCheckbox() {
+    const selectAll = document.getElementById('select-all-checkbox');
+    if (!selectAll) return;
+    
+    const checkboxes = document.querySelectorAll('.product-checkbox');
+    const checkedCount = selectedProducts.size;
+    
+    if (checkedCount === 0) {
+        selectAll.indeterminate = false;
+        selectAll.checked = false;
+    } else if (checkedCount === checkboxes.length) {
+        selectAll.indeterminate = false;
+        selectAll.checked = true;
+    } else {
+        selectAll.indeterminate = true;
+    }
 }
 
 // Setup Event Listeners
 function setupEventListeners() {
-    // Marketplace selector
-    const marketplaceBtn = document.getElementById('marketplace-selector-btn');
-    const marketplaceModal = document.getElementById('marketplace-modal');
-    const modalClose = document.getElementById('modal-close');
-
-    if (marketplaceBtn) {
-        marketplaceBtn.addEventListener('click', () => {
-            marketplaceModal.classList.add('active');
-        });
-    }
-
-    if (modalClose) {
-        modalClose.addEventListener('click', () => {
-            marketplaceModal.classList.remove('active');
-        });
-    }
-
-    marketplaceModal.addEventListener('click', (e) => {
-        if (e.target === marketplaceModal) {
-            marketplaceModal.classList.remove('active');
-        }
-    });
-
-    // Edit price form
-    const editForm = document.getElementById('edit-price-form');
-    if (editForm) {
-        editForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await savePrice();
-        });
-    }
-
-    const cancelEditBtn = document.getElementById('cancel-edit-btn');
-    const closeEditModalBtn = document.getElementById('close-edit-modal');
-
-    if (cancelEditBtn) cancelEditBtn.addEventListener('click', closeEditModal);
-    if (closeEditModalBtn) closeEditModalBtn.addEventListener('click', closeEditModal);
-
     // Search input
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
@@ -347,15 +317,57 @@ function setupEventListeners() {
             }, 300);
         });
     }
+
+    // Select all checkbox
+    const selectAll = document.getElementById('select-all-checkbox');
+    if (selectAll) {
+        selectAll.addEventListener('change', (e) => {
+            const checkboxes = document.querySelectorAll('.product-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+                const productId = parseInt(checkbox.dataset.productId);
+                if (e.target.checked) {
+                    selectedProducts.add(productId);
+                } else {
+                    selectedProducts.delete(productId);
+                }
+            });
+        });
+    }
+
+    // Edit price modal
+    const editForm = document.getElementById('edit-price-form');
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+    const closeEditModalBtn = document.getElementById('close-edit-modal');
+
+    if (editForm) {
+        editForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await savePrice();
+        });
+    }
+
+    if (cancelEditBtn) cancelEditBtn.addEventListener('click', closeEditModal);
+    if (closeEditModalBtn) closeEditModalBtn.addEventListener('click', closeEditModal);
+
+    // Close modal on overlay click
+    const modal = document.getElementById('edit-price-modal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeEditModal();
+            }
+        });
+    }
 }
 
 // Save Price
 async function savePrice() {
-    const productId = document.getElementById('edit-product-id').value;
+    const productId = parseInt(document.getElementById('edit-product-id').value);
     const marketplaceId = document.getElementById('edit-marketplace-id').value || null;
 
     const priceData = {
-        product_id: parseInt(productId),
+        product_id: productId,
         marketplace_id: marketplaceId ? parseInt(marketplaceId) : null,
         cost_price: parseFloat(document.getElementById('edit-cost-price').value) || null,
         selling_price: parseFloat(document.getElementById('edit-selling-price').value) || null,
@@ -389,7 +401,7 @@ async function savePrice() {
     }
 }
 
-// Export for global access
-window.selectMarketplace = selectMarketplace;
+// Export functions for global access
 window.updateProductQuantity = updateProductQuantity;
 window.openEditPriceModal = openEditPriceModal;
+window.closeEditModal = closeEditModal;

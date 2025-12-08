@@ -5,67 +5,21 @@ let orders = [];
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    await loadMarketplaces();
+    // Get marketplace from localStorage (set by dashboard)
+    const savedMarketplace = localStorage.getItem('selectedMarketplace');
+    if (savedMarketplace) {
+        try {
+            const marketplace = JSON.parse(savedMarketplace);
+            currentMarketplaceId = marketplace.id === 'all' ? null : marketplace.id;
+            currentMarketplaceName = marketplace.name || 'AMAZING_STORE';
+        } catch (e) {
+            console.error('Error parsing marketplace:', e);
+        }
+    }
+    
     await loadOrders();
     setupEventListeners();
 });
-
-// Load Marketplaces
-async function loadMarketplaces() {
-    try {
-        const data = await apiRequest('/marketplaces');
-        const marketplaceList = document.getElementById('marketplace-list');
-        if (!marketplaceList) return;
-
-        marketplaceList.innerHTML = '';
-
-        // "Barcha do'konlar" option
-        const allItem = document.createElement('div');
-        allItem.className = 'marketplace-item active';
-        allItem.dataset.marketplaceId = 'all';
-        allItem.dataset.marketplaceName = "Barcha do'konlar";
-        allItem.innerHTML = `<div class="marketplace-name">Barcha do'konlar</div>`;
-        allItem.addEventListener('click', () => selectMarketplace('all', "Barcha do'konlar"));
-        marketplaceList.appendChild(allItem);
-
-        // Marketplaces
-        data.forEach(mp => {
-            const item = document.createElement('div');
-            item.className = 'marketplace-item';
-            if (mp.name === currentMarketplaceName) {
-                item.classList.add('active');
-            }
-            item.dataset.marketplaceId = mp.id;
-            item.dataset.marketplaceName = mp.name;
-            item.innerHTML = `
-                <div class="marketplace-name">${mp.name}</div>
-                ${mp.marketplace_code ? `<div class="marketplace-code">${mp.marketplace_code}</div>` : ''}
-            `;
-            item.addEventListener('click', () => selectMarketplace(mp.id, mp.name));
-            marketplaceList.appendChild(item);
-        });
-    } catch (error) {
-        console.error('Error loading marketplaces:', error);
-    }
-}
-
-// Select Marketplace
-function selectMarketplace(id, name) {
-    currentMarketplaceId = id === 'all' ? null : id;
-    currentMarketplaceName = name;
-    
-    document.getElementById('selected-marketplace').textContent = name;
-    document.getElementById('marketplace-modal').classList.remove('active');
-    
-    document.querySelectorAll('.marketplace-item').forEach(item => {
-        item.classList.remove('active');
-        if (item.dataset.marketplaceName === name) {
-            item.classList.add('active');
-        }
-    });
-
-    loadOrders();
-}
 
 // Load Orders
 async function loadOrders() {
@@ -271,29 +225,6 @@ function closeStatusModal() {
 
 // Setup Event Listeners
 function setupEventListeners() {
-    // Marketplace selector
-    const marketplaceBtn = document.getElementById('marketplace-selector-btn');
-    const marketplaceModal = document.getElementById('marketplace-modal');
-    const modalClose = document.getElementById('modal-close');
-
-    if (marketplaceBtn) {
-        marketplaceBtn.addEventListener('click', () => {
-            marketplaceModal.classList.add('active');
-        });
-    }
-
-    if (modalClose) {
-        modalClose.addEventListener('click', () => {
-            marketplaceModal.classList.remove('active');
-        });
-    }
-
-    marketplaceModal.addEventListener('click', (e) => {
-        if (e.target === marketplaceModal) {
-            marketplaceModal.classList.remove('active');
-        }
-    });
-
     // Status form
     const statusForm = document.getElementById('status-form');
     if (statusForm) {
@@ -342,6 +273,4 @@ async function updateOrderStatus() {
     }
 }
 
-// Export for global access
-window.selectMarketplace = selectMarketplace;
 
