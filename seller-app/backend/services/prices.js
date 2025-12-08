@@ -55,12 +55,22 @@ class PriceService {
                 const strikethroughPrice = product.sale_price ? product.price : null;
 
                 // 4. Products jadvalidan cost_price va commission_rate ni olish
-                const { rows: productRows } = await pool.query(`
-                    SELECT cost_price, commission_rate FROM products WHERE id = $1
-                `, [product.id]);
+                // Agar ustunlar mavjud bo'lmasa, NULL qaytaradi (migration hali bajarilmagan bo'lsa)
+                let productCostPrice = null;
+                let productCommissionRate = null;
                 
-                const productCostPrice = productRows[0]?.cost_price || null;
-                const productCommissionRate = productRows[0]?.commission_rate || null;
+                try {
+                    const { rows: productRows } = await pool.query(`
+                        SELECT cost_price, commission_rate FROM products WHERE id = $1
+                    `, [product.id]);
+                    
+                    productCostPrice = productRows[0]?.cost_price || null;
+                    productCommissionRate = productRows[0]?.commission_rate || null;
+                } catch (error) {
+                    // Agar cost_price yoki commission_rate ustunlari mavjud bo'lmasa, NULL qoldiramiz
+                    // Bu migration 005 hali bajarilmagan bo'lsa bo'ladi
+                    console.warn(`⚠️  Could not fetch cost_price/commission_rate for product ${product.id}:`, error.message);
+                }
 
                 // 5. product_prices da yozuv bor-yo'qligini tekshirish (marketplace_id bilan)
                 const { rows: existing } = await pool.query(`

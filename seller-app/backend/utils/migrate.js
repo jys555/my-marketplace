@@ -37,10 +37,15 @@ function createInlineRunner() {
                 console.log('✅ Migration tracking table created/verified');
 
                 // Try multiple paths to find migrations directory
+                // Real-world approach: Check multiple possible locations
                 const possibleMigrationDirs = [
-                    path.join(__dirname, '../migrations/centralized'), // Railway fallback
-                    path.join(__dirname, '../migrations'), // Local migrations
-                    path.join(__dirname, '../../../database/migrations'), // Root migrations
+                    // 1. Centralized migrations (monorepo root)
+                    path.join(__dirname, '../../../database/migrations'),
+                    path.join(__dirname, '../../../../database/migrations'),
+                    path.join(__dirname, '../../../../../database/migrations'),
+                    // 2. Local migrations (if copied during build)
+                    path.join(__dirname, '../migrations/centralized'),
+                    path.join(__dirname, '../migrations'),
                 ];
                 
                 let migrationsDir = null;
