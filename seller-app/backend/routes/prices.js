@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
             SELECT 
                 pp.id, pp.product_id, pp.marketplace_id,
                 pp.cost_price, pp.selling_price, pp.commission_rate,
-                pp.strikethrough_price, pp.profitability, pp.updated_at,
+                pp.strikethrough_price, pp.profitability, pp.profitability_percentage, pp.updated_at,
                 p.name_uz as product_name_uz, p.name_ru as product_name_ru,
                 p.image_url as product_image_url,
                 m.name as marketplace_name, m.api_type as marketplace_type
@@ -54,7 +54,7 @@ router.get('/:id', async (req, res) => {
             SELECT 
                 pp.id, pp.product_id, pp.marketplace_id,
                 pp.cost_price, pp.selling_price, pp.commission_rate,
-                pp.strikethrough_price, pp.profitability, pp.updated_at,
+                pp.strikethrough_price, pp.profitability, pp.profitability_percentage, pp.updated_at,
                 p.name_uz as product_name_uz, p.name_ru as product_name_ru,
                 m.name as marketplace_name
             FROM product_prices pp
@@ -83,17 +83,20 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'product_id is required' });
         }
 
-        // Rentabillikni hisoblash
+        // Rentabillikni hisoblash (miqdor va foiz)
         let profitability = null;
-        if (cost_price && selling_price) {
+        let profitabilityPercentage = null;
+        if (cost_price && selling_price && parseFloat(selling_price) > 0) {
             const profit = parseFloat(selling_price) - parseFloat(cost_price);
             const commission = commission_rate ? (parseFloat(selling_price) * parseFloat(commission_rate) / 100) : 0;
             profitability = profit - commission;
+            // Rentabillik foizini hisoblash (selling_price ga nisbatan)
+            profitabilityPercentage = (profitability / parseFloat(selling_price)) * 100;
         }
 
         const { rows } = await pool.query(`
-            INSERT INTO product_prices (product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO product_prices (product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, profitability_percentage)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             ON CONFLICT (product_id, marketplace_id) 
             DO UPDATE SET
                 cost_price = EXCLUDED.cost_price,
@@ -101,9 +104,10 @@ router.post('/', async (req, res) => {
                 commission_rate = EXCLUDED.commission_rate,
                 strikethrough_price = EXCLUDED.strikethrough_price,
                 profitability = EXCLUDED.profitability,
+                profitability_percentage = EXCLUDED.profitability_percentage,
                 updated_at = NOW()
-            RETURNING id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, updated_at
-        `, [product_id, marketplace_id || null, cost_price || null, selling_price || null, commission_rate || null, strikethrough_price || null, profitability]);
+            RETURNING id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, profitability_percentage, updated_at
+        `, [product_id, marketplace_id || null, cost_price || null, selling_price || null, commission_rate || null, strikethrough_price || null, profitability, profitabilityPercentage]);
 
         // Rentabillikni qayta hisoblash (agar kerak bo'lsa)
         if (rows.length > 0) {
@@ -126,12 +130,24 @@ router.put('/:id', async (req, res) => {
         const { id } = req.params;
         const { cost_price, selling_price, commission_rate, strikethrough_price } = req.body;
 
-        // Rentabillikni hisoblash
+        // Rentabillikni hisoblash (miqdor va foiz)
+        // Avval mavjud cost_price va selling_price ni olish
+        const { rows: existingRows } = await pool.query(`
+            SELECT cost_price, selling_price, commission_rate FROM product_prices WHERE id = $1
+        `, [id]);
+        
         let profitability = null;
-        if (cost_price && selling_price) {
-            const profit = parseFloat(selling_price) - parseFloat(cost_price);
-            const commission = commission_rate ? (parseFloat(selling_price) * parseFloat(commission_rate) / 100) : 0;
+        let profitabilityPercentage = null;
+        const finalCostPrice = cost_price !== undefined ? cost_price : existingRows[0]?.cost_price;
+        const finalSellingPrice = selling_price !== undefined ? selling_price : existingRows[0]?.selling_price;
+        const finalCommissionRate = commission_rate !== undefined ? commission_rate : existingRows[0]?.commission_rate;
+        
+        if (finalCostPrice && finalSellingPrice && parseFloat(finalSellingPrice) > 0) {
+            const profit = parseFloat(finalSellingPrice) - parseFloat(finalCostPrice);
+            const commission = finalCommissionRate ? (parseFloat(finalSellingPrice) * parseFloat(finalCommissionRate) / 100) : 0;
             profitability = profit - commission;
+            // Rentabillik foizini hisoblash (selling_price ga nisbatan)
+            profitabilityPercentage = (profitability / parseFloat(finalSellingPrice)) * 100;
         }
 
         const { rows } = await pool.query(`
@@ -142,10 +158,11 @@ router.put('/:id', async (req, res) => {
                 commission_rate = COALESCE($3, commission_rate),
                 strikethrough_price = COALESCE($4, strikethrough_price),
                 profitability = COALESCE($5, profitability),
+                profitability_percentage = COALESCE($6, profitability_percentage),
                 updated_at = NOW()
-            WHERE id = $6
-            RETURNING id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, updated_at
-        `, [cost_price, selling_price, commission_rate, strikethrough_price, profitability, id]);
+            WHERE id = $7
+            RETURNING id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, profitability_percentage, updated_at
+        `, [cost_price, selling_price, commission_rate, strikethrough_price, profitability, profitabilityPercentage, id]);
 
         // Rentabillikni qayta hisoblash (agar kerak bo'lsa)
         if (rows.length > 0) {

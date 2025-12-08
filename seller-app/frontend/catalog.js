@@ -175,8 +175,21 @@ function createProductRow(product) {
     // Product SKU (majburiy, har doim mavjud)
     const sku = product.sku;
     
-    // Calculate profitability
+    // Calculate profitability (miqdor va foiz)
     const profitability = priceData?.profitability || null;
+    const profitabilityPercentage = priceData?.profitability_percentage || null;
+    
+    // Rentabillik rangini aniqlash
+    let profitabilityClass = '';
+    if (profitabilityPercentage !== null && profitabilityPercentage !== undefined) {
+        if (profitabilityPercentage < 30) {
+            profitabilityClass = 'profit-low'; // Qizil
+        } else if (profitabilityPercentage >= 30 && profitabilityPercentage <= 40) {
+            profitabilityClass = 'profit-medium'; // Zarg'aldoq
+        } else if (profitabilityPercentage > 40) {
+            profitabilityClass = 'profit-high'; // Yashil
+        }
+    }
     
     row.innerHTML = `
         <td class="checkbox-col">
@@ -229,8 +242,11 @@ function createProductRow(product) {
             </div>
         </td>
         <td class="profitability-col">
-            <div class="profitability-info ${profitability !== null && profitability !== undefined ? (profitability >= 0 ? 'positive' : 'negative') : ''}">
-                ${profitability !== null && profitability !== undefined ? formatPrice(profitability) : '-'}
+            <div class="profitability-info ${profitabilityClass}">
+                ${profitabilityPercentage !== null && profitabilityPercentage !== undefined ? 
+                    `${profitabilityPercentage.toFixed(1)}%` : 
+                    (profitability !== null && profitability !== undefined ? formatPrice(profitability) : '-')
+                }
             </div>
         </td>
         <td class="actions-col">

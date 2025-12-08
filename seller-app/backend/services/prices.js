@@ -54,14 +54,22 @@ class PriceService {
                 const sellingPrice = product.sale_price || product.price;
                 const strikethroughPrice = product.sale_price ? product.price : null;
 
-                // 4. product_prices da yozuv bor-yo'qligini tekshirish (marketplace_id bilan)
+                // 4. Products jadvalidan cost_price va commission_rate ni olish
+                const { rows: productRows } = await pool.query(`
+                    SELECT cost_price, commission_rate FROM products WHERE id = $1
+                `, [product.id]);
+                
+                const productCostPrice = productRows[0]?.cost_price || null;
+                const productCommissionRate = productRows[0]?.commission_rate || null;
+
+                // 5. product_prices da yozuv bor-yo'qligini tekshirish (marketplace_id bilan)
                 const { rows: existing } = await pool.query(`
                     SELECT id FROM product_prices
                     WHERE product_id = $1 AND marketplace_id = $2
                 `, [product.id, marketplaceId]);
 
                 if (existing.length === 0) {
-                    // Yangi yozuv yaratish
+                    // Yangi yozuv yaratish (products jadvalidan cost_price va commission_rate ni olish)
                     await pool.query(`
                         INSERT INTO product_prices (
                             product_id, 
@@ -70,23 +78,36 @@ class PriceService {
                             strikethrough_price,
                             cost_price,
                             commission_rate,
-                            profitability
+                            profitability,
+                            profitability_percentage
                         )
-                        VALUES ($1, $2, $3, $4, NULL, NULL, NULL)
-                    `, [product.id, marketplaceId, sellingPrice, strikethroughPrice]);
+                        VALUES ($1, $2, $3, $4, $5, $6, NULL, NULL)
+                    `, [product.id, marketplaceId, sellingPrice, strikethroughPrice, productCostPrice, productCommissionRate]);
                     created++;
+                    
+                    // Rentabillikni hisoblash
+                    if (productCostPrice && sellingPrice && parseFloat(productCostPrice) > 0) {
+                        await this.recalculateProfitability(product.id, marketplaceId);
+                    }
                 } else {
                     // Mavjud yozuvni yangilash (faqat Amazing Store narxlari)
-                    // cost_price va commission_rate o'zgartirilmaydi
+                    // cost_price va commission_rate products jadvalidan yangilanadi
                     await pool.query(`
                         UPDATE product_prices
                         SET 
                             selling_price = $1,
                             strikethrough_price = $2,
+                            cost_price = COALESCE($5, cost_price),
+                            commission_rate = COALESCE($6, commission_rate),
                             updated_at = NOW()
                         WHERE product_id = $3 AND marketplace_id = $4
-                    `, [sellingPrice, strikethroughPrice, product.id, marketplaceId]);
+                    `, [sellingPrice, strikethroughPrice, product.id, marketplaceId, productCostPrice, productCommissionRate]);
                     updated++;
+                    
+                    // Rentabillikni qayta hisoblash
+                    if (productCostPrice && sellingPrice && parseFloat(productCostPrice) > 0) {
+                        await this.recalculateProfitability(product.id, marketplaceId);
+                    }
                 }
             }
 
@@ -151,7 +172,7 @@ class PriceService {
     }
 
     /**
-     * Rentabillikni qayta hisoblash va yangilash
+     * Rentabillikni qayta hisoblash va yangilash (miqdor va foiz)
      */
     async recalculateProfitability(productId, marketplaceId = null) {
         try {
@@ -167,24 +188,34 @@ class PriceService {
 
             const price = rows[0];
             let profitability = null;
+            let profitabilityPercentage = null;
 
-            // Rentabillikni hisoblash
+            // Rentabillikni hisoblash (miqdor)
             if (price.cost_price && price.selling_price) {
                 const profit = parseFloat(price.selling_price) - parseFloat(price.cost_price);
                 const commission = price.commission_rate 
                     ? (parseFloat(price.selling_price) * parseFloat(price.commission_rate) / 100) 
                     : 0;
                 profitability = profit - commission;
+
+                // Rentabillik foizini hisoblash
+                // Formula: ((selling_price - cost_price - commission) / selling_price) * 100
+                if (parseFloat(price.selling_price) > 0) {
+                    profitabilityPercentage = (profitability / parseFloat(price.selling_price)) * 100;
+                }
             }
 
-            // Rentabillikni yangilash
+            // Rentabillikni yangilash (miqdor va foiz)
             await pool.query(`
                 UPDATE product_prices
-                SET profitability = $1, updated_at = NOW()
-                WHERE product_id = $2 AND (marketplace_id = $3 OR ($3 IS NULL AND marketplace_id IS NULL))
-            `, [profitability, productId, marketplaceId]);
+                SET 
+                    profitability = $1, 
+                    profitability_percentage = $2,
+                    updated_at = NOW()
+                WHERE product_id = $3 AND (marketplace_id = $4 OR ($4 IS NULL AND marketplace_id IS NULL))
+            `, [profitability, profitabilityPercentage, productId, marketplaceId]);
 
-            return profitability;
+            return { profitability, profitabilityPercentage };
         } catch (error) {
             console.error(`❌ Error recalculating profitability:`, error);
             throw error;

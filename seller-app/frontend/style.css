@@ -1099,6 +1099,9 @@ body {
 .profitability-info {
     font-weight: 600;
     font-size: 14px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
 }
 
 .profitability-info.positive {
@@ -1107,6 +1110,22 @@ body {
 
 .profitability-info.negative {
     color: #ef4444;
+}
+
+/* Rentabillik ranglari (foiz bo'yicha) */
+.profitability-info.profit-low {
+    color: #ef4444; /* Qizil - 30% dan kam */
+    background-color: #fee2e2;
+}
+
+.profitability-info.profit-medium {
+    color: #f59e0b; /* Zarg'aldoq - 30-40% */
+    background-color: #fef3c7;
+}
+
+.profitability-info.profit-high {
+    color: #10b981; /* Yashil - 40% dan yuqori */
+    background-color: #d1fae5;
 }
 
 /* Actions Button */
