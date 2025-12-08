@@ -13,10 +13,57 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (savedMarketplace) {
         try {
             const marketplace = JSON.parse(savedMarketplace);
-            currentMarketplaceId = marketplace.id === 'all' ? null : marketplace.id;
-            currentMarketplaceName = marketplace.name || 'AMAZING_STORE';
+            // If marketplace id is string like 'amazing_store', get real ID from API
+            if (marketplace.id && typeof marketplace.id === 'string' && marketplace.id !== 'all') {
+                const marketplaces = await apiRequest('/marketplaces');
+                const foundMarketplace = marketplaces.find(m => 
+                    m.name === marketplace.name || 
+                    m.marketplace_code === marketplace.id ||
+                    m.id.toString() === marketplace.id
+                );
+                if (foundMarketplace) {
+                    currentMarketplaceId = foundMarketplace.id;
+                    currentMarketplaceName = foundMarketplace.name;
+                } else {
+                    // Default to Amazing Store
+                    const amazingStore = marketplaces.find(m => m.name === 'AMAZING_STORE');
+                    if (amazingStore) {
+                        currentMarketplaceId = amazingStore.id;
+                        currentMarketplaceName = 'AMAZING_STORE';
+                    }
+                }
+            } else if (marketplace.id === 'all') {
+                currentMarketplaceId = null;
+                currentMarketplaceName = "Barcha do'konlar";
+            } else {
+                currentMarketplaceId = marketplace.id;
+                currentMarketplaceName = marketplace.name || 'AMAZING_STORE';
+            }
         } catch (e) {
             console.error('Error parsing marketplace:', e);
+            // Default to Amazing Store
+            try {
+                const marketplaces = await apiRequest('/marketplaces');
+                const amazingStore = marketplaces.find(m => m.name === 'AMAZING_STORE');
+                if (amazingStore) {
+                    currentMarketplaceId = amazingStore.id;
+                    currentMarketplaceName = 'AMAZING_STORE';
+                }
+            } catch (err) {
+                console.error('Error loading marketplaces:', err);
+            }
+        }
+    } else {
+        // Default to Amazing Store
+        try {
+            const marketplaces = await apiRequest('/marketplaces');
+            const amazingStore = marketplaces.find(m => m.name === 'AMAZING_STORE');
+            if (amazingStore) {
+                currentMarketplaceId = amazingStore.id;
+                currentMarketplaceName = 'AMAZING_STORE';
+            }
+        } catch (err) {
+            console.error('Error loading marketplaces:', err);
         }
     }
     
@@ -103,7 +150,8 @@ function createProductRow(product) {
     }
     
     // Get last inventory update date
-    const lastUpdate = invData?.updated_at ? new Date(invData.updated_at) : null;
+    const lastUpdate = invData?.last_updated_at ? new Date(invData.last_updated_at) : 
+                       invData?.updated_at ? new Date(invData.updated_at) : null;
     const lastUpdateStr = lastUpdate ? formatDate(lastUpdate) : '';
     
     // Product SKU (using product ID as SKU for now)
