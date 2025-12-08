@@ -19,11 +19,6 @@
     <!-- Top Navigation Bar -->
     <nav class="top-nav">
         <div class="nav-left">
-            <button class="back-button" id="back-button" aria-label="Go back">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-            </button>
             <div class="nav-links">
                 <a href="catalog.html" class="nav-link">Katalog</a>
                 <a href="orders.html" class="nav-link">Buyurtmalar</a>
@@ -97,17 +92,6 @@
     <script src="api.js"></script>
     <script src="inventory-purchase.js"></script>
     <script>
-        // Back button handler
-        (function() {
-            const backButton = document.getElementById('back-button');
-            if (backButton) {
-                backButton.style.display = 'flex';
-                backButton.classList.add('show');
-                backButton.addEventListener('click', () => {
-                    window.location.href = 'inventory.html';
-                });
-            }
-        })();
 
         // Mobile menu toggle
         (function() {

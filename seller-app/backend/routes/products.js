@@ -11,6 +11,7 @@ router.get('/', async (req, res) => {
             SELECT 
                 p.id, p.name_uz, p.name_ru, p.description_uz, p.description_ru,
                 p.price, p.sale_price, p.image_url, p.category_id, p.is_active,
+                p.sku, COALESCE(p.sku, 'ID-' || p.id::text) as display_sku,
                 c.name_uz as category_name_uz, c.name_ru as category_name_ru,
                 p.created_at
             FROM products p
@@ -50,6 +51,7 @@ router.get('/:id', async (req, res) => {
             SELECT 
                 p.id, p.name_uz, p.name_ru, p.description_uz, p.description_ru,
                 p.price, p.sale_price, p.image_url, p.category_id, p.is_active,
+                p.sku, COALESCE(p.sku, 'ID-' || p.id::text) as display_sku,
                 c.name_uz as category_name_uz, c.name_ru as category_name_ru,
                 p.created_at
             FROM products p

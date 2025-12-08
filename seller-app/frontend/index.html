@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Seller App">
-    <title>Seller App - Dashboard</title>
+    <title>Seller App - Xulosa</title>
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/icon-192.png">
     <link rel="stylesheet" href="style.css">
@@ -26,11 +26,6 @@
     <!-- Top Navigation Bar -->
     <nav class="top-nav">
         <div class="nav-left">
-            <button class="back-button" id="back-button" aria-label="Go back" style="display: none;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-            </button>
             <div class="nav-links">
                 <a href="catalog.html" class="nav-link">Katalog</a>
                 <a href="orders.html" class="nav-link">Buyurtmalar</a>
@@ -162,52 +157,6 @@
         // Back button handler - faqat dashboard'da emas, boshqa sahifalarda ko'rinadi
         (function() {
             const backButton = document.getElementById('back-button');
-            const currentPage = window.location.pathname;
-            const isDashboard = currentPage === '/' || currentPage === '/index.html' || currentPage.endsWith('/');
-            
-            // Dashboard'da back button'ni yashirish
-            if (isDashboard && backButton) {
-                backButton.style.display = 'none';
-                backButton.classList.remove('show');
-            } else if (backButton) {
-                // Boshqa sahifalarda back button'ni ko'rsatish
-                backButton.style.display = 'flex';
-                backButton.classList.add('show');
-            }
-            
-            function handleBack() {
-                // Telegram Web App kontekstida bot'ga qaytish
-                if (window.Telegram?.WebApp) {
-                    const tg = window.Telegram.WebApp;
-                    if (tg.BackButton && tg.BackButton.isVisible) {
-                        // Telegram BackButton API'dan foydalanish
-                        tg.BackButton.onClick(() => {
-                            tg.close();
-                        });
-                        tg.BackButton.show();
-                    } else {
-                        // Agar BackButton API mavjud bo'lmasa, history.back() ishlatish
-                        if (window.history.length > 1) {
-                            window.history.back();
-                        } else {
-                            // Agar history'da sahifa bo'lmasa, bot'ga qaytish
-                            tg.close();
-                        }
-                    }
-                } else {
-                    // Oddiy browser'da history.back() ishlatish
-                    if (window.history.length > 1) {
-                        window.history.back();
-                    } else {
-                        // Agar history'da sahifa bo'lmasa, bosh sahifaga qaytish
-                        window.location.href = '/';
-                    }
-                }
-            }
-            
-            if (backButton) {
-                backButton.addEventListener('click', handleBack);
-            }
         })();
 
         // Mobile menu toggle

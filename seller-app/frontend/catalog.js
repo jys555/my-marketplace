@@ -154,8 +154,8 @@ function createProductRow(product) {
                        invData?.updated_at ? new Date(invData.updated_at) : null;
     const lastUpdateStr = lastUpdate ? formatDate(lastUpdate) : '';
     
-    // Product SKU (using product ID as SKU for now)
-    const sku = `ID: ${product.id}`;
+    // Product SKU (use sku field if available, otherwise use ID)
+    const sku = product.sku || product.display_sku || `ID-${product.id}`;
     
     // Calculate profitability
     const profitability = priceData?.profitability || null;

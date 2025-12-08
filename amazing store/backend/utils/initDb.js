@@ -160,6 +160,22 @@ async function initializeDatabase() {
         `);
         console.log('✅ Products.category_id column added/verified');
 
+        // 7.1. Products jadvaliga sku ustuni qo'shish (agar yo'q bo'lsa)
+        await pool.query(`
+            DO $$ 
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns 
+                    WHERE table_name='products' AND column_name='sku'
+                ) THEN
+                    ALTER TABLE products 
+                    ADD COLUMN sku VARCHAR(100) UNIQUE;
+                    RAISE NOTICE 'Products.sku column added';
+                END IF;
+            END $$;
+        `);
+        console.log('✅ Products.sku column added/verified');
+
         // 8. Indexlar qo'shish
         await pool.query(`
             CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id)
