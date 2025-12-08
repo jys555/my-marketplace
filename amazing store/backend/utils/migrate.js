@@ -38,12 +38,19 @@ function createInlineRunner() {
 
                 // Try multiple paths to find migrations directory
                 // Real-world approach: Check multiple possible locations
+                // Markazlashtirilgan migration'lar - barcha path'larni tekshirish
+                // Railway'da working directory har xil bo'lishi mumkin
                 const possibleMigrationDirs = [
-                    // 1. Centralized migrations (monorepo root)
+                    // 1. Centralized migrations (monorepo root) - asosiy path
                     path.join(__dirname, '../../../database/migrations'),
                     path.join(__dirname, '../../../../database/migrations'),
                     path.join(__dirname, '../../../../../database/migrations'),
-                    // 2. Local migrations (if copied during build)
+                    path.join(__dirname, '../../../../../../database/migrations'),
+                    // 2. process.cwd() orqali (Railway'da working directory)
+                    path.join(process.cwd(), '../../database/migrations'),
+                    path.join(process.cwd(), '../../../database/migrations'),
+                    path.join(process.cwd(), '../../../../database/migrations'),
+                    // 3. Local migrations (fallback, agar copy qilingan bo'lsa)
                     path.join(__dirname, '../migrations/centralized'),
                     path.join(__dirname, '../migrations'),
                 ];

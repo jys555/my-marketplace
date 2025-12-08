@@ -35,16 +35,20 @@ async function runMigrations() {
         console.log('✅ Migration tracking table created/verified');
 
         // Migration fayllarini o'qish
+        // Markazlashtirilgan migration'lar - barcha path'larni tekshirish
         // Real-world approach: Check multiple possible locations
-        // Priority: 1) Centralized location, 2) Local copies (if any)
         const possibleMigrationDirs = [
-            // 1. Standard centralized location (monorepo root)
+            // 1. Standard centralized location (monorepo root) - asosiy path
             path.join(__dirname, 'migrations'),
             // 2. Alternative paths (Railway deployment)
             path.join(__dirname, '../database/migrations'),
             path.join(__dirname, '../../database/migrations'),
             path.join(__dirname, '../../../database/migrations'),
-            // 3. Backend-specific copies (fallback, if copied during build)
+            // 3. process.cwd() orqali (Railway'da working directory)
+            path.join(process.cwd(), 'database/migrations'),
+            path.join(process.cwd(), '../database/migrations'),
+            path.join(process.cwd(), '../../database/migrations'),
+            // 4. Backend-specific copies (fallback, agar copy qilingan bo'lsa)
             path.join(__dirname, '../../seller-app/backend/migrations/centralized'),
             path.join(__dirname, '../../amazing store/backend/migrations/centralized'),
         ];
