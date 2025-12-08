@@ -98,8 +98,14 @@ async function loadProducts() {
         });
 
         // Load prices
-        const pricesParams = currentMarketplaceId ? `?marketplace_id=${currentMarketplaceId}` : '';
-        prices = await apiRequest(`/prices${pricesParams}`);
+        try {
+            const pricesParams = currentMarketplaceId ? `?marketplace_id=${currentMarketplaceId}` : '';
+            prices = await apiRequest(`/prices${pricesParams}`);
+            console.log('Prices loaded:', prices.length, 'prices found');
+        } catch (error) {
+            console.error('Error loading prices:', error);
+            prices = []; // Fallback to empty array
+        }
 
         // Load inventory
         inventory = await apiRequest('/inventory');
@@ -144,8 +150,9 @@ function createProductRow(product) {
     row.dataset.productSku = product.sku;
     row.dataset.productId = product.id; // Ichki ishlatish uchun (yashirilgan)
     
-    const priceData = prices.find(p => p.product_id === product.id);
-    const invData = inventory.find(i => i.product_id === product.id);
+    // Find price data - try both product.id and product._id
+    const priceData = prices.find(p => p.product_id === product.id || p.product_id === product._id);
+    const invData = inventory.find(i => i.product_id === product.id || i.product_id === product._id);
     
     const quantity = invData?.quantity || 0;
     const costPrice = priceData?.cost_price || null;
@@ -330,7 +337,8 @@ function openEditPriceModal(productSku) {
     const product = products.find(p => p.sku === productSku);
     if (!product) return;
     
-    const priceData = prices.find(p => p.product_id === product.id);
+    // Find price data - try both product.id and product._id
+    const priceData = prices.find(p => p.product_id === product.id || p.product_id === product._id);
     const modal = document.getElementById('edit-price-modal');
     
     if (!modal) return;
