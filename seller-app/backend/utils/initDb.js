@@ -1,6 +1,5 @@
 // backend/utils/initDb.js
-const path = require('path');
-const { runMigrations } = require(path.join(__dirname, '../../../database/migrate'));
+const { runMigrations } = require('./migrate');
 
 async function initializeDatabase() {
     console.log('🔄 Seller App Database initialization started...');
