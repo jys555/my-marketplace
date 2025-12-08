@@ -1001,14 +1001,16 @@ body {
 .product-name {
     font-weight: 500;
     color: var(--text-color);
-    margin-bottom: 4px;
+    margin-bottom: 6px;
     line-height: 1.4;
     word-wrap: break-word;
+    font-size: 15px; /* Yiriklashtirildi */
 }
 
 .product-sku {
-    font-size: 12px;
+    font-size: 13px; /* Yiriklashtirildi */
     color: var(--text-muted);
+    font-weight: 500; /* Biroz qalinroq */
 }
 
 /* Warehouse Info */
@@ -1278,7 +1280,8 @@ body {
 .product-name {
     font-weight: 500;
     color: var(--text-color);
-    margin-bottom: 4px;
+    margin-bottom: 6px;
+    font-size: 15px; /* Yiriklashtirildi */
 }
 
 .product-category {
