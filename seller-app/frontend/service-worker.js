@@ -1,7 +1,7 @@
 // Service Worker for Seller App
-// Version: 2.0.0 - Updated after catalog redesign
+// Version: 3.0.0 - Updated catalog table design
 
-const CACHE_NAME = 'seller-app-v2.0.0';
+const CACHE_NAME = 'seller-app-v3.0.0';
 const urlsToCache = [
     '/',
     '/index.html',
@@ -22,7 +22,7 @@ const urlsToCache = [
 
 // Install event - cache resources
 self.addEventListener('install', (event) => {
-    console.log('[Service Worker] Installing...');
+    console.log('[Service Worker] Installing new version:', CACHE_NAME);
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
@@ -33,14 +33,16 @@ self.addEventListener('install', (event) => {
                 console.error('[Service Worker] Cache failed:', error);
             })
     );
+    // Skip waiting - yangi versiya darhol aktiv bo'ladi
     self.skipWaiting();
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-    console.log('[Service Worker] Activating...');
+    console.log('[Service Worker] Activating new version:', CACHE_NAME);
     event.waitUntil(
         caches.keys().then((cacheNames) => {
+            console.log('[Service Worker] Found caches:', cacheNames);
             return Promise.all(
                 cacheNames.map((cacheName) => {
                     if (cacheName !== CACHE_NAME) {
@@ -50,13 +52,28 @@ self.addEventListener('activate', (event) => {
                 })
             );
         }).then(() => {
-            // Force update all clients
+            console.log('[Service Worker] Claiming clients...');
+            // Force update all clients immediately
             return self.clients.claim();
+        }).then(() => {
+            console.log('[Service Worker] Notifying clients about update...');
+            // Send message to all clients to reload
+            return self.clients.matchAll({ includeUncontrolled: true }).then(clients => {
+                console.log('[Service Worker] Found', clients.length, 'clients');
+                clients.forEach(client => {
+                    console.log('[Service Worker] Sending update message to client');
+                    client.postMessage({ 
+                        type: 'SW_UPDATED', 
+                        cacheName: CACHE_NAME,
+                        message: 'New version available, reloading...'
+                    });
+                });
+            });
         })
     );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - Network first, then cache (for better updates)
 self.addEventListener('fetch', (event) => {
     // Skip non-GET requests
     if (event.request.method !== 'GET') {
@@ -68,32 +85,50 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    event.respondWith(
-        caches.match(event.request)
-            .then((response) => {
-                // Return cached version or fetch from network
-                return response || fetch(event.request)
-                    .then((response) => {
-                        // Don't cache if not a valid response
-                        if (!response || response.status !== 200 || response.type !== 'basic') {
-                            return response;
-                        }
-
-                        // Clone the response
+    // For HTML files, always fetch from network first
+    if (event.request.headers.get('accept').includes('text/html')) {
+        event.respondWith(
+            fetch(event.request)
+                .then((response) => {
+                    // Cache the new version
+                    if (response && response.status === 200) {
                         const responseToCache = response.clone();
+                        caches.open(CACHE_NAME).then((cache) => {
+                            cache.put(event.request, responseToCache);
+                        });
+                    }
+                    return response;
+                })
+                .catch(() => {
+                    // Fallback to cache if network fails
+                    return caches.match(event.request);
+                })
+        );
+        return;
+    }
 
-                        caches.open(CACHE_NAME)
-                            .then((cache) => {
-                                cache.put(event.request, responseToCache);
-                            });
+    // For other resources, try network first, then cache
+    event.respondWith(
+        fetch(event.request)
+            .then((response) => {
+                // Don't cache if not a valid response
+                if (!response || response.status !== 200 || response.type !== 'basic') {
+                    return response;
+                }
 
-                        return response;
-                    })
-                    .catch((error) => {
-                        console.error('[Service Worker] Fetch failed:', error);
-                        // Return offline page if available
-                        return caches.match('/index.html');
+                // Clone the response
+                const responseToCache = response.clone();
+
+                caches.open(CACHE_NAME)
+                    .then((cache) => {
+                        cache.put(event.request, responseToCache);
                     });
+
+                return response;
+            })
+            .catch(() => {
+                // Fallback to cache if network fails
+                return caches.match(event.request);
             })
     );
 });
