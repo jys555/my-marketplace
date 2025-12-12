@@ -1,18 +1,78 @@
 const express = require('express');
 const pool = require('../db');
 const priceService = require('../services/prices');
+const migrate = require('../utils/migrate');
 const router = express.Router();
+
+// Cache for column existence check (to avoid running migrations on every request)
+let profitabilityPercentageColumnChecked = false;
+let profitabilityPercentageColumnExists = false;
+
+// Helper function: Check if column exists, if not, run migrations
+async function ensureProfitabilityPercentageColumn() {
+    // If already checked and exists, return immediately
+    if (profitabilityPercentageColumnChecked && profitabilityPercentageColumnExists) {
+        return true;
+    }
+    
+    try {
+        const { rows } = await pool.query(`
+            SELECT column_name FROM information_schema.columns 
+            WHERE table_name = 'product_prices' AND column_name = 'profitability_percentage'
+        `);
+        
+        if (rows.length > 0) {
+            profitabilityPercentageColumnChecked = true;
+            profitabilityPercentageColumnExists = true;
+            return true;
+        }
+        
+        // Column doesn't exist, run migrations
+        console.log('⚠️  profitability_percentage column not found. Running migrations...');
+        await migrate.runMigrations();
+        console.log('✅ Migrations completed');
+        
+        // Check again after migration
+        const { rows: checkAgain } = await pool.query(`
+            SELECT column_name FROM information_schema.columns 
+            WHERE table_name = 'product_prices' AND column_name = 'profitability_percentage'
+        `);
+        
+        profitabilityPercentageColumnChecked = true;
+        
+        if (checkAgain.length > 0) {
+            profitabilityPercentageColumnExists = true;
+            return true;
+        } else {
+            profitabilityPercentageColumnExists = false;
+            console.error('❌ profitability_percentage column still not found after migration');
+            return false;
+        }
+    } catch (error) {
+        console.error('Error checking profitability_percentage column:', error);
+        profitabilityPercentageColumnChecked = true;
+        profitabilityPercentageColumnExists = false;
+        return false;
+    }
+}
 
 // GET /api/seller/prices - Barcha narxlar
 router.get('/', async (req, res) => {
     try {
         const { marketplace_id, product_id } = req.query;
 
-        let query = `
-            SELECT 
+        // Ensure profitability_percentage column exists
+        await ensureProfitabilityPercentageColumn();
+
+        let selectFields = `
                 pp.id, pp.product_id, pp.marketplace_id,
                 pp.cost_price, pp.selling_price, pp.commission_rate,
-                pp.strikethrough_price, pp.profitability, pp.profitability_percentage, pp.updated_at,
+                pp.strikethrough_price, pp.profitability, pp.profitability_percentage,
+                pp.updated_at`;
+
+        let query = `
+            SELECT 
+                ${selectFields},
                 p.name_uz as product_name_uz, p.name_ru as product_name_ru,
                 p.image_url as product_image_url,
                 m.name as marketplace_name, m.api_type as marketplace_type
@@ -50,11 +110,19 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { rows } = await pool.query(`
-            SELECT 
+        
+        // Ensure profitability_percentage column exists
+        await ensureProfitabilityPercentageColumn();
+
+        let selectFields = `
                 pp.id, pp.product_id, pp.marketplace_id,
                 pp.cost_price, pp.selling_price, pp.commission_rate,
-                pp.strikethrough_price, pp.profitability, pp.profitability_percentage, pp.updated_at,
+                pp.strikethrough_price, pp.profitability, pp.profitability_percentage,
+                pp.updated_at`;
+
+        const { rows } = await pool.query(`
+            SELECT 
+                ${selectFields},
                 p.name_uz as product_name_uz, p.name_ru as product_name_ru,
                 m.name as marketplace_name
             FROM product_prices pp
@@ -94,20 +162,31 @@ router.post('/', async (req, res) => {
             profitabilityPercentage = (profitability / parseFloat(selling_price)) * 100;
         }
 
-        const { rows } = await pool.query(`
-            INSERT INTO product_prices (product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, profitability_percentage)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            ON CONFLICT (product_id, marketplace_id) 
-            DO UPDATE SET
+        // Ensure profitability_percentage column exists
+        await ensureProfitabilityPercentageColumn();
+
+        // Insert with profitability_percentage
+        const insertColumns = 'product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, profitability_percentage';
+        const insertValues = '$1, $2, $3, $4, $5, $6, $7, $8';
+        const updateClause = `
                 cost_price = EXCLUDED.cost_price,
                 selling_price = EXCLUDED.selling_price,
                 commission_rate = EXCLUDED.commission_rate,
                 strikethrough_price = EXCLUDED.strikethrough_price,
                 profitability = EXCLUDED.profitability,
-                profitability_percentage = EXCLUDED.profitability_percentage,
+                profitability_percentage = EXCLUDED.profitability_percentage`;
+        const returningClause = 'id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, profitability_percentage, updated_at';
+        const params = [product_id, marketplace_id || null, cost_price || null, selling_price || null, commission_rate || null, strikethrough_price || null, profitability, profitabilityPercentage];
+
+        const { rows } = await pool.query(`
+            INSERT INTO product_prices (${insertColumns})
+            VALUES (${insertValues})
+            ON CONFLICT (product_id, marketplace_id) 
+            DO UPDATE SET
+                ${updateClause},
                 updated_at = NOW()
-            RETURNING id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, profitability_percentage, updated_at
-        `, [product_id, marketplace_id || null, cost_price || null, selling_price || null, commission_rate || null, strikethrough_price || null, profitability, profitabilityPercentage]);
+            RETURNING ${returningClause}
+        `, params);
 
         // Rentabillikni qayta hisoblash (agar kerak bo'lsa)
         if (rows.length > 0) {
@@ -150,26 +229,36 @@ router.put('/:id', async (req, res) => {
             profitabilityPercentage = (profitability / parseFloat(finalSellingPrice)) * 100;
         }
 
-        const { rows } = await pool.query(`
-            UPDATE product_prices
-            SET 
+        // Ensure profitability_percentage column exists
+        await ensureProfitabilityPercentageColumn();
+
+        // Update with profitability_percentage
+        const updateClause = `
                 cost_price = COALESCE($1, cost_price),
                 selling_price = COALESCE($2, selling_price),
                 commission_rate = COALESCE($3, commission_rate),
                 strikethrough_price = COALESCE($4, strikethrough_price),
                 profitability = COALESCE($5, profitability),
-                profitability_percentage = COALESCE($6, profitability_percentage),
+                profitability_percentage = COALESCE($6, profitability_percentage)`;
+        const returningClause = 'id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, profitability_percentage, updated_at';
+        const params = [cost_price, selling_price, commission_rate, strikethrough_price, profitability, profitabilityPercentage, id];
+
+        const { rows } = await pool.query(`
+            UPDATE product_prices
+            SET 
+                ${updateClause},
                 updated_at = NOW()
-            WHERE id = $7
-            RETURNING id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, profitability_percentage, updated_at
-        `, [cost_price, selling_price, commission_rate, strikethrough_price, profitability, profitabilityPercentage, id]);
+            WHERE id = $${params.length}
+            RETURNING ${returningClause}
+        `, params);
 
         // Rentabillikni qayta hisoblash (agar kerak bo'lsa)
         if (rows.length > 0) {
             await priceService.recalculateProfitability(rows[0].product_id, rows[0].marketplace_id);
             // Yangilangan ma'lumotlarni qayta olish
             const { rows: updatedRows } = await pool.query(`
-                SELECT * FROM product_prices WHERE id = $1
+                SELECT id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, profitability_percentage, updated_at
+                FROM product_prices WHERE id = $1
             `, [id]);
             if (updatedRows.length > 0) {
                 return res.json(updatedRows[0]);
