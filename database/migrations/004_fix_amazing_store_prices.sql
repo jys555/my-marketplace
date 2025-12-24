@@ -26,27 +26,7 @@ BEGIN
         RAISE NOTICE 'Found AMAZING_STORE marketplace with ID: %', amazing_store_id;
     END IF;
 
-    -- Barcha duplicate yozuvlarni tozalash:
-    -- 1. amazing_store_id bilan duplicate yozuvlarni o'chirish (eng eski ni qoldirish)
-    DELETE FROM product_prices pp1
-    WHERE pp1.marketplace_id = amazing_store_id
-    AND pp1.id NOT IN (
-        SELECT MIN(pp2.id)
-        FROM product_prices pp2
-        WHERE pp2.marketplace_id = amazing_store_id
-        GROUP BY pp2.product_id
-    );
-    
-    -- 2. Agar amazing_store_id bilan yozuv bor bo'lsa, NULL yozuvlarni o'chiramiz (duplicate)
-    DELETE FROM product_prices pp1
-    WHERE pp1.marketplace_id IS NULL
-    AND EXISTS (
-        SELECT 1 FROM product_prices pp2
-        WHERE pp2.product_id = pp1.product_id
-        AND pp2.marketplace_id = amazing_store_id
-    );
-    
-    -- 3. Qolgan NULL yozuvlarni amazing_store_id ga yangilash
+    -- marketplace_id = NULL bo'lgan yozuvlarni yangilash
     UPDATE product_prices
     SET marketplace_id = amazing_store_id
     WHERE marketplace_id IS NULL;

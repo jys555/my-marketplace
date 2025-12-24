@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "description": "Backend for the marketplace application",
   "main": "server.js",
-  "engines": {
-    "node": "18.x",
-    "npm": "9.x"
-  },
   "scripts": {
     "prebuild": "node scripts/copy-migrations.js",
     "build": "echo 'Build completed'",
