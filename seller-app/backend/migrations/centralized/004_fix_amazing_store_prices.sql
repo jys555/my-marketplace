@@ -27,9 +27,15 @@ BEGIN
     END IF;
 
     -- marketplace_id = NULL bo'lgan yozuvlarni yangilash
-    UPDATE product_prices
+    -- Faqat duplicate bo'lmaganlarini yangilaymiz (unique constraint xatolikni oldini olish uchun)
+    UPDATE product_prices pp1
     SET marketplace_id = amazing_store_id
-    WHERE marketplace_id IS NULL;
+    WHERE pp1.marketplace_id IS NULL
+    AND NOT EXISTS (
+        SELECT 1 FROM product_prices pp2
+        WHERE pp2.product_id = pp1.product_id
+        AND pp2.marketplace_id = amazing_store_id
+    );
 
     GET DIAGNOSTICS updated_count = ROW_COUNT;
     RAISE NOTICE 'Updated % product_prices records with AMAZING_STORE marketplace_id', updated_count;
