@@ -1,6 +1,5 @@
-// O'ZGARTIRILDI: getCategories import qo'shildi
-// O'ZGARTIRILDI: getSelectedCategory import qo'shildi
-import { getLang, getUser, isRegistered as isUserRegistered, getProducts, getCart, getProductById, isFavorite, getOrders, getBanners, getGuestTelegramUser, getFavorites, getCategories, getSelectedCategory } from './state.js';
+// PERFORMANCE: Pagination importlar
+import { getLang, getUser, isRegistered as isUserRegistered, getProducts, getCart, getProductById, isFavorite, getOrders, getBanners, getGuestTelegramUser, getFavorites, getCategories, getSelectedCategory, getProductsPagination, setProductsLoading } from './state.js';
 
 // XSS himoyasi uchun HTML escape funksiyasi
 function escapeHtml(str) {
@@ -291,17 +290,28 @@ function getHomeContent() {
     `;
 }
 
-export function renderProducts() {
+// PERFORMANCE: Infinite scroll uchun append qilish
+export function renderProducts(append = false) {
     const productsContainer = document.getElementById('products');
     if (!productsContainer) return;
 
     const products = getProducts();
-    if (products.length === 0) {
+    const pagination = getProductsPagination();
+    
+    // PERFORMANCE: Agar mahsulotlar bo'sh bo'lsa va append emas bo'lsa
+    if (products.length === 0 && !append) {
         productsContainer.innerHTML = `<p>${t('no_products_yet')}</p>`;
         return;
     }
+    
+    // PERFORMANCE: Loading indicator'ni olib tashlash
+    const existingLoader = productsContainer.querySelector('.products-loading');
+    if (existingLoader) {
+        existingLoader.remove();
+    }
 
-    productsContainer.innerHTML = products.map(p => {
+    // PERFORMANCE: Append qilish yoki to'liq almashtirish
+    const productsHTML = products.map(p => {
         const hasSale = p.sale_price && p.price > p.sale_price;
         const salePercentage = hasSale ? Math.round(((p.price - p.sale_price) / p.price) * 100) : 0;
         const safeName = escapeHtml(p.name);
@@ -332,6 +342,42 @@ export function renderProducts() {
           </div>
         `;
     }).join('');
+    
+    if (append) {
+        // PERFORMANCE: Mavjud mahsulotlarga qo'shish (infinite scroll)
+        productsContainer.insertAdjacentHTML('beforeend', productsHTML);
+    } else {
+        // PERFORMANCE: To'liq almashtirish (yangi yuklash)
+        productsContainer.innerHTML = productsHTML;
+    }
+    
+    // PERFORMANCE: Infinite scroll uchun loading indicator qo'shish
+    if (pagination.hasMore) {
+        const loaderHTML = `
+            <div class="products-loading" id="products-loading">
+                <div class="loading-spinner"></div>
+                <p>Yuklanmoqda...</p>
+            </div>
+        `;
+        productsContainer.insertAdjacentHTML('beforeend', loaderHTML);
+    }
+}
+
+// PERFORMANCE: Loading indicator ko'rsatish
+export function showProductsLoading() {
+    const productsContainer = document.getElementById('products');
+    if (!productsContainer) return;
+    
+    const existingLoader = productsContainer.querySelector('.products-loading');
+    if (!existingLoader) {
+        const loaderHTML = `
+            <div class="products-loading" id="products-loading">
+                <div class="loading-spinner"></div>
+                <p>Yuklanmoqda...</p>
+            </div>
+        `;
+        productsContainer.insertAdjacentHTML('beforeend', loaderHTML);
+    }
 }
 
 // O'ZGARTIRILDI: Katalog (kategoriyalar) sahifasi - backend'dan olinadi

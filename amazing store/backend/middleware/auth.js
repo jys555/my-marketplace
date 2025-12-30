@@ -1,5 +1,7 @@
 const crypto = require('crypto');
 const pool = require('../db'); // Ma'lumotlar bazasini import qilish
+const logger = require('../utils/logger');
+const logger = require('../utils/logger');
 
 async function authenticate(req, res, next) { // Funksiyani asinxron qilish
     const authHeader = req.headers['x-telegram-data'];
@@ -10,7 +12,7 @@ async function authenticate(req, res, next) { // Funksiyani asinxron qilish
 
     const botToken = process.env.TELEGRAM_BOT_TOKEN; 
     if (!botToken) {
-        console.error("TELEGRAM_BOT_TOKEN is not configured in environment variables.");
+        logger.error("TELEGRAM_BOT_TOKEN is not configured in environment variables.");
         return res.status(500).json({ message: 'Internal server configuration error' });
     }
 
@@ -53,7 +55,7 @@ async function authenticate(req, res, next) { // Funksiyani asinxron qilish
 
         next();
     } catch (error) {
-        console.error('Authentication error:', error);
+        logger.error('Authentication error:', error);
         return res.status(400).json({ message: 'Invalid authentication data format' });
     }
 }
@@ -62,11 +64,11 @@ const isAdmin = (req, res, next) => {
     // Bu funksiya o'zgarishsiz qoladi
     const adminId = process.env.ADMIN_TELEGRAM_ID;
     if (!adminId) {
-        console.error('CRITICAL: ADMIN_TELEGRAM_ID is not configured on the server.');
+        logger.error('CRITICAL: ADMIN_TELEGRAM_ID is not configured on the server.');
         return res.status(500).json({ error: 'Admin ID not configured on server.' });
     }
     if (!req.telegramUser || req.telegramUser.id.toString() !== adminId) {
-        console.warn(`Forbidden access attempt by Telegram ID: ${req.telegramUser ? req.telegramUser.id : 'Unknown'}`);
+        logger.warn(`Forbidden access attempt by Telegram ID: ${req.telegramUser ? req.telegramUser.id : 'Unknown'}`);
         return res.status(403).json({ error: 'Forbidden: Admin access required.' });
     }
     next();

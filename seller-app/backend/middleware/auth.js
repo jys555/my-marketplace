@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const pool = require('../db');
+const logger = require('../utils/logger');
 
 // Telegram autentifikatsiya middleware
 async function authenticate(req, res, next) {
@@ -11,7 +12,7 @@ async function authenticate(req, res, next) {
 
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     if (!botToken) {
-        console.error("TELEGRAM_BOT_TOKEN is not configured in environment variables.");
+        logger.error("TELEGRAM_BOT_TOKEN is not configured in environment variables.");
         return res.status(500).json({ message: 'Internal server configuration error' });
     }
 
@@ -54,16 +55,16 @@ async function authenticate(req, res, next) {
             if (userRows.length > 0) {
                 req.userId = userRows[0].id;
                 req.isAdmin = userRows[0].is_admin === true;
-                console.log(`✅ User authenticated: ${user.id}, is_admin: ${req.isAdmin}`);
+                logger.info(`✅ User authenticated: ${user.id}, is_admin: ${req.isAdmin}`);
             } else {
-                console.warn(`⚠️  User not found in database: ${user.id}. Please register user first.`);
+                logger.warn(`⚠️  User not found in database: ${user.id}. Please register user first.`);
                 req.isAdmin = false;
             }
         }
 
         next();
     } catch (error) {
-        console.error('Authentication error:', error);
+        logger.error('Authentication error:', error);
         return res.status(400).json({ message: 'Invalid authentication data format' });
     }
 }
@@ -71,7 +72,7 @@ async function authenticate(req, res, next) {
 // Admin tekshiruvi - faqat is_admin = true bo'lgan userlar
 const isAdmin = async (req, res, next) => {
     if (!req.telegramUser) {
-        console.warn('❌ Admin check failed: No telegramUser');
+        logger.warn('❌ Admin check failed: No telegramUser');
         return res.status(401).json({ error: 'Authentication required' });
     }
 
@@ -79,14 +80,14 @@ const isAdmin = async (req, res, next) => {
     const isAdminUser = req.isAdmin === true;
     
     if (!isAdminUser) {
-        console.warn(`❌ Forbidden access attempt by Telegram ID: ${req.telegramUser.id}, is_admin: ${req.isAdmin}`);
+        logger.warn(`❌ Forbidden access attempt by Telegram ID: ${req.telegramUser.id}, is_admin: ${req.isAdmin}`);
         return res.status(403).json({ 
             error: 'Forbidden: Admin access required',
             message: 'User is not an admin. Please set is_admin = true in database for this user.'
         });
     }
 
-    console.log(`✅ Admin access granted for Telegram ID: ${req.telegramUser.id}`);
+    logger.info(`✅ Admin access granted for Telegram ID: ${req.telegramUser.id}`);
     next();
 };
 

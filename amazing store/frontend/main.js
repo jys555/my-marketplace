@@ -2,6 +2,73 @@ import * as api from './api.js';
 import * as state from './state.js';
 import * as ui from './ui.js';
 
+// PERFORMANCE: Infinite scroll funksiyasi
+let infiniteScrollObserver = null;
+
+async function loadMoreProducts() {
+    const pagination = state.getProductsPagination();
+    
+    // Agar yuklanmoqda bo'lsa yoki boshqa mahsulotlar yo'q bo'lsa, to'xtatish
+    if (pagination.isLoading || !pagination.hasMore) {
+        return;
+    }
+    
+    // Loading holatini belgilash
+    state.setProductsLoading(true);
+    ui.showProductsLoading();
+    
+    try {
+        const selectedCat = state.getSelectedCategory();
+        const productsData = await api.getProducts(selectedCat, 20, pagination.currentOffset);
+        
+        // PERFORMANCE: Mavjud mahsulotlarga qo'shish (append=true)
+        state.setProducts(productsData, true);
+        ui.renderProducts(true); // append=true
+        
+        // Event listenerlarni qayta qo'shish (yangi mahsulotlar uchun)
+        attachPageEventListeners('home');
+    } catch (error) {
+        console.error('Error loading more products:', error);
+        // Loading indicator'ni olib tashlash
+        const loader = document.getElementById('products-loading');
+        if (loader) loader.remove();
+    } finally {
+        state.setProductsLoading(false);
+    }
+}
+
+function setupInfiniteScroll() {
+    // Eski observer'ni tozalash
+    if (infiniteScrollObserver) {
+        infiniteScrollObserver.disconnect();
+    }
+    
+    // PERFORMANCE: Intersection Observer sozlash
+    infiniteScrollObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            // Agar loading indicator ko'rinadigan bo'lsa va yuklanmagan bo'lsa
+            if (entry.isIntersecting) {
+                const pagination = state.getProductsPagination();
+                if (pagination.hasMore && !pagination.isLoading) {
+                    loadMoreProducts();
+                }
+            }
+        });
+    }, {
+        root: null, // viewport
+        rootMargin: '200px', // 200px oldindan yuklash
+        threshold: 0.1
+    });
+    
+    // Observer'ni qo'shish (keyinroq loading indicator ko'rinadi)
+    setTimeout(() => {
+        const loadingIndicator = document.getElementById('products-loading');
+        if (loadingIndicator) {
+            infiniteScrollObserver.observe(loadingIndicator);
+        }
+    }, 100);
+}
+
 const WebApp = window.Telegram.WebApp;
 let pendingAction = null;
 
@@ -199,14 +266,14 @@ async function initializeApp() {
 
 async function loadInitialData() {
     try {
-        // O'ZGARTIRILDI: Kategoriyalar xatosi bo'lsa, davom etish
+        // PERFORMANCE: Pagination bilan mahsulotlarni yuklash (boshlang'ich: limit=20, offset=0)
         const selectedCat = state.getSelectedCategory();
-        const [products, banners] = await Promise.all([
-            api.getProducts(selectedCat), // Kategoriya filtri bilan
+        const [productsData, banners] = await Promise.all([
+            api.getProducts(selectedCat, 20, 0), // PERFORMANCE: Kategoriya filtri bilan, pagination bilan
             api.getBanners()
         ]);
 
-        state.setProducts(products);
+        state.setProducts(productsData, false); // PERFORMANCE: Yangi yuklash (append=false)
         state.setBanners(banners);
         
         // Kategoriyalarni alohida yuklash (xato bo'lsa, davom etish)
@@ -324,6 +391,9 @@ function attachPageEventListeners(pageName) {
             ui.initCarousel();
             ui.renderProducts();
             
+            // PERFORMANCE: Infinite scroll sozlash (DOM tayyor bo'lgandan keyin)
+            setTimeout(() => setupInfiniteScroll(), 100);
+            
             // O'ZGARTIRILDI: Search funksiyasini qo'shish
             const searchInput = document.querySelector('.search-input');
             if (searchInput) {
@@ -351,10 +421,11 @@ function attachPageEventListeners(pageName) {
                 navigateTo('catalog');
             });
             
-            // O'ZGARTIRILDI: "Barcha mahsulotlar" tugmasi
+            // PERFORMANCE: "Barcha mahsulotlar" tugmasi - pagination bilan
             document.getElementById('show-all-btn')?.addEventListener('click', async () => {
                 state.setSelectedCategory(null); // Filtrni tozalash
                 state.setFilteredProducts(null); // Search filtrni ham tozalash
+                // PERFORMANCE: Pagination bilan yuklash
                 await loadInitialData();
                 navigateTo('home');
             });
@@ -474,9 +545,9 @@ async function handleCategoryFilter(categoryId) {
         // Loading ko'rsatish
         ui.showLoading(ui.t('loading'));
         
-        // Filtrlangan mahsulotlarni yuklash
-        const products = await api.getProducts(categoryId);
-        state.setProducts(products);
+        // PERFORMANCE: Filtrlangan mahsulotlarni yuklash (pagination bilan)
+        const productsData = await api.getProducts(categoryId, 20, 0);
+        state.setProducts(productsData, false); // Yangi yuklash
         state.setFilteredProducts(null); // Search filtrini tozalash
         
         // Home sahifaga o'tish va mahsulotlarni ko'rsatish

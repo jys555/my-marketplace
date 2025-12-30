@@ -137,11 +137,17 @@ function setupEventListeners() {
 
 // Save Purchase
 async function savePurchase() {
-    const purchaseDate = document.getElementById('purchase-date').value;
-    const notes = document.getElementById('purchase-notes').value;
+    const form = document.getElementById('purchase-form');
+    if (!form) return;
 
-    if (!purchaseDate) {
-        alert('Sana kiritilishi shart!');
+    // Validate purchase date
+    const purchaseDateField = document.getElementById('purchase-date');
+    const purchaseDateValidation = window.validation.validateField(
+        purchaseDateField,
+        (value, fieldName) => window.validation.validateDate(window.validation.validateRequired(value, fieldName), fieldName),
+        'Purchase date'
+    );
+    if (!purchaseDateValidation.valid) {
         return;
     }
 
@@ -153,10 +159,20 @@ async function savePurchase() {
         return;
     }
 
-    // Validate all items have price
-    const invalidItems = items.filter(item => !item.purchase_price || item.purchase_price <= 0);
-    if (invalidItems.length > 0) {
-        alert('Barcha tovarlar uchun narx kiritilishi kerak!');
+    // Validate all items have quantity and price
+    let hasErrors = false;
+    items.forEach((item, index) => {
+        if (!item.quantity || item.quantity <= 0) {
+            alert(`Tovar ${index + 1}: Miqdor kiritilishi va 0 dan katta bo'lishi kerak!`);
+            hasErrors = true;
+        }
+        if (!item.purchase_price || item.purchase_price <= 0) {
+            alert(`Tovar ${index + 1}: Narx kiritilishi va 0 dan katta bo'lishi kerak!`);
+            hasErrors = true;
+        }
+    });
+    
+    if (hasErrors) {
         return;
     }
 

@@ -1,0 +1,25 @@
+name: CI - All Projects
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  seller-app-backend:
+    name: Seller App Backend
+    uses: ./.github/workflows/seller-app-backend.yml
+
+  amazing-store-backend:
+    name: Amazing Store Backend
+    uses: ./.github/workflows/amazing-store-backend.yml
+
+  # Optional: Frontend checks (if needed)
+  # seller-app-frontend:
+  #   name: Seller App Frontend
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Check HTML/CSS/JS
+  #       run: echo "Frontend checks (if needed)"

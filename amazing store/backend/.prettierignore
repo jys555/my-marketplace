@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+coverage/
+dist/
+build/
+
+# Logs
+logs/
+*.log
+
+# Database
+*.sql
+
+# Config files
+*.config.js
+.env
+.env.*
+
+# Package manager
+package-lock.json
+yarn.lock

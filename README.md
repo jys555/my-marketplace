@@ -162,9 +162,24 @@ git commit -m "feat(seller-app): new feature"
 
 ## Documentation
 
+- [Developer Guide](DEVELOPER_GUIDE.md) - Complete development guide
+- [CI/CD Setup Guide](CI_CD_SETUP.md) - GitHub Actions workflow guide
 - [Deployment Guide](DEPLOYMENT.md)
-- [Amazing Store README](amazing-store/README.md)
+- [Amazing Store README](amazing store/README.md)
 - [Seller App README](seller-app/README.md)
+
+### API Documentation
+
+- **Amazing Store API:** `http://localhost:3000/api-docs` (Swagger UI)
+- **Seller App API:** `http://localhost:3001/api-docs` (Swagger UI)
+
+## CI/CD
+
+- **GitHub Actions:** Automated testing, linting, and build
+- **Railway:** Automated backend deployment (via GitHub integration)
+- **Vercel:** Automated frontend deployment (via GitHub integration)
+
+See [CI/CD Setup Guide](CI_CD_SETUP.md) for details.
 
 ## License
 

@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db');
 const router = express.Router();
+const logger = require('../utils/logger');
 
 // GET /api/seller/analytics/dashboard - Dashboard ma'lumotlari
 router.get('/dashboard', async (req, res) => {
@@ -59,7 +60,7 @@ router.get('/dashboard', async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error fetching dashboard analytics:', error);
+        logger.error('Error fetching dashboard analytics:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
@@ -105,7 +106,7 @@ router.get('/daily', async (req, res) => {
         const { rows } = await pool.query(query, params);
         res.json(rows);
     } catch (error) {
-        console.error('Error fetching daily analytics:', error);
+        logger.error('Error fetching daily analytics:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
@@ -159,7 +160,7 @@ router.get('/products', async (req, res) => {
         const { rows } = await pool.query(query, params);
         res.json(rows);
     } catch (error) {
-        console.error('Error fetching product analytics:', error);
+        logger.error('Error fetching product analytics:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });

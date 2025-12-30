@@ -1,7 +1,65 @@
 const express = require('express');
 const pool = require('../db');
 const router = express.Router();
+const { validateParams, validateBody, required, oneOf, optional, integer, array, positive } = require('../middleware/validate');
+const { NotFoundError } = require('../utils/errors');
+const logger = require('../utils/logger');
 
+/**
+ * @swagger
+ * /api/seller/orders:
+ *   get:
+ *     summary: Get all orders with optional filtering
+ *     description: Retrieve a list of orders with optional filtering by marketplace, status, and date range
+ *     tags: [Orders]
+ *     security:
+ *       - TelegramAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: marketplace_id
+ *         schema:
+ *           type: integer
+ *         description: Filter by marketplace ID
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [new, processing, ready, delivered, cancelled]
+ *         description: Filter by order status
+ *       - in: query
+ *         name: start_date
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter orders from this date (YYYY-MM-DD)
+ *       - in: query
+ *         name: end_date
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter orders until this date (YYYY-MM-DD)
+ *     responses:
+ *       200:
+ *         description: Successful response with orders list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Order'
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/seller/orders - Barcha buyurtmalar
 router.get('/', async (req, res) => {
     try {
@@ -54,11 +112,60 @@ router.get('/', async (req, res) => {
         const { rows } = await pool.query(query, params);
         res.json(rows);
     } catch (error) {
-        console.error('Error fetching orders:', error);
+        logger.error('Error fetching orders:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
+/**
+ * @swagger
+ * /api/seller/orders/{id}:
+ *   get:
+ *     summary: Get a single order by ID
+ *     description: Retrieve order details including order items
+ *     tags: [Orders]
+ *     security:
+ *       - TelegramAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Order ID
+ *     responses:
+ *       200:
+ *         description: Successful response with order details and items
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Order'
+ *                 - type: object
+ *                   properties:
+ *                     items:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/OrderItem'
+ *       404:
+ *         description: Order not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/seller/orders/:id - Bitta buyurtma
 router.get('/:id', async (req, res) => {
     try {
@@ -100,30 +207,99 @@ router.get('/:id', async (req, res) => {
             items: itemsRows
         });
     } catch (error) {
-        console.error('Error fetching order:', error);
+        logger.error('Error fetching order:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
+/**
+ * @swagger
+ * /api/seller/orders/{id}/status:
+ *   put:
+ *     summary: Update order status
+ *     description: Update order status. When status changes to 'cancelled' or 'delivered', inventory is automatically updated.
+ *     tags: [Orders]
+ *     security:
+ *       - TelegramAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Order ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [new, processing, ready, delivered, cancelled]
+ *                 description: New order status
+ *     responses:
+ *       200:
+ *         description: Order status updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 order_number:
+ *                   type: string
+ *                 status:
+ *                   type: string
+ *                 total_amount:
+ *                   type: number
+ *                 updated_at:
+ *                   type: string
+ *                   format: date-time
+ *       404:
+ *         description: Order not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // PUT /api/seller/orders/:id/status - Buyurtma statusini yangilash
-router.put('/:id/status', async (req, res) => {
+router.put('/:id/status',
+    validateParams({
+        id: required(integer)
+    }),
+    validateBody({
+        status: required(oneOf(['new', 'processing', 'ready', 'delivered', 'cancelled']))
+    }),
+    async (req, res, next) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
         const { id } = req.params;
         const { status } = req.body;
-
-        if (!status) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({ error: 'status is required' });
-        }
-
-        const validStatuses = ['new', 'processing', 'ready', 'delivered', 'cancelled'];
-        if (!validStatuses.includes(status)) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({ error: `status must be one of: ${validStatuses.join(', ')}` });
-        }
 
         // Order statusini yangilash
         const { rows } = await client.query(`
@@ -135,7 +311,7 @@ router.put('/:id/status', async (req, res) => {
 
         if (rows.length === 0) {
             await client.query('ROLLBACK');
-            return res.status(404).json({ error: 'Order not found' });
+            return next(new NotFoundError('Order'));
         }
 
         // Agar buyurtma bekor qilinsa yoki yetkazib berilsa, inventory'ni yangilash
@@ -183,13 +359,102 @@ router.put('/:id/status', async (req, res) => {
         res.json(rows[0]);
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error updating order status:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        next(error);
     } finally {
         client.release();
     }
 });
 
+/**
+ * @swagger
+ * /api/seller/orders:
+ *   post:
+ *     summary: Create a new manual order
+ *     description: Create a new order manually. Inventory will be automatically updated (quantity decreased, reserved increased).
+ *     tags: [Orders]
+ *     security:
+ *       - TelegramAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - items
+ *             properties:
+ *               marketplace_id:
+ *                 type: integer
+ *                 description: Marketplace ID (optional)
+ *               items:
+ *                 type: array
+ *                 description: Array of order items (required)
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - product_id
+ *                     - quantity
+ *                   properties:
+ *                     product_id:
+ *                       type: integer
+ *                       description: Product ID
+ *                     quantity:
+ *                       type: integer
+ *                       minimum: 1
+ *                       description: Item quantity
+ *               customer_name:
+ *                 type: string
+ *                 description: Customer name
+ *               customer_phone:
+ *                 type: string
+ *                 description: Customer phone number
+ *               customer_address:
+ *                 type: string
+ *                 description: Customer address
+ *               payment_method:
+ *                 type: string
+ *                 description: Payment method
+ *               delivery_method:
+ *                 type: string
+ *                 description: Delivery method
+ *     responses:
+ *       201:
+ *         description: Order created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 order_number:
+ *                   type: string
+ *                 status:
+ *                   type: string
+ *                 total_amount:
+ *                   type: number
+ *                 created_at:
+ *                   type: string
+ *                   format: date-time
+ *       400:
+ *         description: Validation error (invalid items, products not found, etc.)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // POST /api/seller/orders - Yangi buyurtma (manual)
 router.post('/', async (req, res) => {
     const client = await pool.connect();
@@ -284,7 +549,7 @@ router.post('/', async (req, res) => {
         res.status(201).json(orderRows[0]);
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error creating order:', error);
+        logger.error('Error creating order:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     } finally {
         client.release();

@@ -88,10 +88,14 @@ export async function validateUser() {
     }
 }
 
-// O'ZGARTIRILDI: Kategoriya parametri qo'shildi
-export function getProducts(categoryId = null) {
-    const url = categoryId ? `/products?category_id=${categoryId}` : '/products';
-    return apiFetch(url);
+// PERFORMANCE: Pagination bilan mahsulotlarni olish
+export function getProducts(categoryId = null, limit = 20, offset = 0) {
+    const params = new URLSearchParams();
+    if (categoryId) params.append('category_id', categoryId);
+    params.append('limit', limit);
+    params.append('offset', offset);
+    
+    return apiFetch(`/products?${params.toString()}`);
 }
 
 export function getBanners() {

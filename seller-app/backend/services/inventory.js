@@ -1,4 +1,5 @@
 const pool = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Inventory management service
@@ -38,7 +39,7 @@ class InventoryService {
                 available_quantity: inventory.quantity - inventory.reserved_quantity
             };
         } catch (error) {
-            console.error('Error getting inventory:', error);
+            logger.error('Error getting inventory:', error);
             throw error;
         }
     }
@@ -74,7 +75,7 @@ class InventoryService {
                 available_quantity: inv.quantity - inv.reserved_quantity
             }));
         } catch (error) {
-            console.error('Error getting all inventory:', error);
+            logger.error('Error getting all inventory:', error);
             throw error;
         }
     }
@@ -124,7 +125,7 @@ class InventoryService {
             return rows[0];
         } catch (error) {
             await client.query('ROLLBACK');
-            console.error('Error adding inventory:', error);
+            logger.error('Error adding inventory:', error);
             throw error;
         } finally {
             client.release();
@@ -187,7 +188,7 @@ class InventoryService {
             return rows[0];
         } catch (error) {
             await client.query('ROLLBACK');
-            console.error('Error subtracting inventory:', error);
+            logger.error('Error subtracting inventory:', error);
             throw error;
         } finally {
             client.release();
@@ -236,7 +237,7 @@ class InventoryService {
             return rows[0];
         } catch (error) {
             await client.query('ROLLBACK');
-            console.error('Error reserving inventory:', error);
+            logger.error('Error reserving inventory:', error);
             throw error;
         } finally {
             client.release();
@@ -288,7 +289,7 @@ class InventoryService {
             return rows[0];
         } catch (error) {
             await client.query('ROLLBACK');
-            console.error('Error adjusting inventory:', error);
+            logger.error('Error adjusting inventory:', error);
             throw error;
         } finally {
             client.release();
@@ -318,7 +319,7 @@ class InventoryService {
 
             return rows;
         } catch (error) {
-            console.error('Error getting inventory movements:', error);
+            logger.error('Error getting inventory movements:', error);
             throw error;
         }
     }

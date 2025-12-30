@@ -256,8 +256,28 @@ function setupEventListeners() {
 
 // Update Order Status
 async function updateOrderStatus() {
+    const form = document.getElementById('status-form');
+    if (!form) return;
+
+    // Frontend validation
+    const schema = {
+        'new-status': {
+            validator: (value, fieldName) => window.validation.validateOneOf(
+                window.validation.validateRequired(value, fieldName),
+                fieldName,
+                ['new', 'processing', 'ready', 'delivered', 'cancelled']
+            ),
+            fieldName: 'Status'
+        }
+    };
+
+    const validation = window.validation.validateForm(form, schema);
+    if (!validation.valid) {
+        return;
+    }
+
     const orderId = document.getElementById('status-order-id').value;
-    const newStatus = document.getElementById('new-status').value;
+    const newStatus = validation.data['new-status'];
 
     try {
         await apiRequest(`/orders/${orderId}/status`, {

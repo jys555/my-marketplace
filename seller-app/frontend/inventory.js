@@ -247,9 +247,29 @@ function setupEventListeners() {
 
 // Adjust Inventory
 async function adjustInventory() {
+    const form = document.getElementById('adjust-form');
+    if (!form) return;
+
+    // Frontend validation
+    const schema = {
+        'adjust-quantity': {
+            validator: (value, fieldName) => window.validation.validateInteger(window.validation.validateRequired(value, fieldName), fieldName),
+            fieldName: 'Quantity'
+        },
+        'adjust-notes': {
+            validator: (value, fieldName) => window.validation.validateString(value, fieldName),
+            fieldName: 'Notes'
+        }
+    };
+
+    const validation = window.validation.validateForm(form, schema);
+    if (!validation.valid) {
+        return;
+    }
+
     const productId = document.getElementById('adjust-product-id').value;
-    const quantity = parseInt(document.getElementById('adjust-quantity').value);
-    const notes = document.getElementById('adjust-notes').value;
+    const quantity = validation.data['adjust-quantity'];
+    const notes = validation.data['adjust-notes'] || null;
 
     try {
         await apiRequest(`/inventory/${productId}/adjust`, {

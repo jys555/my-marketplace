@@ -1,9 +1,11 @@
 const express = require('express');
 const pool = require('../db');
 const router = express.Router();
+const { validateBody, validateParams, required, array, optional, string, integer, positive } = require('../middleware/validate');
+const { NotFoundError, ValidationError } = require('../utils/errors');
 
 // GET /api/seller/purchases - Barcha kirimlar
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
     try {
         const { start_date, end_date } = req.query;
 
@@ -35,13 +37,12 @@ router.get('/', async (req, res) => {
         const { rows } = await pool.query(query, params);
         res.json(rows);
     } catch (error) {
-        console.error('Error fetching purchases:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        next(error);
     }
 });
 
 // GET /api/seller/purchases/:id - Bitta kirim
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
     try {
         const { id } = req.params;
 
@@ -54,7 +55,7 @@ router.get('/:id', async (req, res) => {
         `, [id]);
 
         if (purchaseRows.length === 0) {
-            return res.status(404).json({ error: 'Purchase not found' });
+            return next(new NotFoundError('Purchase'));
         }
 
         // Purchase items
@@ -74,22 +75,45 @@ router.get('/:id', async (req, res) => {
             items: itemsRows
         });
     } catch (error) {
-        console.error('Error fetching purchase:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        next(error);
     }
 });
 
 // POST /api/seller/purchases - Yangi kirim
-router.post('/', async (req, res) => {
+router.post('/',
+    validateBody({
+        purchase_date: required(string), // ISO date string
+        items: required(array),
+        notes: optional(string)
+    }),
+    async (req, res, next) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
         const { purchase_date, items, notes } = req.body;
 
-        if (!purchase_date || !items || !Array.isArray(items) || items.length === 0) {
+        // Items array validation (each item must have product_id, quantity, purchase_price)
+        if (!Array.isArray(items) || items.length === 0) {
             await client.query('ROLLBACK');
-            return res.status(400).json({ error: 'purchase_date and items array are required' });
+            return next(new ValidationError('items array is required and must not be empty'));
+        }
+
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            if (!item.product_id || !item.quantity || !item.purchase_price) {
+                await client.query('ROLLBACK');
+                return next(new ValidationError(`Item ${i + 1}: product_id, quantity, and purchase_price are required`));
+            }
+            // Type validation
+            if (typeof item.quantity !== 'number' || item.quantity <= 0) {
+                await client.query('ROLLBACK');
+                return next(new ValidationError(`Item ${i + 1}: quantity must be a positive number`));
+            }
+            if (typeof item.purchase_price !== 'number' || item.purchase_price <= 0) {
+                await client.query('ROLLBACK');
+                return next(new ValidationError(`Item ${i + 1}: purchase_price must be a positive number`));
+            }
         }
 
         // Purchase yaratish
@@ -106,12 +130,7 @@ router.post('/', async (req, res) => {
         for (const item of items) {
             const { product_id, quantity, purchase_price } = item;
 
-            if (!product_id || !quantity || !purchase_price) {
-                await client.query('ROLLBACK');
-                return res.status(400).json({ error: 'Each item must have product_id, quantity, and purchase_price' });
-            }
-
-            const totalPrice = parseFloat(quantity) * parseFloat(purchase_price);
+            const totalPrice = quantity * purchase_price;
             totalAmount += totalPrice;
 
             await client.query(`
@@ -174,15 +193,18 @@ router.post('/', async (req, res) => {
         });
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error creating purchase:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        next(error);
     } finally {
         client.release();
     }
 });
 
 // DELETE /api/seller/purchases/:id - Kirim o'chirish
-router.delete('/:id', async (req, res) => {
+router.delete('/:id',
+    validateParams({
+        id: required(integer)
+    }),
+    async (req, res, next) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
@@ -227,15 +249,14 @@ router.delete('/:id', async (req, res) => {
 
         if (rows.length === 0) {
             await client.query('ROLLBACK');
-            return res.status(404).json({ error: 'Purchase not found' });
+            return next(new NotFoundError('Purchase'));
         }
 
         await client.query('COMMIT');
         res.json({ message: 'Purchase deleted successfully' });
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error deleting purchase:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        next(error);
     } finally {
         client.release();
     }

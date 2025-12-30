@@ -30,6 +30,13 @@ let state = {
     navigationHistory: [], // Tarix stack - back button uchun
     banners: [],
     initData: null,
+    // PERFORMANCE: Pagination state
+    productsPagination: {
+        hasMore: false,
+        total: 0,
+        currentOffset: 0,
+        isLoading: false
+    }
 };
 
 // --- Getters (Holatni olish) ---
@@ -90,10 +97,47 @@ export function setGuestTelegramUser(telegramUser) {
     state.guestTelegramUser = telegramUser;
 }
 
-export function setProducts(products) {
-    state.products = products;
-    state.filteredProducts = null; // O'ZGARTIRILDI: Yangi mahsulotlar kelganda filtrni tozalash
+// PERFORMANCE: Pagination bilan mahsulotlarni o'rnatish
+export function setProducts(productsData, append = false) {
+    // Backend'dan { products, pagination } formatida keladi
+    if (productsData && typeof productsData === 'object' && 'products' in productsData) {
+        // Yangi format (pagination bilan)
+        if (append) {
+            // Infinite scroll uchun - mavjud mahsulotlarga qo'shish
+            state.products = [...state.products, ...productsData.products];
+        } else {
+            // Yangi yuklash - eski mahsulotlarni almashtirish
+            state.products = productsData.products;
+        }
+        
+        // Pagination ma'lumotlarini saqlash
+        if (productsData.pagination) {
+            state.productsPagination = {
+                hasMore: productsData.pagination.hasMore || false,
+                total: productsData.pagination.total || 0,
+                currentOffset: productsData.pagination.offset + productsData.pagination.currentCount,
+                isLoading: false
+            };
+        }
+    } else {
+        // Eski format (backward compatibility) - faqat array
+        state.products = Array.isArray(productsData) ? productsData : [];
+        state.productsPagination = {
+            hasMore: false,
+            total: state.products.length,
+            currentOffset: state.products.length,
+            isLoading: false
+        };
+    }
+    
+    state.filteredProducts = null; // Yangi mahsulotlar kelganda filtrni tozalash
 }
+
+// PERFORMANCE: Pagination getters
+export const getProductsPagination = () => state.productsPagination;
+export const setProductsLoading = (isLoading) => {
+    state.productsPagination.isLoading = isLoading;
+};
 
 // O'ZGARTIRILDI: Qidiruv uchun filter funksiyasi
 export function setFilteredProducts(products) {

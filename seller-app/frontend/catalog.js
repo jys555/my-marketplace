@@ -5,6 +5,14 @@ let products = [];
 let prices = [];
 let inventory = [];
 let selectedProducts = new Set();
+// PERFORMANCE: Pagination state
+let productsPagination = {
+    hasMore: false,
+    total: 0,
+    currentOffset: 0,
+    isLoading: false,
+    limit: 50 // Default 50 ta (table formatida ko'proq ko'rsatish)
+};
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -84,10 +92,49 @@ async function loadProducts() {
         loadingState.style.display = 'flex';
         table.style.display = 'none';
         emptyState.style.display = 'none';
+        
+        // PERFORMANCE: Reset offset if it's a new search/initial load
+        // (Agar search o'zgarganda, offset 0 dan boshlaydi - bu setupEventListeners'da qilinadi)
 
-        // Load products
+        // PERFORMANCE: Load products with pagination
         // API response'da ID yashirilgan (_id), SKU asosiy identifier
-        products = await apiRequest('/products');
+        const searchParam = document.getElementById('search-input')?.value ? `&search=${encodeURIComponent(document.getElementById('search-input').value)}` : '';
+        const productsResponse = await apiRequest(`/products?limit=${productsPagination.limit}&offset=${productsPagination.currentOffset}${searchParam}`);
+        
+        // PERFORMANCE: Pagination response format: { products: [...], pagination: {...} }
+        let newProducts;
+        if (productsResponse && productsResponse.products) {
+            // Yangi format (pagination bilan)
+            newProducts = productsResponse.products;
+            if (productsResponse.pagination) {
+                productsPagination = {
+                    hasMore: productsResponse.pagination.hasMore || false,
+                    total: productsResponse.pagination.total || 0,
+                    currentOffset: productsResponse.pagination.offset + productsResponse.pagination.currentCount,
+                    isLoading: false,
+                    limit: productsResponse.pagination.limit
+                };
+            }
+        } else {
+            // Eski format (backward compatibility) - faqat array
+            newProducts = Array.isArray(productsResponse) ? productsResponse : [];
+            productsPagination = {
+                hasMore: false,
+                total: newProducts.length,
+                currentOffset: newProducts.length,
+                isLoading: false,
+                limit: 50
+            };
+        }
+        
+        // PERFORMANCE: Append qilish yoki to'liq almashtirish
+        if (productsPagination.currentOffset > productsPagination.limit && products.length > 0) {
+            // Append (keyingi sahifa)
+            products = [...products, ...newProducts];
+        } else {
+            // Yangi yuklash
+            products = newProducts;
+        }
         
         // Backend compatibility: agar _id bo'lsa, id'ga o'zgartirish (ichki ishlatish)
         products = products.map(p => {
@@ -110,12 +157,8 @@ async function loadProducts() {
         // Load inventory
         inventory = await apiRequest('/inventory');
 
-        // Filter by search
-        const searchTerm = document.getElementById('search-input')?.value.toLowerCase() || '';
-        const filteredProducts = products.filter(p => {
-            const name = (p.name_uz || p.name_ru || '').toLowerCase();
-            return name.includes(searchTerm);
-        });
+        // PERFORMANCE: Backend'da allaqachon search qilingan, shuning uchun filter kerak emas
+        const filteredProducts = products;
 
         if (filteredProducts.length === 0) {
             loadingState.style.display = 'none';
@@ -124,12 +167,15 @@ async function loadProducts() {
             return;
         }
 
-        // Render products as table rows
+        // PERFORMANCE: Render products as table rows (yangi yuklash - to'liq almashtirish)
         tableBody.innerHTML = '';
         filteredProducts.forEach(product => {
             const row = createProductRow(product);
             tableBody.appendChild(row);
         });
+
+        // PERFORMANCE: Infinite scroll sozlash (DOM tayyor bo'lgandan keyin)
+        setTimeout(() => setupInfiniteScroll(), 100);
 
         loadingState.style.display = 'none';
         table.style.display = 'table';
@@ -399,13 +445,16 @@ function updateSelectAllCheckbox() {
 
 // Setup Event Listeners
 function setupEventListeners() {
-    // Search input
+    // PERFORMANCE: Search input - pagination'ni reset qilish
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
         let searchTimeout;
         searchInput.addEventListener('input', () => {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
+                // PERFORMANCE: Search o'zgarganda pagination'ni reset qilish
+                productsPagination.currentOffset = 0;
+                products = []; // Reset products array
                 loadProducts();
             }, 300);
         });
@@ -452,20 +501,185 @@ function setupEventListeners() {
             }
         });
     }
+
+}
+
+// PERFORMANCE: Infinite Scroll - Load More Products
+async function loadMoreProducts() {
+    if (productsPagination.isLoading || !productsPagination.hasMore) {
+        return;
+    }
+
+    productsPagination.isLoading = true;
+    showProductsLoading();
+
+    try {
+        const searchParam = document.getElementById('search-input')?.value ? `&search=${encodeURIComponent(document.getElementById('search-input').value)}` : '';
+        const productsResponse = await apiRequest(`/products?limit=${productsPagination.limit}&offset=${productsPagination.currentOffset}${searchParam}`);
+        
+        let newProducts;
+        if (productsResponse && productsResponse.products) {
+            newProducts = productsResponse.products;
+            if (productsResponse.pagination) {
+                productsPagination = {
+                    hasMore: productsResponse.pagination.hasMore || false,
+                    total: productsResponse.pagination.total || 0,
+                    currentOffset: productsResponse.pagination.offset + productsResponse.pagination.currentCount,
+                    isLoading: false,
+                    limit: productsResponse.pagination.limit
+                };
+            }
+        } else {
+            newProducts = Array.isArray(productsResponse) ? productsResponse : [];
+            productsPagination.hasMore = false;
+        }
+
+        // Backend compatibility
+        newProducts = newProducts.map(p => {
+            if (p._id && !p.id) {
+                p.id = p._id;
+            }
+            return p;
+        });
+
+        // Append to existing products
+        products = [...products, ...newProducts];
+
+        // PERFORMANCE: Render new products (append to table)
+        const tableBody = document.getElementById('products-table-body');
+        if (tableBody) {
+            newProducts.forEach(product => {
+                const row = createProductRow(product);
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Re-attach event listeners for new rows
+        attachProductRowListeners();
+        
+        // Setup infinite scroll again for next batch
+        setTimeout(() => setupInfiniteScroll(), 100);
+    } catch (error) {
+        console.error('Error loading more products:', error);
+        hideProductsLoading();
+    } finally {
+        productsPagination.isLoading = false;
+    }
+}
+
+// PERFORMANCE: Infinite Scroll Setup
+let infiniteScrollObserver = null;
+
+function setupInfiniteScroll() {
+    // Eski observer'ni tozalash
+    if (infiniteScrollObserver) {
+        infiniteScrollObserver.disconnect();
+    }
+    
+    // PERFORMANCE: Intersection Observer sozlash
+    infiniteScrollObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            // Agar loading indicator ko'rinadigan bo'lsa va yuklanmagan bo'lsa
+            if (entry.isIntersecting) {
+                if (productsPagination.hasMore && !productsPagination.isLoading) {
+                    loadMoreProducts();
+                }
+            }
+        });
+    }, {
+        root: null, // viewport
+        rootMargin: '200px', // 200px oldindan yuklash
+        threshold: 0.1
+    });
+    
+    // Observer'ni qo'shish (loading indicator ko'rinadi)
+    const loadingIndicator = document.getElementById('products-loading');
+    if (loadingIndicator && productsPagination.hasMore) {
+        loadingIndicator.style.display = 'flex';
+        infiniteScrollObserver.observe(loadingIndicator);
+    } else if (loadingIndicator) {
+        loadingIndicator.style.display = 'none';
+    }
+}
+
+// PERFORMANCE: Show/Hide Loading Indicator
+function showProductsLoading() {
+    const loadingIndicator = document.getElementById('products-loading');
+    if (loadingIndicator && productsPagination.hasMore) {
+        loadingIndicator.style.display = 'flex';
+    }
+}
+
+function hideProductsLoading() {
+    const loadingIndicator = document.getElementById('products-loading');
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'none';
+    }
+}
+
+// Attach event listeners to product rows (for newly added rows)
+function attachProductRowListeners() {
+    // This function will be called after adding new rows
+    // Event listeners are already attached in createProductRow function
+    // But we might need to re-attach checkbox listeners
+    const checkboxes = document.querySelectorAll('.product-checkbox');
+    checkboxes.forEach(checkbox => {
+        if (!checkbox.dataset.listenerAttached) {
+            checkbox.addEventListener('change', (e) => {
+                const productSku = checkbox.dataset.productSku;
+                if (e.target.checked) {
+                    selectedProducts.add(productSku);
+                } else {
+                    selectedProducts.delete(productSku);
+                }
+                updateSelectAllCheckbox();
+            });
+            checkbox.dataset.listenerAttached = 'true';
+        }
+    });
 }
 
 // Save Price
 async function savePrice() {
+    const form = document.getElementById('edit-price-form');
+    if (!form) return;
+
+    // Frontend validation
+    const schema = {
+        'edit-cost-price': {
+            validator: (value, fieldName) => window.validation.validatePositive(value, fieldName),
+            fieldName: 'Cost price'
+        },
+        'edit-selling-price': {
+            validator: (value, fieldName) => window.validation.validatePositive(window.validation.validateRequired(value, fieldName), fieldName),
+            fieldName: 'Selling price'
+        },
+        'edit-strikethrough-price': {
+            validator: (value, fieldName) => window.validation.validatePositive(value, fieldName),
+            fieldName: 'Strikethrough price'
+        },
+        'edit-commission-rate': {
+            validator: (value, fieldName) => window.validation.validateNumber(value, fieldName, 0, 100),
+            fieldName: 'Commission rate'
+        }
+    };
+
+    const validation = window.validation.validateForm(form, schema);
+    if (!validation.valid) {
+        // Errors already displayed by validateForm
+        return;
+    }
+
     const productId = parseInt(document.getElementById('edit-product-id').value);
     const marketplaceId = document.getElementById('edit-marketplace-id').value || null;
 
     const priceData = {
         product_id: productId,
         marketplace_id: marketplaceId ? parseInt(marketplaceId) : null,
-        cost_price: parseFloat(document.getElementById('edit-cost-price').value) || null,
-        selling_price: parseFloat(document.getElementById('edit-selling-price').value) || null,
-        commission_rate: parseFloat(document.getElementById('edit-commission-rate').value) || null,
-        strikethrough_price: parseFloat(document.getElementById('edit-strikethrough-price').value) || null
+        cost_price: validation.data['edit-cost-price'] || null,
+        selling_price: validation.data['edit-selling-price'] || null,
+        commission_rate: validation.data['edit-commission-rate'] || null,
+        strikethrough_price: validation.data['edit-strikethrough-price'] || null
     };
 
     try {

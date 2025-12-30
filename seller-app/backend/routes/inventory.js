@@ -1,6 +1,9 @@
 const express = require('express');
 const pool = require('../db');
 const router = express.Router();
+const { validateParams, validateBody, required, integer, optional, string } = require('../middleware/validate');
+const { NotFoundError } = require('../utils/errors');
+const logger = require('../utils/logger');
 
 // GET /api/seller/inventory - Barcha ombor qoldiqlari
 router.get('/', async (req, res) => {
@@ -28,7 +31,7 @@ router.get('/', async (req, res) => {
         const { rows } = await pool.query(query, params);
         res.json(rows);
     } catch (error) {
-        console.error('Error fetching inventory:', error);
+        logger.error('Error fetching inventory:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
@@ -53,24 +56,27 @@ router.get('/:product_id', async (req, res) => {
 
         res.json(rows[0]);
     } catch (error) {
-        console.error('Error fetching inventory:', error);
+        logger.error('Error fetching inventory:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
 // PUT /api/seller/inventory/:product_id/adjust - Qoldiqni tuzatish
-router.put('/:product_id/adjust', async (req, res) => {
+router.put('/:product_id/adjust',
+    validateParams({
+        product_id: required(integer)
+    }),
+    validateBody({
+        quantity: required(integer),
+        reason: optional(string)
+    }),
+    async (req, res, next) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
         const { product_id } = req.params;
-        const { quantity, notes } = req.body;
-
-        if (quantity === undefined || quantity === null) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({ error: 'quantity is required' });
-        }
+        const { quantity, reason } = req.body;
 
         // Eski qoldiqni olish
         const { rows: oldRows } = await client.query(`
@@ -110,8 +116,7 @@ router.put('/:product_id/adjust', async (req, res) => {
         res.json(rows[0]);
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error adjusting inventory:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        next(error);
     } finally {
         client.release();
     }
@@ -138,7 +143,7 @@ router.get('/:product_id/movements', async (req, res) => {
 
         res.json(rows);
     } catch (error) {
-        console.error('Error fetching inventory movements:', error);
+        logger.error('Error fetching inventory movements:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });

@@ -1,4 +1,5 @@
 const pool = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Analytics service
@@ -71,7 +72,7 @@ class AnalyticsService {
                 }
             };
         } catch (error) {
-            console.error('Error getting dashboard data:', error);
+            logger.error('Error getting dashboard data:', error);
             throw error;
         }
     }
@@ -162,7 +163,7 @@ class AnalyticsService {
             return analyticsRows[0];
         } catch (error) {
             await client.query('ROLLBACK');
-            console.error('Error calculating daily analytics:', error);
+            logger.error('Error calculating daily analytics:', error);
             throw error;
         } finally {
             client.release();
@@ -217,7 +218,7 @@ class AnalyticsService {
             const { rows } = await pool.query(query, params);
             return rows;
         } catch (error) {
-            console.error('Error getting product analytics:', error);
+            logger.error('Error getting product analytics:', error);
             throw error;
         }
     }
@@ -302,7 +303,7 @@ class AnalyticsService {
             return analyticsRows[0];
         } catch (error) {
             await client.query('ROLLBACK');
-            console.error('Error calculating product analytics:', error);
+            logger.error('Error calculating product analytics:', error);
             throw error;
         } finally {
             client.release();
@@ -361,7 +362,7 @@ class AnalyticsService {
 
             return results;
         } catch (error) {
-            console.error('Error recalculating analytics:', error);
+            logger.error('Error recalculating analytics:', error);
             throw error;
         }
     }

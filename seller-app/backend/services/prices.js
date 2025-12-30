@@ -2,6 +2,7 @@
 // Amazing Store narxlarini product_prices ga ko'chirish va boshqarish
 
 const pool = require('../db');
+const logger = require('../utils/logger');
 
 class PriceService {
     /**
@@ -10,7 +11,7 @@ class PriceService {
      */
     async syncAmazingStorePrices() {
         try {
-            console.log('🔄 Syncing Amazing Store prices...');
+            logger.info('🔄 Syncing Amazing Store prices...');
 
             // 1. Amazing Store marketplace ID'sini olish
             const { rows: marketplaceRows } = await pool.query(`
@@ -19,7 +20,7 @@ class PriceService {
 
             let marketplaceId;
             if (marketplaceRows.length === 0) {
-                console.warn('⚠️  Amazing Store marketplace not found. Creating it...');
+                logger.warn('⚠️  Amazing Store marketplace not found. Creating it...');
                 // Amazing Store marketplace yaratish
                 const { rows: newMarketplace } = await pool.query(`
                     INSERT INTO marketplaces (name, api_type, marketplace_code, is_active)
@@ -27,10 +28,10 @@ class PriceService {
                     RETURNING id
                 `);
                 marketplaceId = newMarketplace[0].id;
-                console.log(`✅ Created Amazing Store marketplace with ID: ${marketplaceId}`);
+                logger.info(`✅ Created Amazing Store marketplace with ID: ${marketplaceId}`);
             } else {
                 marketplaceId = marketplaceRows[0].id;
-                console.log(`✅ Found Amazing Store marketplace ID: ${marketplaceId}`);
+                logger.info(`✅ Found Amazing Store marketplace ID: ${marketplaceId}`);
             }
 
             // 2. Amazing Store'dagi barcha tovarlarni olish
@@ -40,7 +41,7 @@ class PriceService {
                 WHERE is_active = true
             `);
 
-            console.log(`📦 Found ${products.length} active products in Amazing Store`);
+            logger.info(`📦 Found ${products.length} active products in Amazing Store`);
 
             let created = 0;
             let updated = 0;
@@ -69,7 +70,7 @@ class PriceService {
                 } catch (error) {
                     // Agar cost_price yoki commission_rate ustunlari mavjud bo'lmasa, NULL qoldiramiz
                     // Bu migration 005 hali bajarilmagan bo'lsa bo'ladi
-                    console.warn(`⚠️  Could not fetch cost_price/commission_rate for product ${product.id}:`, error.message);
+                    logger.warn(`⚠️  Could not fetch cost_price/commission_rate for product ${product.id}:`, error.message);
                 }
 
                 // 5. product_prices da yozuv bor-yo'qligini tekshirish (marketplace_id bilan)
@@ -121,10 +122,10 @@ class PriceService {
                 }
             }
 
-            console.log(`✅ Price sync completed: ${created} created, ${updated} updated, ${skipped} skipped`);
+            logger.info(`✅ Price sync completed: ${created} created, ${updated} updated, ${skipped} skipped`);
             return { created, updated, skipped, total: products.length };
         } catch (error) {
-            console.error('❌ Error syncing Amazing Store prices:', error);
+            logger.error('❌ Error syncing Amazing Store prices:', error);
             throw error;
         }
     }
@@ -176,7 +177,7 @@ class PriceService {
 
             return { success: true, productId, sellingPrice, strikethroughPrice };
         } catch (error) {
-            console.error(`❌ Error syncing product price ${productId}:`, error);
+            logger.error(`❌ Error syncing product price ${productId}:`, error);
             throw error;
         }
     }
@@ -227,7 +228,7 @@ class PriceService {
 
             return { profitability, profitabilityPercentage };
         } catch (error) {
-            console.error(`❌ Error recalculating profitability:`, error);
+            logger.error(`❌ Error recalculating profitability:`, error);
             throw error;
         }
     }

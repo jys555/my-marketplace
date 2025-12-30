@@ -1,12 +1,113 @@
 const express = require('express');
 const pool = require('../db');
 const router = express.Router();
+const { validateBody, validateParams, required, string, optional, number, positive, integer, url, boolean } = require('../middleware/validate');
+const { NotFoundError, ConflictError } = require('../utils/errors');
+const logger = require('../utils/logger');
 
-// GET /api/seller/products - Barcha tovarlar (Amazing Store)
+/**
+ * @swagger
+ * /api/seller/products:
+ *   get:
+ *     summary: Get all products with pagination
+ *     description: Retrieve a paginated list of products with optional filtering by category and search
+ *     tags: [Products]
+ *     security:
+ *       - TelegramAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *           minimum: 1
+ *           maximum: 200
+ *         description: Number of products per page (1-200)
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *           minimum: 0
+ *         description: Offset for pagination
+ *       - in: query
+ *         name: category_id
+ *         schema:
+ *           type: integer
+ *         description: Filter by category ID
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search in product name (UZ/RU) or SKU
+ *     responses:
+ *       200:
+ *         description: Successful response with products and pagination info
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 products:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Product'
+ *                 pagination:
+ *                   $ref: '#/components/schemas/Pagination'
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+// GET /api/seller/products - Barcha tovarlar (Amazing Store) - PERFORMANCE: Pagination bilan
 router.get('/', async (req, res) => {
     try {
         const { marketplace_id, search, category_id } = req.query;
+        
+        // PERFORMANCE: Pagination parametrlari
+        const limit = parseInt(req.query.limit) || 50; // Seller App'da default 50 ta (ko'proq ko'rsatish uchun)
+        const offset = parseInt(req.query.offset) || 0;
+        
+        // Limit va offset validatsiyasi
+        const validLimit = Math.min(Math.max(limit, 1), 200); // 1-200 oralig'ida
+        const validOffset = Math.max(offset, 0);
 
+        let whereConditions = ['1=1']; // Base condition
+        const params = [];
+        let paramIndex = 1;
+
+        if (category_id) {
+            whereConditions.push(`p.category_id = $${paramIndex}`);
+            params.push(category_id);
+            paramIndex++;
+        }
+
+        if (search) {
+            whereConditions.push(`(p.name_uz ILIKE $${paramIndex} OR p.name_ru ILIKE $${paramIndex} OR p.sku ILIKE $${paramIndex})`);
+            params.push(`%${search}%`);
+            paramIndex++;
+        }
+
+        const whereClause = whereConditions.join(' AND ');
+
+        // PERFORMANCE: Total count olish (pagination uchun)
+        const countQuery = `
+            SELECT COUNT(*) as total
+            FROM products p
+            WHERE ${whereClause}
+        `;
+        const { rows: countRows } = await pool.query(countQuery, params);
+        const total = parseInt(countRows[0].total);
+
+        // PERFORMANCE: Faqat kerakli qismni olish (LIMIT/OFFSET)
         let query = `
             SELECT 
                 p.id, p.name_uz, p.name_ru, p.description_uz, p.description_ru,
@@ -16,47 +117,85 @@ router.get('/', async (req, res) => {
                 p.created_at
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
-            WHERE 1=1
+            WHERE ${whereClause}
+            ORDER BY p.created_at DESC
+            LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
         `;
         
-        // Note: ID is included for internal use (foreign keys, backend logic)
-        // Frontend should use SKU as primary identifier
-        const params = [];
-        let paramIndex = 1;
-
-        if (category_id) {
-            query += ` AND p.category_id = $${paramIndex}`;
-            params.push(category_id);
-            paramIndex++;
-        }
-
-        if (search) {
-            query += ` AND (p.name_uz ILIKE $${paramIndex} OR p.name_ru ILIKE $${paramIndex} OR p.sku ILIKE $${paramIndex})`;
-            params.push(`%${search}%`);
-            paramIndex++;
-        }
-
-        query += ` ORDER BY p.created_at DESC`;
-
+        params.push(validLimit, validOffset);
+        
         const { rows } = await pool.query(query, params);
         
         // ID'ni yashirish (frontend uchun SKU asosiy identifier)
-        // ID backend'da kerak (foreign keys), lekin frontend'da ko'rinmasligi kerak
         const products = rows.map(row => {
             const { id, ...rest } = row;
             return {
                 ...rest,
-                _id: id  // Yashirilgan ID (ichki ishlatish uchun, frontend'da ishlatilmasligi kerak)
+                _id: id  // Yashirilgan ID (ichki ishlatish uchun)
             };
         });
         
-        res.json(products);
+        // PERFORMANCE: Pagination ma'lumotlari bilan javob qaytarish
+        const hasMore = validOffset + rows.length < total;
+        
+        res.json({
+            products: products,
+            pagination: {
+                total,
+                limit: validLimit,
+                offset: validOffset,
+                hasMore,
+                currentCount: products.length
+            }
+        });
     } catch (error) {
-        console.error('Error fetching products:', error);
+        logger.error('Error fetching products:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
+/**
+ * @swagger
+ * /api/seller/products/{id}:
+ *   get:
+ *     summary: Get a single product by ID or SKU
+ *     description: Retrieve product details by ID or SKU
+ *     tags: [Products]
+ *     security:
+ *       - TelegramAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Product ID or SKU
+ *     responses:
+ *       200:
+ *         description: Successful response with product details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Product'
+ *       404:
+ *         description: Product not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/seller/products/:id - Bitta tovar
 router.get('/:id', async (req, res) => {
     try {
@@ -84,19 +223,112 @@ router.get('/:id', async (req, res) => {
             _id: productId  // Yashirilgan ID (ichki ishlatish uchun)
         });
     } catch (error) {
-        console.error('Error fetching product:', error);
+        logger.error('Error fetching product:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
+/**
+ * @swagger
+ * /api/seller/products:
+ *   post:
+ *     summary: Create a new product
+ *     description: Create a new product in the Amazing Store. SKU will be auto-generated if not provided.
+ *     tags: [Products]
+ *     security:
+ *       - TelegramAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name_uz
+ *               - price
+ *             properties:
+ *               name_uz:
+ *                 type: string
+ *                 description: Product name in Uzbek (required)
+ *               name_ru:
+ *                 type: string
+ *                 description: Product name in Russian
+ *               description_uz:
+ *                 type: string
+ *                 description: Product description in Uzbek
+ *               description_ru:
+ *                 type: string
+ *                 description: Product description in Russian
+ *               price:
+ *                 type: number
+ *                 format: float
+ *                 description: Product price (required, must be positive)
+ *               sale_price:
+ *                 type: number
+ *                 format: float
+ *                 description: Product sale price (optional, must be positive)
+ *               image_url:
+ *                 type: string
+ *                 format: uri
+ *                 description: Product image URL
+ *               category_id:
+ *                 type: integer
+ *                 description: Category ID
+ *               sku:
+ *                 type: string
+ *                 description: Stock Keeping Unit (auto-generated if not provided)
+ *               is_active:
+ *                 type: boolean
+ *                 description: Product active status
+ *     responses:
+ *       201:
+ *         description: Product created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Product'
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       409:
+ *         description: Conflict - SKU already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // POST /api/seller/products - Yangi tovar (Amazing Store)
-router.post('/', async (req, res) => {
+router.post('/',
+    validateBody({
+        name_uz: required(string),
+        name_ru: optional(string),
+        description_uz: optional(string),
+        description_ru: optional(string),
+        price: required(positive),
+        sale_price: optional(positive),
+        image_url: optional(url),
+        category_id: optional(integer),
+        sku: optional(string),
+        is_active: optional(boolean)
+    }),
+    async (req, res, next) => {
     try {
-        const { name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, sku } = req.body;
-
-        if (!name_uz || !price) {
-            return res.status(400).json({ error: 'name_uz and price are required' });
-        }
+        const { name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, sku, is_active } = req.body;
 
         // SKU majburiy, agar berilmagan bo'lsa avtomatik generatsiya qilish
         let finalSku = sku;
@@ -132,18 +364,121 @@ router.post('/', async (req, res) => {
         });
     } catch (error) {
         if (error.code === '23505') { // Unique violation
-            return res.status(400).json({ error: 'SKU already exists' });
+            return next(new ConflictError('SKU already exists'));
         }
-        console.error('Error creating product:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        next(error);
     }
 });
 
+/**
+ * @swagger
+ * /api/seller/products/{id}:
+ *   put:
+ *     summary: Update a product by ID or SKU
+ *     description: Update product details. All fields are optional - only provided fields will be updated.
+ *     tags: [Products]
+ *     security:
+ *       - TelegramAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Product ID or SKU
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name_uz:
+ *                 type: string
+ *                 description: Product name in Uzbek
+ *               name_ru:
+ *                 type: string
+ *                 description: Product name in Russian
+ *               description_uz:
+ *                 type: string
+ *                 description: Product description in Uzbek
+ *               description_ru:
+ *                 type: string
+ *                 description: Product description in Russian
+ *               price:
+ *                 type: number
+ *                 format: float
+ *                 description: Product price (must be positive)
+ *               sale_price:
+ *                 type: number
+ *                 format: float
+ *                 description: Product sale price (must be positive)
+ *               image_url:
+ *                 type: string
+ *                 format: uri
+ *                 description: Product image URL
+ *               category_id:
+ *                 type: integer
+ *                 description: Category ID
+ *               sku:
+ *                 type: string
+ *                 description: Stock Keeping Unit (must be unique)
+ *               is_active:
+ *                 type: boolean
+ *                 description: Product active status
+ *     responses:
+ *       200:
+ *         description: Product updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Product'
+ *       404:
+ *         description: Product not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       409:
+ *         description: Conflict - SKU already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // PUT /api/seller/products/:id - Tovar yangilash (id yoki sku orqali)
-router.put('/:id', async (req, res) => {
+router.put('/:id',
+    validateParams({
+        id: required(string) // id yoki sku bo'lishi mumkin
+    }),
+    validateBody({
+        name_uz: optional(string),
+        name_ru: optional(string),
+        description_uz: optional(string),
+        description_ru: optional(string),
+        price: optional(positive),
+        sale_price: optional(positive),
+        image_url: optional(url),
+        category_id: optional(integer),
+        sku: optional(string),
+        is_active: optional(boolean)
+    }),
+    async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, sku } = req.body;
+        const { name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, sku, is_active } = req.body;
 
         // SKU yangilash bo'lsa, unique tekshirish
         if (sku) {
@@ -152,7 +487,7 @@ router.put('/:id', async (req, res) => {
                 [sku, id]
             );
             if (existing.length > 0) {
-                return res.status(400).json({ error: 'SKU already exists' });
+                return next(new ConflictError('SKU already exists'));
             }
         }
 
@@ -173,7 +508,7 @@ router.put('/:id', async (req, res) => {
         `, [name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, sku, id]);
 
         if (rows.length === 0) {
-            return res.status(404).json({ error: 'Product not found' });
+            return next(new NotFoundError('Product'));
         }
 
         // ID'ni yashirish (frontend uchun SKU asosiy identifier)
@@ -184,13 +519,61 @@ router.put('/:id', async (req, res) => {
         });
     } catch (error) {
         if (error.code === '23505') { // Unique violation
-            return res.status(400).json({ error: 'SKU already exists' });
+            return next(new ConflictError('SKU already exists'));
         }
-        console.error('Error updating product:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        next(error);
     }
 });
 
+/**
+ * @swagger
+ * /api/seller/products/{id}:
+ *   delete:
+ *     summary: Delete a product by ID or SKU
+ *     description: Permanently delete a product from the database
+ *     tags: [Products]
+ *     security:
+ *       - TelegramAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Product ID or SKU
+ *     responses:
+ *       200:
+ *         description: Product deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Product deleted successfully
+ *                 sku:
+ *                   type: string
+ *                   description: Deleted product SKU
+ *       404:
+ *         description: Product not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // DELETE /api/seller/products/:id - Tovar o'chirish (id yoki sku orqali)
 router.delete('/:id', async (req, res) => {
     try {
@@ -212,7 +595,7 @@ router.delete('/:id', async (req, res) => {
             sku: rows[0].sku  // SKU'ni qaytarish (ID emas)
         });
     } catch (error) {
-        console.error('Error deleting product:', error);
+        logger.error('Error deleting product:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });

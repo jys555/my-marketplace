@@ -1,0 +1,33 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  # Railway deployment is handled via Railway's GitHub integration
+  # This workflow is for reference/notification purposes
+  
+  notify:
+    name: Deployment Notification
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deployment Info
+        run: |
+          echo "🚀 Deployment triggered for commit: ${{ github.sha }}"
+          echo "Branch: ${{ github.ref }}"
+          echo "Railway will automatically deploy if GitHub integration is configured"
+          echo ""
+          echo "Backend services:"
+          echo "- Seller App Backend: Railway will deploy seller-app/backend"
+          echo "- Amazing Store Backend: Railway will deploy amazing store/backend"
+          echo ""
+          echo "Frontend services:"
+          echo "- Seller App Frontend: Vercel will deploy seller-app/frontend"
+          echo "- Amazing Store Frontend: Vercel will deploy amazing store/frontend"

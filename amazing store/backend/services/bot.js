@@ -1,5 +1,6 @@
 const { Bot, InlineKeyboard } = require('grammy');
 const pool = require('../db');
+const logger = require('../utils/logger');
 
 class TelegramBotService {
     constructor() {
@@ -12,7 +13,7 @@ class TelegramBotService {
     async initialize() {
         const token = process.env.TELEGRAM_BOT_TOKEN;
         if (!token) {
-            console.warn('⚠️  TELEGRAM_BOT_TOKEN not set, bot disabled');
+            logger.warn('⚠️  TELEGRAM_BOT_TOKEN not set, bot disabled');
             return;
         }
 
@@ -21,9 +22,9 @@ class TelegramBotService {
         // Bot'ni initialize qilish (bot ma'lumotlarini Telegram API'dan olish)
         try {
             await this.bot.init();
-            console.log('✅ Bot initialized');
+            logger.info('✅ Bot initialized');
         } catch (error) {
-            console.error('❌ Bot initialization failed:', error);
+            logger.error('❌ Bot initialization failed:', error);
             this.bot = null;
             return;
         }
@@ -34,14 +35,14 @@ class TelegramBotService {
         // Webhook yoki polling
         if (process.env.WEBHOOK_URL) {
             await this.bot.api.setWebhook(process.env.WEBHOOK_URL);
-            console.log('✅ Bot webhook set:', process.env.WEBHOOK_URL);
+            logger.info('✅ Bot webhook set:', process.env.WEBHOOK_URL);
         } else {
             // bot.start() Promise qaytaradi va hech qachon resolve qilmaydi (polling loop)
             // Shuning uchun await qilmaymiz, background'da ishlaydi
             this.bot.start().catch((error) => {
-                console.error('❌ Bot polling error:', error);
+                logger.error('❌ Bot polling error:', error);
             });
-            console.log('✅ Bot started with polling');
+            logger.info('✅ Bot started with polling');
         }
     }
 
@@ -124,7 +125,7 @@ class TelegramBotService {
                 
                 await ctx.reply(message, { reply_markup: keyboard });
             } catch (error) {
-                console.error('Error fetching orders:', error);
+                logger.error('Error fetching orders:', error);
                 await ctx.reply('❌ Xatolik yuz berdi. Iltimos, keyinroq urinib ko\'ring.');
             }
         });
@@ -191,7 +192,7 @@ class TelegramBotService {
             
             return rows[0].is_admin === true;
         } catch (error) {
-            console.error('Error checking admin status:', error);
+            logger.error('Error checking admin status:', error);
             return false;
         }
     }
@@ -206,7 +207,7 @@ class TelegramBotService {
         );
         
         if (admins.length === 0) {
-            console.warn('⚠️  No admins found in database');
+            logger.warn('⚠️  No admins found in database');
             return;
         }
         
@@ -222,7 +223,7 @@ class TelegramBotService {
             try {
                 await this.bot.api.sendMessage(admin.telegram_id, message);
             } catch (error) {
-                console.error(`Error sending message to admin ${admin.telegram_id}:`, error);
+                logger.error(`Error sending message to admin ${admin.telegram_id}:`, error);
             }
         }
     }
@@ -247,7 +248,7 @@ class TelegramBotService {
         try {
             await this.bot.api.sendMessage(telegramId, message);
         } catch (error) {
-            console.error(`Error sending message to customer ${telegramId}:`, error);
+            logger.error(`Error sending message to customer ${telegramId}:`, error);
         }
     }
 }

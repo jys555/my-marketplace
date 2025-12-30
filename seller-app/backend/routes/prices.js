@@ -3,6 +3,9 @@ const pool = require('../db');
 const priceService = require('../services/prices');
 const migrate = require('../utils/migrate');
 const router = express.Router();
+const { validateBody, validateParams, required, optional, integer, positive, number } = require('../middleware/validate');
+const { NotFoundError, ConflictError } = require('../utils/errors');
+const logger = require('../utils/logger');
 
 // Cache for column existence check (to avoid running migrations on every request)
 let profitabilityPercentageColumnChecked = false;
@@ -28,13 +31,13 @@ async function ensureProfitabilityPercentageColumn() {
         }
         
         // Column doesn't exist, run migrations
-        console.log('⚠️  profitability_percentage column not found. Running migrations...');
+        logger.warn('⚠️  profitability_percentage column not found. Running migrations...');
         try {
             const migrationResult = await migrate.runMigrations();
-            console.log('✅ Migrations completed:', migrationResult);
+            logger.info('✅ Migrations completed:', migrationResult);
         } catch (migrationError) {
-            console.error('❌ Migration failed:', migrationError);
-            console.error('Migration error details:', {
+            logger.error('❌ Migration failed:', migrationError);
+            logger.error('Migration error details:', {
                 message: migrationError.message,
                 stack: migrationError.stack,
                 code: migrationError.code
@@ -52,28 +55,28 @@ async function ensureProfitabilityPercentageColumn() {
         
         if (checkAgain.length > 0) {
             profitabilityPercentageColumnExists = true;
-            console.log('✅ profitability_percentage column found after migration');
+            logger.info('✅ profitability_percentage column found after migration');
             return true;
         } else {
             profitabilityPercentageColumnExists = false;
-            console.error('❌ profitability_percentage column still not found after migration');
+            logger.error('❌ profitability_percentage column still not found after migration');
             // Try to create the column directly as a fallback
             try {
-                console.log('🔄 Attempting to create profitability_percentage column directly...');
+                logger.info('🔄 Attempting to create profitability_percentage column directly...');
                 await pool.query(`
                     ALTER TABLE product_prices
                     ADD COLUMN IF NOT EXISTS profitability_percentage DECIMAL(5, 2)
                 `);
-                console.log('✅ Column created directly');
+                logger.info('✅ Column created directly');
                 profitabilityPercentageColumnExists = true;
                 return true;
             } catch (directError) {
-                console.error('❌ Failed to create column directly:', directError);
+                logger.error('❌ Failed to create column directly:', directError);
                 return false;
             }
         }
     } catch (error) {
-        console.error('Error checking profitability_percentage column:', error);
+        logger.error('Error checking profitability_percentage column:', error);
         profitabilityPercentageColumnChecked = true;
         profitabilityPercentageColumnExists = false;
         return false;
@@ -88,7 +91,7 @@ router.get('/', async (req, res) => {
         // Ensure profitability_percentage column exists
         const columnExists = await ensureProfitabilityPercentageColumn();
         if (!columnExists) {
-            console.error('❌ profitability_percentage column does not exist and could not be created');
+            logger.error('❌ profitability_percentage column does not exist and could not be created');
             // Continue anyway, but don't select the column
         }
 
@@ -137,7 +140,7 @@ router.get('/', async (req, res) => {
         const { rows } = await pool.query(query, params);
         res.json(rows);
     } catch (error) {
-        console.error('Error fetching prices:', error);
+        logger.error('Error fetching prices:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
@@ -150,7 +153,7 @@ router.get('/:id', async (req, res) => {
         // Ensure profitability_percentage column exists
         const columnExists = await ensureProfitabilityPercentageColumn();
         if (!columnExists) {
-            console.error('❌ profitability_percentage column does not exist and could not be created');
+            logger.error('❌ profitability_percentage column does not exist and could not be created');
         }
 
         let selectFields = `
@@ -184,19 +187,24 @@ router.get('/:id', async (req, res) => {
 
         res.json(rows[0]);
     } catch (error) {
-        console.error('Error fetching price:', error);
+        logger.error('Error fetching price:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
 // POST /api/seller/prices - Yangi narx
-router.post('/', async (req, res) => {
+router.post('/',
+    validateBody({
+        product_id: required(integer),
+        marketplace_id: optional(integer),
+        cost_price: optional(positive),
+        selling_price: optional(positive),
+        commission_rate: optional(number),
+        strikethrough_price: optional(positive)
+    }),
+    async (req, res, next) => {
     try {
         const { product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price } = req.body;
-
-        if (!product_id) {
-            return res.status(400).json({ error: 'product_id is required' });
-        }
 
         // Rentabillikni hisoblash (miqdor va foiz)
         let profitability = null;
@@ -250,15 +258,27 @@ router.post('/', async (req, res) => {
         res.status(201).json(rows[0]);
     } catch (error) {
         if (error.code === '23503') {
-            return res.status(404).json({ error: 'Product or marketplace not found' });
+            return next(new NotFoundError('Product or marketplace'));
         }
-        console.error('Error creating price:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        if (error.code === '23505') {
+            return next(new ConflictError('Price already exists for this product and marketplace'));
+        }
+        next(error);
     }
 });
 
 // PUT /api/seller/prices/:id - Narx yangilash
-router.put('/:id', async (req, res) => {
+router.put('/:id',
+    validateParams({
+        id: required(integer)
+    }),
+    validateBody({
+        cost_price: optional(positive),
+        selling_price: optional(positive),
+        commission_rate: optional(number),
+        strikethrough_price: optional(positive)
+    }),
+    async (req, res, next) => {
     try {
         const { id } = req.params;
         const { cost_price, selling_price, commission_rate, strikethrough_price } = req.body;
@@ -333,8 +353,7 @@ router.put('/:id', async (req, res) => {
 
         res.json(rows[0]);
     } catch (error) {
-        console.error('Error updating price:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        next(error);
     }
 });
 
@@ -355,7 +374,7 @@ router.delete('/:id', async (req, res) => {
 
         res.json({ message: 'Price deleted successfully' });
     } catch (error) {
-        console.error('Error deleting price:', error);
+        logger.error('Error deleting price:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });

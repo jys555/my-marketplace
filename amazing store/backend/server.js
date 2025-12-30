@@ -6,6 +6,9 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { initializeDatabase } = require('./utils/initDb');
 const botService = require('./services/bot');
+const logger = require('./utils/logger');
+const requestLogger = require('./middleware/requestLogger');
+const metricsMiddleware = require('./middleware/metrics');
 
 // Amazing Store routes
 const bannerRoutes = require('./routes/banners');
@@ -13,6 +16,13 @@ const productRoutes = require('./routes/products');
 const userRoutes = require('./routes/users');
 const orderRoutes = require('./routes/orders');
 const categoryRoutes = require('./routes/categories');
+const healthRoutes = require('./routes/health');
+const metricsRoutes = require('./routes/metrics');
+const errorHandler = require('./middleware/errorHandler');
+
+// Swagger documentation
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,7 +40,13 @@ const apiLimiter = rateLimit({
 });
 
 // Global middleware
-app.use(helmet({ contentSecurityPolicy: false })); // Xavfsizlik headerlari
+app.use(helmet({ contentSecurityPolicy: false }));
+
+// Request logging (logs to FILE, NOT database)
+app.use(requestLogger);
+
+// Metrics collection middleware
+app.use(metricsMiddleware);
 
 // CORS sozlamalari - faqat ishonchli domenlardan so'rovlar qabul qilinadi
 const allowedOrigins = [
@@ -47,7 +63,7 @@ app.use(cors({
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
-            console.warn(`CORS blocked request from: ${origin}`);
+            logger.warn(`CORS blocked request from: ${origin}`);
             callback(new Error('Not allowed by CORS'));
         }
     },
@@ -67,12 +83,25 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
         await botService.bot.handleUpdate(update);
         res.sendStatus(200);
     } catch (error) {
-        console.error('Webhook error:', error);
+        logger.error('Webhook error:', error);
         res.sendStatus(200); // Telegram'ga 200 qaytarish kerak
     }
 });
 
 app.use(express.json());
+
+// Health check endpoint (rate limit'dan oldin, authentication'dan oldin)
+app.get('/health', healthRoutes.healthCheck);
+
+// Metrics endpoint (rate limit'dan oldin, authentication'dan oldin)
+app.get('/metrics', metricsRoutes.getMetrics);
+
+// Swagger API Documentation (rate limit'dan oldin, authentication'dan oldin)
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Amazing Store API Documentation'
+}));
+
 app.use('/api/', apiLimiter); // API endpointlariga rate limit qo'llash
 
 // Static files: Amazing Store frontend
@@ -90,6 +119,9 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
+// PHASE 3: Error Handler Middleware (barcha route'lardan keyin)
+app.use(errorHandler);
+
 // Database'ni initialize qilib, keyin serverni ishga tushirish
 async function startServer() {
     try {
@@ -101,12 +133,12 @@ async function startServer() {
         
         // Server ishga tushirish
         app.listen(PORT, () => {
-            console.log(`✅ Amazing Store Server is running on port ${PORT}`);
-            console.log(`📱 Frontend: http://localhost:${PORT}`);
-            console.log(`🤖 Telegram Bot: ${botService.bot ? 'Active' : 'Disabled'}`);
+            logger.info(`✅ Amazing Store Server is running on port ${PORT}`);
+            logger.info(`📱 Frontend: http://localhost:${PORT}`);
+            logger.info(`🤖 Telegram Bot: ${botService.bot ? 'Active' : 'Disabled'}`);
         });
     } catch (error) {
-        console.error('❌ Failed to start server:', error);
+        logger.error('❌ Failed to start server:', error);
         process.exit(1);
     }
 }

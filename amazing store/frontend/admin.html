@@ -12,6 +12,8 @@
     .form-group { margin-bottom: 15px; }
     label { display: block; margin-bottom: 5px; font-weight: bold; }
     input, textarea { display: block; width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+    .validation-error { border-color: #dc3545 !important; box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important; }
+    .error-message { color: #dc3545; font-size: 12px; margin-top: 4px; display: block; }
     .lang-group { display: flex; gap: 20px; }
     .lang-group > div { flex: 1; }
     button { display: block; width: 100%; padding: 12px; background: #007aff; color: white; border: none; cursor: pointer; border-radius: 4px; font-size: 16px; font-weight: bold; }
@@ -74,6 +76,7 @@
     <div id="result"></div>
   </div>
 
+  <script src="validation.js"></script>
   <script>
     // Backend URL ni avtomatik aniqlash
     // Vercel'da deploy bo'lsa, vercel.json orqali /api proxy qilinadi
@@ -144,23 +147,60 @@
       e.preventDefault();
       const resultDiv = document.getElementById('result');
       
-      // O'ZGARTIRILDI: category_id qo'shildi
-      const product = {
-        name_uz: document.getElementById('name_uz').value,
-        name_ru: document.getElementById('name_ru').value,
-        description_uz: document.getElementById('description_uz').value,
-        description_ru: document.getElementById('description_ru').value,
-        price: parseFloat(document.getElementById('price').value),
-        sale_price: document.getElementById('sale_price').value ? parseFloat(document.getElementById('sale_price').value) : null,
-        image_url: document.getElementById('image_url').value,
-        category_id: parseInt(document.getElementById('category_id').value)
+      const form = document.getElementById('productForm');
+      
+      // Frontend validation
+      const schema = {
+        'name_uz': {
+          validator: (value, fieldName) => window.validation.validateString(window.validation.validateRequired(value, fieldName), fieldName, 1),
+          fieldName: 'Name (Uzbek)'
+        },
+        'name_ru': {
+          validator: (value, fieldName) => window.validation.validateString(window.validation.validateRequired(value, fieldName), fieldName, 1),
+          fieldName: 'Name (Russian)'
+        },
+        'description_uz': {
+          validator: (value, fieldName) => window.validation.validateString(value, fieldName),
+          fieldName: 'Description (Uzbek)'
+        },
+        'description_ru': {
+          validator: (value, fieldName) => window.validation.validateString(value, fieldName),
+          fieldName: 'Description (Russian)'
+        },
+        'category_id': {
+          validator: (value, fieldName) => window.validation.validateInteger(window.validation.validateRequired(value, fieldName), fieldName),
+          fieldName: 'Category'
+        },
+        'price': {
+          validator: (value, fieldName) => window.validation.validatePositive(window.validation.validateRequired(value, fieldName), fieldName),
+          fieldName: 'Price'
+        },
+        'sale_price': {
+          validator: (value, fieldName) => window.validation.validatePositive(value, fieldName),
+          fieldName: 'Sale price'
+        },
+        'image_url': {
+          validator: (value, fieldName) => window.validation.validateURL(window.validation.validateRequired(value, fieldName), fieldName),
+          fieldName: 'Image URL'
+        }
       };
 
-      // Validatsiya
-      if (!product.name_uz || !product.name_ru || !product.price || !product.image_url || !product.category_id) {
-          resultDiv.innerHTML = '<p style="color:red;">Iltimos, barcha majburiy maydonlarni to\'ldiring (kategoriya ham!).</p>';
-          return;
+      const validation = window.validation.validateForm(form, schema);
+      if (!validation.valid) {
+        resultDiv.innerHTML = '<p style="color:red;">Iltimos, xatoliklarni to\'g\'rilang.</p>';
+        return;
       }
+      
+      const product = {
+        name_uz: validation.data['name_uz'],
+        name_ru: validation.data['name_ru'],
+        description_uz: validation.data['description_uz'] || null,
+        description_ru: validation.data['description_ru'] || null,
+        price: validation.data['price'],
+        sale_price: validation.data['sale_price'] || null,
+        image_url: validation.data['image_url'],
+        category_id: validation.data['category_id']
+      };
 
       resultDiv.innerHTML = '<p style="color:blue;">Yuborilmoqda...</p>';
 

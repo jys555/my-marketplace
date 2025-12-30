@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const { authenticate, isAdmin } = require('../middleware/auth');
+const logger = require('../utils/logger');
 
 // Validate user and return user data or guest status
 router.post('/validate', authenticate, async (req, res) => {
@@ -22,13 +23,65 @@ router.post('/validate', authenticate, async (req, res) => {
             res.json({ status: 'guest', telegramUser: req.telegramUser });
         }
     } catch (error) {
-        console.error('Error validating user:', error);
+        logger.error('Error validating user:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
+/**
+ * @swagger
+ * /api/users/profile:
+ *   get:
+ *     summary: Get user profile
+ *     description: Retrieve the authenticated user's profile. User must be registered.
+ *     tags: [Users]
+ *     security:
+ *       - TelegramAuth: []
+ *     responses:
+ *       200:
+ *         description: Successful response with user profile
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 first_name:
+ *                   type: string
+ *                 last_name:
+ *                   type: string
+ *                 phone:
+ *                   type: string
+ *                 username:
+ *                   type: string
+ *                 cart:
+ *                   type: object
+ *                   description: User shopping cart
+ *                 favorites:
+ *                   type: array
+ *                   items:
+ *                     type: integer
+ *                   description: User favorite product IDs
+ *       404:
+ *         description: User profile not found (user not registered)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Get user profile
-router.get('/profile', authenticate, async (req, res) => {
+router.get('/profile', authenticate, async (req, res, next) => {
     if (!req.userId) {
         // This handles guests trying to access a profile that doesn't exist yet.
         return res.status(404).json({ error: 'User profile not found. Please create a profile.' });
@@ -46,11 +99,78 @@ router.get('/profile', authenticate, async (req, res) => {
             res.status(404).json({ error: 'User not found' });
         }
     } catch (error) {
-        console.error('Error fetching user profile:', error);
+        logger.error('Error fetching user profile:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
+/**
+ * @swagger
+ * /api/users/profile:
+ *   put:
+ *     summary: Create or update user profile
+ *     description: Create a new user profile or update existing one. Phone number must be in format +998XXXXXXXXX and belong to a valid Uzbek operator.
+ *     tags: [Users]
+ *     security:
+ *       - TelegramAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - first_name
+ *               - phone
+ *             properties:
+ *               first_name:
+ *                 type: string
+ *                 description: User first name (required)
+ *               last_name:
+ *                 type: string
+ *                 description: User last name
+ *               phone:
+ *                 type: string
+ *                 pattern: '^\+998[0-9]{9}$'
+ *                 description: Phone number in format +998XXXXXXXXX (required, must be valid Uzbek operator)
+ *     responses:
+ *       200:
+ *         description: User profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       201:
+ *         description: User profile created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Validation error (invalid phone format, missing required fields, etc.)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       409:
+ *         description: Conflict - User already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Create or update user profile
 router.put('/profile', authenticate, async (req, res) => {
     const { first_name, last_name, phone } = req.body;
@@ -98,7 +218,7 @@ router.put('/profile', authenticate, async (req, res) => {
             res.status(201).json(user);
         }
     } catch (error) {
-        console.error('Error saving user profile:', error);
+        logger.error('Error saving user profile:', error);
         if (error.code === '23505') {
             return res.status(409).json({ error: 'This user already exists.' });
         }
@@ -119,7 +239,7 @@ router.put('/cart', authenticate, async (req, res) => {
         await pool.query('UPDATE users SET cart = $1 WHERE id = $2', [cart, req.userId]);
         res.status(200).json({ message: 'Cart updated successfully' });
     } catch (error) {
-        console.error('Error updating cart:', error);
+        logger.error('Error updating cart:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
@@ -137,7 +257,7 @@ router.put('/favorites', authenticate, async (req, res) => {
         await pool.query('UPDATE users SET favorites = $1 WHERE id = $2', [favorites, req.userId]);
         res.status(200).json({ message: 'Favorites updated successfully' });
     } catch (error) {
-        console.error('Error updating favorites:', error);
+        logger.error('Error updating favorites:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });

@@ -2,11 +2,75 @@ const express = require('express');
 const pool = require('../db');
 const { authenticate } = require('../middleware/auth');
 const botService = require('../services/bot');
+const logger = require('../utils/logger');
+const { validateBody, required, optional, array } = require('../middleware/validate');
+const { ValidationError, NotFoundError } = require('../utils/errors');
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /api/orders:
+ *   get:
+ *     summary: Get user orders
+ *     description: Retrieve all orders for the authenticated user. Returns empty array if user is not registered.
+ *     tags: [Orders]
+ *     security:
+ *       - TelegramAuth: []
+ *     responses:
+ *       200:
+ *         description: Successful response with user orders
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   order_number:
+ *                     type: string
+ *                   status:
+ *                     type: string
+ *                   total_amount:
+ *                     type: number
+ *                   payment_method:
+ *                     type: string
+ *                   delivery_method:
+ *                     type: string
+ *                   items:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         product_id:
+ *                           type: integer
+ *                         quantity:
+ *                           type: integer
+ *                         price:
+ *                           type: number
+ *                   created_at:
+ *                     type: string
+ *                     format: date-time
+ *                   updated_at:
+ *                     type: string
+ *                     format: date-time
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/orders - Foydalanuvchi buyurtmalarini olish
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticate, async (req, res, next) => {
     if (!req.userId) {
         // Agar foydalanuvchi bizning DBda ro'yxatdan o'tmagan bo'lsa, uning buyurtmalari yo'q
         return res.json([]);
@@ -27,22 +91,126 @@ router.get('/', authenticate, async (req, res) => {
         `, [userId]);
         res.json(orders);
     } catch (error) {
-        console.error('Error fetching orders:', error);
+        logger.error('Error fetching orders:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
+/**
+ * @swagger
+ * /api/orders:
+ *   post:
+ *     summary: Create a new order
+ *     description: Create a new order for the authenticated user. User must be registered. Admin and customer will receive Telegram notifications.
+ *     tags: [Orders]
+ *     security:
+ *       - TelegramAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - items
+ *             properties:
+ *               items:
+ *                 type: array
+ *                 description: Array of order items (required)
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - product_id
+ *                     - quantity
+ *                   properties:
+ *                     product_id:
+ *                       type: integer
+ *                       description: Product ID
+ *                     quantity:
+ *                       type: integer
+ *                       minimum: 1
+ *                       description: Item quantity
+ *               payment_method:
+ *                 type: string
+ *                 description: Payment method
+ *               delivery_method:
+ *                 type: string
+ *                 description: Delivery method
+ *     responses:
+ *       201:
+ *         description: Order created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 status:
+ *                   type: string
+ *                   example: new
+ *                 total_amount:
+ *                   type: number
+ *       400:
+ *         description: Validation error (invalid items, user not registered, etc.)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: One or more products not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // POST /api/orders - Yangi buyurtma yaratish
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate,
+    validateBody({
+        items: required(array),
+        payment_method: optional(string),
+        delivery_method: optional(string)
+    }),
+    async (req, res, next) => {
     if (!req.userId) {
         // Buyurtma yaratish uchun foydalanuvchi ro'yxatdan o'tgan bo'lishi shart
-        return res.status(403).json({ error: 'User must be registered to create an order.' });
+        return next(new Error('User must be registered to create an order.'));
     }
     const userId = req.userId;
     const { items, payment_method, delivery_method } = req.body;
 
-    if (!items || !Array.isArray(items) || items.length === 0) {
-        return res.status(400).json({ error: 'Order must contain an array of items' });
+    // Items array validation
+    if (!Array.isArray(items) || items.length === 0) {
+        return next(new ValidationError('Order must contain at least one item', { 
+            errors: [{ field: 'items', message: 'At least one item is required' }] 
+        }));
+    }
+
+    // Validate each item
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (!item.product_id || !Number.isInteger(item.product_id)) {
+            return next(new ValidationError(`Item ${i + 1}: product_id is required and must be an integer`, {
+                errors: [{ field: `items[${i}].product_id`, message: 'product_id is required and must be an integer' }]
+            }));
+        }
+        if (!item.quantity || item.quantity <= 0) {
+            return next(new ValidationError(`Item ${i + 1}: quantity must be a positive number`, {
+                errors: [{ field: `items[${i}].quantity`, message: 'quantity must be a positive number' }]
+            }));
+        }
     }
 
     const client = await pool.connect();
@@ -53,7 +221,7 @@ router.post('/', authenticate, async (req, res) => {
         const { rows: products } = await client.query('SELECT id, price, sale_price FROM products WHERE id = ANY($1::int[])', [productIds]);
 
         if (products.length !== productIds.length) {
-            throw new Error('One or more products not found');
+            return next(new NotFoundError('One or more products'));
         }
 
         const productPriceMap = products.reduce((acc, p) => {
@@ -65,7 +233,7 @@ router.post('/', authenticate, async (req, res) => {
         for (const item of items) {
             const price = productPriceMap[item.product_id];
             if (!price || item.quantity <= 0) {
-                 throw new Error(`Invalid data for product ID ${item.product_id}`);
+                return next(new ValidationError(`Invalid data for product ID ${item.product_id}`));
             }
             totalAmount += price * item.quantity;
         }
@@ -121,7 +289,7 @@ router.post('/', authenticate, async (req, res) => {
                 }
             }
         } catch (botError) {
-            console.error('Bot notification error (non-critical):', botError);
+            logger.error('Bot notification error (non-critical):', botError);
         }
         
         // Response'da ham database'dagi format bilan mos keladigan string qaytaramiz
@@ -133,7 +301,7 @@ router.post('/', authenticate, async (req, res) => {
         });
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error creating order:', error);
+        logger.error('Error creating order:', error);
         res.status(500).json({ error: 'Failed to create order', details: error.message });
     } finally {
         client.release();

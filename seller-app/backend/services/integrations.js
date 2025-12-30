@@ -1,4 +1,5 @@
 const pool = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Marketplace integratsiyalari uchun service
@@ -36,7 +37,7 @@ class IntegrationService {
                     throw new Error(`Unsupported marketplace type: ${marketplace.api_type}`);
             }
         } catch (error) {
-            console.error('Error fetching marketplace products:', error);
+            logger.error('Error fetching marketplace products:', error);
             throw error;
         }
     }
@@ -49,7 +50,7 @@ class IntegrationService {
     async fetchUzumProducts(marketplace) {
         // TODO: Uzum API integratsiyasi
         // Hozircha mock data qaytaradi
-        console.log('Fetching Uzum products...', marketplace.name);
+        logger.info('Fetching Uzum products...', marketplace.name);
         
         // Keyinroq Uzum API bilan integratsiya qilinadi
         // const response = await fetch('https://api.uzum.uz/...', {
@@ -70,7 +71,7 @@ class IntegrationService {
     async fetchYandexProducts(marketplace) {
         // TODO: Yandex Market API integratsiyasi
         // Hozircha mock data qaytaradi
-        console.log('Fetching Yandex Market products...', marketplace.name);
+        logger.info('Fetching Yandex Market products...', marketplace.name);
         
         // Keyinroq Yandex Market API bilan integratsiya qilinadi
         // const response = await fetch('https://api.partner.market.yandex.ru/...', {
@@ -106,7 +107,7 @@ class IntegrationService {
                 marketplace_strikethrough_price: product.sale_price ? parseFloat(product.price) : null
             }));
         } catch (error) {
-            console.error('Error fetching Amazing Store products:', error);
+            logger.error('Error fetching Amazing Store products:', error);
             throw error;
         }
     }
@@ -153,7 +154,7 @@ class IntegrationService {
 
             return rows[0];
         } catch (error) {
-            console.error('Error linking marketplace product:', error);
+            logger.error('Error linking marketplace product:', error);
             throw error;
         }
     }
@@ -187,11 +188,11 @@ class IntegrationService {
                         );
                         synced++;
                     } else {
-                        console.warn(`Product not found in Amazing Store: ${mp.marketplace_name}`);
+                        logger.warn(`Product not found in Amazing Store: ${mp.marketplace_name}`);
                         errors++;
                     }
                 } catch (error) {
-                    console.error(`Error syncing product ${mp.marketplace_product_id}:`, error);
+                    logger.error(`Error syncing product ${mp.marketplace_product_id}:`, error);
                     errors++;
                 }
             }
@@ -203,7 +204,7 @@ class IntegrationService {
                 total: marketplaceProducts.length
             };
         } catch (error) {
-            console.error('Error syncing marketplace products:', error);
+            logger.error('Error syncing marketplace products:', error);
             throw error;
         }
     }
