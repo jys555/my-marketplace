@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const pool = require('../db');
 const logger = require('../utils/logger');
 
+
 async function authenticate(req, res, next) {
     const authHeader = req.headers['x-telegram-data'];
 
