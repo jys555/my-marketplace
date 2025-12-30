@@ -3,7 +3,7 @@ const pool = require('../db');
 const { authenticate } = require('../middleware/auth');
 const botService = require('../services/bot');
 const logger = require('../utils/logger');
-const { validateBody, required, optional, array } = require('../middleware/validate');
+const { validateBody, required, optional, array, string } = require('../middleware/validate');
 const { ValidationError, NotFoundError } = require('../utils/errors');
 
 const router = express.Router();

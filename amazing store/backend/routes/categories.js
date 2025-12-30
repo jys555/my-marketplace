@@ -2,7 +2,7 @@ const express = require('express');
 const pool = require('../db');
 const { authenticate, isAdmin } = require('../middleware/auth');
 const cache = require('../utils/cache');
-const { validateBody, validateParams, required, string, optional, url, integer } = require('../middleware/validate');
+const { validateBody, validateParams, required, string, optional, url, integer, boolean } = require('../middleware/validate');
 const { NotFoundError } = require('../utils/errors');
 
 const router = express.Router();

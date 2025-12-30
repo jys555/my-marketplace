@@ -1,7 +1,6 @@
 const crypto = require('crypto');
 const pool = require('../db'); // Ma'lumotlar bazasini import qilish
 const logger = require('../utils/logger');
-const logger = require('../utils/logger');
 
 async function authenticate(req, res, next) { // Funksiyani asinxron qilish
     const authHeader = req.headers['x-telegram-data'];
