@@ -9,9 +9,9 @@ async function authenticate(req, res, next) {
         return res.status(401).json({ message: 'Authentication data not provided' });
     }
 
-    const botToken = process.env.TELEGRAM_BOT_TOKEN; 
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
     if (!botToken) {
-        logger.error("TELEGRAM_BOT_TOKEN is not configured in environment variables.");
+        logger.error('TELEGRAM_BOT_TOKEN is not configured in environment variables.');
         return res.status(500).json({ message: 'Internal server configuration error' });
     }
 
@@ -20,11 +20,10 @@ async function authenticate(req, res, next) {
         const hash = params.get('hash');
         params.delete('hash');
 
-        // auth_date tekshiruvi - 24 soatdan eski ma'lumotlarni rad etish (replay attack oldini olish)
         const authDate = parseInt(params.get('auth_date'));
         const now = Math.floor(Date.now() / 1000);
-        const maxAge = 86400; // 24 soat (sekundlarda)
-        
+        const maxAge = 86400;
+
         if (!authDate || (now - authDate) > maxAge) {
             return res.status(403).json({ message: 'Authentication data expired' });
         }
@@ -40,11 +39,10 @@ async function authenticate(req, res, next) {
         if (calculatedHash !== hash) {
             return res.status(403).json({ message: 'Invalid data signature' });
         }
-        
+
         const user = JSON.parse(params.get('user'));
         req.telegramUser = user;
 
-        // Foydalanuvchining ichki ID'sini topish
         if (user && user.id) {
             const { rows: userRows } = await pool.query('SELECT id FROM users WHERE telegram_id = $1', [user.id]);
             if (userRows.length > 0) {
