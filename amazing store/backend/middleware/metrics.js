@@ -1,6 +1,7 @@
 /**
  * Metrics Collection Middleware
  * Tracks requests, response times, and errors
+ *  jhyftrctrghgh8hnybu
  */
 
 const metrics = require('../utils/metrics');
@@ -8,7 +9,7 @@ const metrics = require('../utils/metrics');
 /**
  * Metrics collection middleware
  * Should be added after request logger but before routes
- */
+ */  
 function metricsMiddleware(req, res, next) {
     const startTime = Date.now();
 
