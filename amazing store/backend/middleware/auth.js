@@ -58,17 +58,50 @@ async function authenticate(req, res, next) {
     }
 }
 
-const isAdmin = (req, res, next) => {
-    const adminId = process.env.ADMIN_TELEGRAM_ID;
-    if (!adminId) {
-        logger.error('CRITICAL: ADMIN_TELEGRAM_ID is not configured on the server.');
-        return res.status(500).json({ error: 'Admin ID not configured on server.' });
-    }
-    if (!req.telegramUser || req.telegramUser.id.toString() !== adminId) {
-        logger.warn(`Forbidden access attempt by Telegram ID: ${req.telegramUser ? req.telegramUser.id : 'Unknown'}`);
+/**
+ * Admin tekshiruv middleware
+ * Avval database'dan is_admin field'ni tekshiradi
+ * Agar database'da topilmasa, ADMIN_TELEGRAM_ID environment variable'dan foydalanadi (fallback)
+ */
+const isAdmin = async (req, res, next) => {
+    if (!req.telegramUser || !req.telegramUser.id) {
+        logger.warn('Forbidden access attempt: No Telegram user data');
         return res.status(403).json({ error: 'Forbidden: Admin access required.' });
     }
-    next();
+
+    const telegramId = req.telegramUser.id;
+
+    try {
+        // 1. Database'dan is_admin field'ni tekshirish (asosiy usul)
+        const { rows } = await pool.query(
+            'SELECT is_admin FROM users WHERE telegram_id = $1',
+            [telegramId]
+        );
+
+        if (rows.length > 0 && rows[0].is_admin === true) {
+            // Database'da admin sifatida topildi
+            return next();
+        }
+
+        // 2. Fallback: ADMIN_TELEGRAM_ID environment variable'dan tekshirish
+        const adminId = process.env.ADMIN_TELEGRAM_ID;
+        if (adminId && telegramId.toString() === adminId) {
+            // Environment variable orqali admin
+            return next();
+        }
+
+        // Admin emas
+        logger.warn(`Forbidden access attempt by Telegram ID: ${telegramId}`);
+        return res.status(403).json({ error: 'Forbidden: Admin access required.' });
+    } catch (error) {
+        logger.error('Error checking admin status:', error);
+        // Xatolik bo'lsa, fallback sifatida environment variable'dan tekshirish
+        const adminId = process.env.ADMIN_TELEGRAM_ID;
+        if (adminId && telegramId.toString() === adminId) {
+            return next();
+        }
+        return res.status(500).json({ error: 'Error checking admin status.' });
+    }
 };
 
 module.exports = { authenticate, isAdmin };

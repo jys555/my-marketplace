@@ -92,7 +92,7 @@ router.get('/', authenticate, async (req, res, next) => {
         res.json(orders);
     } catch (error) {
         logger.error('Error fetching orders:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        next(error);
     }
 });
 
@@ -225,15 +225,20 @@ router.post('/', authenticate,
         }
 
         const productPriceMap = products.reduce((acc, p) => {
-            acc[p.id] = parseFloat(p.sale_price || p.price);
+            const price = parseFloat(p.sale_price || p.price);
+            // Validation: Price 0 yoki manfiy bo'lmasligi kerak
+            if (isNaN(price) || price <= 0) {
+                throw new ValidationError(`Invalid price for product ID ${p.id}: price must be greater than 0`);
+            }
+            acc[p.id] = price;
             return acc;
         }, {});
 
         let totalAmount = 0;
         for (const item of items) {
             const price = productPriceMap[item.product_id];
-            if (!price || item.quantity <= 0) {
-                return next(new ValidationError(`Invalid data for product ID ${item.product_id}`));
+            if (!price || price <= 0 || item.quantity <= 0) {
+                return next(new ValidationError(`Invalid data for product ID ${item.product_id}: price and quantity must be greater than 0`));
             }
             totalAmount += price * item.quantity;
         }
@@ -260,49 +265,51 @@ router.post('/', authenticate,
         // Database'dan saqlangan total_amount'ni olish (string formatda)
         const savedTotalAmount = totalAmount.toFixed(2);
         
-        // Bot xabarlarini yuborish (async, xatolik bo'lsa ham buyurtma yaratiladi)
-        try {
-            // Mijoz ma'lumotlarini olish
-            const { rows: userRows } = await client.query(
-                'SELECT first_name, last_name, phone, telegram_id FROM users WHERE id = $1',
-                [userId]
-            );
-            
-            if (userRows.length > 0) {
-                const user = userRows[0];
-                
-                // Admin'ga yangi buyurtma xabari
-                await botService.notifyAdminNewOrder({
-                    order_number: orderNumber,
-                    total_amount: savedTotalAmount,
-                    user_name: `${user.first_name} ${user.last_name || ''}`.trim(),
-                    user_phone: user.phone || 'N/A'
-                });
-                
-                // Mijozga tasdiqlash xabari
-                if (user.telegram_id) {
-                    await botService.notifyCustomerOrderStatus({
-                        order_number: orderNumber,
-                        status: 'new',
-                        total_amount: savedTotalAmount
-                    }, user.telegram_id);
-                }
-            }
-        } catch (botError) {
-            logger.error('Bot notification error (non-critical):', botError);
-        }
-        
-        // Response'da ham database'dagi format bilan mos keladigan string qaytaramiz
-        // yoki parseFloat qilib number qaytarish mumkin, lekin formatni saqlash uchun string qaytaramiz
+        // Response'ni darhol qaytarish (transaction muvaffaqiyatli yakunlandi)
         res.status(201).json({ 
             id: orderId, 
             status: 'new', 
             total_amount: parseFloat(savedTotalAmount) // Number formatda, lekin database'dagi qiymat bilan mos
         });
+        
+        // Bot xabarlarini transaction'dan KEYIN yuborish (non-blocking, async)
+        // Bu xatolik bo'lsa ham buyurtma allaqachon yaratilgan bo'ladi
+        setImmediate(async () => {
+            try {
+                // Mijoz ma'lumotlarini olish (transaction'dan keyin, alohida query)
+                const { rows: userRows } = await pool.query(
+                    'SELECT first_name, last_name, phone, telegram_id FROM users WHERE id = $1',
+                    [userId]
+                );
+                
+                if (userRows.length > 0) {
+                    const user = userRows[0];
+                    
+                    // Admin'ga yangi buyurtma xabari
+                    await botService.notifyAdminNewOrder({
+                        order_number: orderNumber,
+                        total_amount: savedTotalAmount,
+                        user_name: `${user.first_name} ${user.last_name || ''}`.trim(),
+                        user_phone: user.phone || 'N/A'
+                    });
+                    
+                    // Mijozga tasdiqlash xabari
+                    if (user.telegram_id) {
+                        await botService.notifyCustomerOrderStatus({
+                            order_number: orderNumber,
+                            status: 'new',
+                            total_amount: savedTotalAmount
+                        }, user.telegram_id);
+                    }
+                }
+            } catch (botError) {
+                logger.error('Bot notification error (non-critical):', botError);
+            }
+        });
     } catch (error) {
         await client.query('ROLLBACK');
         logger.error('Error creating order:', error);
-        res.status(500).json({ error: 'Failed to create order', details: error.message });
+        next(error);
     } finally {
         client.release();
     }

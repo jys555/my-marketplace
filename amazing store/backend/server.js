@@ -58,9 +58,23 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Telegram Mini App'dan so'rovlarda origin bo'lmasligi mumkin (null)
-        // Shuning uchun origin yo'q bo'lsa ham ruxsat beramiz
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Production'da origin null'ni bloklash (xavfsizlik)
+        const isProduction = process.env.NODE_ENV === 'production';
+        
+        // Origin yo'q bo'lsa (Telegram Mini App yoki boshqa client)
+        if (!origin) {
+            // Development'da ruxsat berish, production'da bloklash
+            if (!isProduction) {
+                logger.debug('CORS: Allowing request without origin (development mode)');
+                return callback(null, true);
+            } else {
+                logger.warn('CORS blocked: Request without origin in production mode');
+                return callback(new Error('Not allowed by CORS: Origin required in production'));
+            }
+        }
+        
+        // Allowed origins ro'yxatida bo'lsa, ruxsat berish
+        if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
             logger.warn(`CORS blocked request from: ${origin}`);

@@ -1,7 +1,6 @@
 /**
  * Metrics Collection Middleware
  * Tracks requests, response times, and errors
- *  jhyftrctrghgh8hnybu
  */
 
 const metrics = require('../utils/metrics');

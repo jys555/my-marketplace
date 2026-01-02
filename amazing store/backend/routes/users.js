@@ -5,7 +5,7 @@ const { authenticate, isAdmin } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
 // Validate user and return user data or guest status
-router.post('/validate', authenticate, async (req, res) => {
+router.post('/validate', authenticate, async (req, res, next) => {
     try {
         // User is authenticated via middleware, and telegramUser is on req.
         // Now, check if this user exists in our database.
@@ -24,7 +24,7 @@ router.post('/validate', authenticate, async (req, res) => {
         }
     } catch (error) {
         logger.error('Error validating user:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        next(error);
     }
 });
 
@@ -100,7 +100,7 @@ router.get('/profile', authenticate, async (req, res, next) => {
         }
     } catch (error) {
         logger.error('Error fetching user profile:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        next(error);
     }
 });
 
@@ -172,7 +172,7 @@ router.get('/profile', authenticate, async (req, res, next) => {
  *               $ref: '#/components/schemas/Error'
  */
 // Create or update user profile
-router.put('/profile', authenticate, async (req, res) => {
+router.put('/profile', authenticate, async (req, res, next) => {
     const { first_name, last_name, phone } = req.body;
     const { id: telegram_id, username } = req.telegramUser;
 
@@ -222,12 +222,12 @@ router.put('/profile', authenticate, async (req, res) => {
         if (error.code === '23505') {
             return res.status(409).json({ error: 'This user already exists.' });
         }
-        res.status(500).json({ error: 'Internal Server Error' });
+        next(error);
     }
 });
 
 // New route to update cart
-router.put('/cart', authenticate, async (req, res) => {
+router.put('/cart', authenticate, async (req, res, next) => {
     if (!req.userId) {
         return res.status(403).json({ error: 'User not registered' });
     }
@@ -235,30 +235,69 @@ router.put('/cart', authenticate, async (req, res) => {
     if (typeof cart !== 'object' || cart === null) {
         return res.status(400).json({ error: 'Invalid cart data' });
     }
+
+    // Validation: Cart format tekshirish
+    // Cart object bo'lishi kerak, key'lar product_id (integer), value'lar quantity (positive integer)
+    try {
+        for (const [key, value] of Object.entries(cart)) {
+            const productId = parseInt(key);
+            const quantity = parseInt(value);
+
+            if (isNaN(productId) || productId <= 0) {
+                return res.status(400).json({ error: `Invalid product ID in cart: ${key}` });
+            }
+            if (isNaN(quantity) || quantity <= 0 || !Number.isInteger(quantity)) {
+                return res.status(400).json({ error: `Invalid quantity for product ID ${key}: must be a positive integer` });
+            }
+        }
+
+        // JSONB format tekshirish - JSON.stringify orqali
+        JSON.stringify(cart);
+    } catch (error) {
+        if (error instanceof TypeError && error.message.includes('circular')) {
+            return res.status(400).json({ error: 'Invalid cart data: circular reference detected' });
+        }
+        return res.status(400).json({ error: 'Invalid cart data format' });
+    }
+
     try {
         await pool.query('UPDATE users SET cart = $1 WHERE id = $2', [cart, req.userId]);
         res.status(200).json({ message: 'Cart updated successfully' });
     } catch (error) {
         logger.error('Error updating cart:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        next(error);
     }
 });
 
 // New route to update favorites
-router.put('/favorites', authenticate, async (req, res) => {
+router.put('/favorites', authenticate, async (req, res, next) => {
     if (!req.userId) {
         return res.status(403).json({ error: 'User not registered' });
     }
     const { favorites } = req.body;
     if (!Array.isArray(favorites)) {
-        return res.status(400).json({ error: 'Invalid favorites data' });
+        return res.status(400).json({ error: 'Invalid favorites data: must be an array' });
     }
+
+    // Validation: Array elementlari integer ekanligi va unique ekanligi
+    const seen = new Set();
+    for (let i = 0; i < favorites.length; i++) {
+        const productId = parseInt(favorites[i]);
+        if (isNaN(productId) || productId <= 0 || !Number.isInteger(productId)) {
+            return res.status(400).json({ error: `Invalid product ID at index ${i}: must be a positive integer` });
+        }
+        if (seen.has(productId)) {
+            return res.status(400).json({ error: `Duplicate product ID: ${productId}` });
+        }
+        seen.add(productId);
+    }
+
     try {
         await pool.query('UPDATE users SET favorites = $1 WHERE id = $2', [favorites, req.userId]);
         res.status(200).json({ message: 'Favorites updated successfully' });
     } catch (error) {
         logger.error('Error updating favorites:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        next(error);
     }
 });
 

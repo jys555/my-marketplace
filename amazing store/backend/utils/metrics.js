@@ -159,3 +159,4 @@ function formatUptime(seconds) {
 }
 
 module.exports = metricsCollector;
+module.exports.formatUptime = formatUptime;

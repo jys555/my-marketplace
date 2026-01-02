@@ -4,6 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const logger = require('../utils/logger');
 
 const possibleSourceDirs = [
     // 1. Monorepo root (local development)
@@ -25,25 +26,25 @@ for (const dir of possibleSourceDirs) {
         const files = fs.readdirSync(dir).filter(f => f.endsWith('.sql'));
         if (files.length > 0) {
             sourceDir = dir;
-            console.log(`📁 Found source migrations directory: ${sourceDir} (${files.length} files)`);
+            logger.info(`📁 Found source migrations directory: ${sourceDir} (${files.length} files)`);
             break;
         }
     }
 }
 
 if (!sourceDir) {
-    console.error('❌ Source migrations directory not found. Tried paths:');
-    possibleSourceDirs.forEach(dir => console.error(`   - ${dir}`));
+    logger.error('❌ Source migrations directory not found. Tried paths:');
+    possibleSourceDirs.forEach(dir => logger.error(`   - ${dir}`));
     // Railway'da build script ishlamayapti bo'lsa, xatolikni ko'rsatish
     // Lekin server ishga tushishi kerak (migration runner fallback ishlatadi)
-    console.warn('⚠️  Build script failed, but server will continue (migration runner will use fallback)');
+    logger.warn('⚠️  Build script failed, but server will continue (migration runner will use fallback)');
     process.exit(0); // Exit code 0 - server ishga tushishi kerak
 }
 
 // Create destination directory if it doesn't exist
 if (!fs.existsSync(destDir)) {
     fs.mkdirSync(destDir, { recursive: true });
-    console.log(`📁 Created destination directory: ${destDir}`);
+    logger.info(`📁 Created destination directory: ${destDir}`);
 }
 
 // Copy all .sql files
@@ -56,12 +57,12 @@ files.forEach(file => {
     
     try {
         fs.copyFileSync(sourceFile, destFile);
-        console.log(`✅ Copied ${file}`);
+        logger.info(`✅ Copied ${file}`);
         copied++;
     } catch (error) {
-        console.error(`❌ Error copying ${file}:`, error.message);
+        logger.error(`❌ Error copying ${file}:`, error.message);
     }
 });
 
-console.log(`\n🎉 Copied ${copied}/${files.length} migration files to ${destDir}`);
+logger.info(`\n🎉 Copied ${copied}/${files.length} migration files to ${destDir}`);
 

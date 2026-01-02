@@ -10,7 +10,7 @@ const CACHE_TTL = 5 * 60; // 300 soniya
 const CACHE_KEY = 'banners:active';
 
 // GET /api/banners - Fetch all active banners
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
     try {
         // PERFORMANCE: Avval cache'dan tekshirish
         const cached = cache.get(CACHE_KEY);
@@ -29,7 +29,7 @@ router.get('/', async (req, res) => {
         res.json(rows);
     } catch (error) {
         logger.error('Error fetching banners:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        next(error);
     }
 });
 

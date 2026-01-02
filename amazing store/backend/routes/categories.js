@@ -71,8 +71,9 @@ router.post('/', authenticate, isAdmin,
             [name_uz, name_ru, icon || '📦', color || '#999', sort_order || 0]
         );
         
-        // PERFORMANCE: Categories cache'ni tozalash (yangi kategoriya qo'shildi)
+        // PERFORMANCE: Categories va products cache'ni tozalash (yangi kategoriya qo'shildi)
         cache.deletePattern('categories:*');
+        cache.deletePattern('products:*'); // Category o'zgarganda products cache ham eskirgan bo'lishi mumkin
         
         res.status(201).json(rows[0]);
     } catch (error) {
@@ -115,8 +116,9 @@ router.put('/:id', authenticate, isAdmin,
             return next(new NotFoundError('Category'));
         }
         
-        // PERFORMANCE: Categories cache'ni tozalash (kategoriya o'zgartirildi)
+        // PERFORMANCE: Categories va products cache'ni tozalash (kategoriya o'zgartirildi)
         cache.deletePattern('categories:*');
+        cache.deletePattern('products:*'); // Category o'zgarganda products cache ham eskirgan bo'lishi mumkin
         
         res.json(rows[0]);
     } catch (error) {

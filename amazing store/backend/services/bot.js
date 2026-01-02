@@ -178,21 +178,39 @@ class TelegramBotService {
         });
     }
 
-    // Database'dan is_admin field'ni tekshirish
+    /**
+     * Admin tekshiruv funksiyasi
+     * Avval database'dan is_admin field'ni tekshiradi
+     * Agar database'da topilmasa, ADMIN_TELEGRAM_ID environment variable'dan foydalanadi (fallback)
+     */
     async checkIsAdmin(telegramId) {
         try {
+            // 1. Database'dan is_admin field'ni tekshirish (asosiy usul)
             const { rows } = await pool.query(
                 'SELECT is_admin FROM users WHERE telegram_id = $1',
                 [telegramId]
             );
-            
-            if (rows.length === 0) {
-                return false;
+
+            if (rows.length > 0 && rows[0].is_admin === true) {
+                // Database'da admin sifatida topildi
+                return true;
             }
-            
-            return rows[0].is_admin === true;
+
+            // 2. Fallback: ADMIN_TELEGRAM_ID environment variable'dan tekshirish
+            const adminId = process.env.ADMIN_TELEGRAM_ID;
+            if (adminId && telegramId.toString() === adminId) {
+                // Environment variable orqali admin
+                return true;
+            }
+
+            return false;
         } catch (error) {
             logger.error('Error checking admin status:', error);
+            // Xatolik bo'lsa, fallback sifatida environment variable'dan tekshirish
+            const adminId = process.env.ADMIN_TELEGRAM_ID;
+            if (adminId && telegramId.toString() === adminId) {
+                return true;
+            }
             return false;
         }
     }

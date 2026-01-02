@@ -5,26 +5,33 @@
 const path = require('path');
 const fs = require('fs');
 const { Pool } = require('pg');
+const logger = require('./logger');
 require('dotenv').config();
 
 let cachedRunner = null;
+let inlineRunnerPool = null; // Pool'ni saqlash uchun
 
 /**
  * Create inline migration runner (fallback when centralized runner not found)
  */
 function createInlineRunner() {
-    const pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-        ssl: {
-            rejectUnauthorized: false
-        },
-        max: 5,
-        idleTimeoutMillis: 30000
-    });
+    // Pool'ni faqat bir marta yaratish (singleton pattern)
+    if (!inlineRunnerPool) {
+        inlineRunnerPool = new Pool({
+            connectionString: process.env.DATABASE_URL,
+            ssl: {
+                rejectUnauthorized: false
+            },
+            max: 5,
+            idleTimeoutMillis: 30000
+        });
+    }
+
+    const pool = inlineRunnerPool;
 
     return {
         async runMigrations() {
-            console.log('🔄 Starting database migrations (inline runner)...');
+            logger.info('🔄 Starting database migrations (inline runner)...');
 
             try {
                 await pool.query(`
@@ -34,7 +41,7 @@ function createInlineRunner() {
                         applied_at TIMESTAMP DEFAULT NOW()
                     )
                 `);
-                console.log('✅ Migration tracking table created/verified');
+                logger.info('✅ Migration tracking table created/verified');
 
                 // Try multiple paths to find migrations directory
                 // Real-world approach: Check multiple possible locations
@@ -88,19 +95,19 @@ function createInlineRunner() {
                 
                 // Debug: Barcha topilgan papkalarni ko'rsatish
                 if (foundDirs.length > 0) {
-                    console.log('📂 Found migration directories:');
+                    logger.debug('📂 Found migration directories:');
                     foundDirs.forEach(({ dir, files }) => {
-                        console.log(`   - ${dir} (${files} files)`);
+                        logger.debug(`   - ${dir} (${files} files)`);
                     });
                 }
                 
                 if (migrationsDir) {
-                    console.log(`📁 Selected migrations directory: ${migrationsDir} (${maxFiles} files)`);
+                    logger.info(`📁 Selected migrations directory: ${migrationsDir} (${maxFiles} files)`);
                 }
                 
                 if (!migrationsDir) {
-                    console.error('❌ Migrations directory not found. Tried paths:');
-                    possibleMigrationDirs.forEach(dir => console.error(`   - ${dir}`));
+                    logger.error('❌ Migrations directory not found. Tried paths:');
+                    possibleMigrationDirs.forEach(dir => logger.error(`   - ${dir}`));
                     throw new Error('Migrations directory not found');
                 }
 
@@ -108,7 +115,7 @@ function createInlineRunner() {
                     .filter(f => f.endsWith('.sql'))
                     .sort();
 
-                console.log(`📦 Found ${files.length} migration files in ${migrationsDir}`);
+                logger.info(`📦 Found ${files.length} migration files in ${migrationsDir}`);
 
                 let applied = 0;
                 let skipped = 0;
@@ -116,7 +123,7 @@ function createInlineRunner() {
                 for (const file of files) {
                     const versionMatch = file.match(/^(\d+)_/);
                     if (!versionMatch) {
-                        console.warn(`⚠️  Skipping invalid migration file: ${file}`);
+                        logger.warn(`⚠️  Skipping invalid migration file: ${file}`);
                         continue;
                     }
 
@@ -128,12 +135,12 @@ function createInlineRunner() {
                     );
 
                     if (rows.length > 0) {
-                        console.log(`⏭️  Migration ${file} already applied (version ${version})`);
+                        logger.info(`⏭️  Migration ${file} already applied (version ${version})`);
                         skipped++;
                         continue;
                     }
 
-                    console.log(`🔄 Running migration: ${file} (version ${version})`);
+                    logger.info(`🔄 Running migration: ${file} (version ${version})`);
                     const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
 
                     const client = await pool.connect();
@@ -145,21 +152,21 @@ function createInlineRunner() {
                             [version, file]
                         );
                         await client.query('COMMIT');
-                        console.log(`✅ Migration ${file} completed successfully`);
+                        logger.info(`✅ Migration ${file} completed successfully`);
                         applied++;
                     } catch (error) {
                         await client.query('ROLLBACK');
-                        console.error(`❌ Migration ${file} failed:`, error.message);
+                        logger.error(`❌ Migration ${file} failed:`, error.message);
                         throw error;
                     } finally {
                         client.release();
                     }
                 }
 
-                console.log(`\n🎉 Migrations completed: ${applied} applied, ${skipped} skipped`);
+                logger.info(`\n🎉 Migrations completed: ${applied} applied, ${skipped} skipped`);
                 return { applied, skipped, total: files.length };
             } catch (error) {
-                console.error('❌ Migration error:', error);
+                logger.error('❌ Migration error:', error);
                 throw error;
             }
         }
@@ -182,10 +189,10 @@ function getMigrationRunner() {
     if (fs.existsSync(rootMigratePath)) {
         try {
             cachedRunner = require(rootMigratePath);
-            console.log('✅ Using centralized migration runner:', rootMigratePath);
+            logger.info('✅ Using centralized migration runner:', rootMigratePath);
             return cachedRunner;
         } catch (error) {
-            console.warn('⚠️  Could not load root migration runner:', error.message);
+            logger.warn('⚠️  Could not load root migration runner:', error.message);
         }
     }
     
@@ -200,7 +207,7 @@ function getMigrationRunner() {
         if (fs.existsSync(possiblePath)) {
             try {
                 cachedRunner = require(possiblePath);
-                console.log('✅ Using centralized migration runner:', possiblePath);
+                logger.info('✅ Using centralized migration runner:', possiblePath);
                 return cachedRunner;
             } catch (error) {
                 // Continue to next path
@@ -210,16 +217,44 @@ function getMigrationRunner() {
     
     // 3. Fallback: Use inline migration runner (Railway deployment)
     // Markazlashtirilgan runner topilmasa, wrapper o'zining migration logikasini ishlatadi
-    console.log('⚠️  Centralized migration runner not found, using inline runner');
+    logger.warn('⚠️  Centralized migration runner not found, using inline runner');
     cachedRunner = createInlineRunner();
     return cachedRunner;
 }
+
+/**
+ * Cleanup function - pool'ni yopish
+ * Server yopilganda yoki kerak bo'lganda chaqiriladi
+ */
+async function cleanup() {
+    if (inlineRunnerPool) {
+        try {
+            await inlineRunnerPool.end();
+            inlineRunnerPool = null;
+            logger.info('✅ Migration pool closed successfully');
+        } catch (error) {
+            logger.error('Error closing migration pool:', error);
+        }
+    }
+}
+
+// Process exit'da pool'ni yopish
+process.on('SIGINT', async () => {
+    await cleanup();
+    process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+    await cleanup();
+    process.exit(0);
+});
 
 // Export wrapper functions (lazy loading)
 module.exports = {
     runMigrations: async function() {
         const runner = getMigrationRunner();
         return await runner.runMigrations();
-    }
+    },
+    cleanup
 };
 

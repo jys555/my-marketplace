@@ -168,7 +168,7 @@ router.get('/', async (req, res) => {
         });
     } catch (error) {
         logger.error('Error fetching products:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        next(error);
     }
 });
 

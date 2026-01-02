@@ -1,18 +1,19 @@
 // backend/utils/initDb.js
 const { runMigrations } = require('./migrate');
+const logger = require('./logger');
 
 async function initializeDatabase() {
-    console.log('🔄 Amazing Store Database initialization started...');
+    logger.info('🔄 Amazing Store Database initialization started...');
     
     try {
         // Markazlashtirilgan migration'lar ni bajarish
         await runMigrations();
-        console.log('✅ Database migrations completed');
-        console.log('🎉 Amazing Store Database initialization completed successfully!');
+        logger.info('✅ Database migrations completed');
+        logger.info('🎉 Amazing Store Database initialization completed successfully!');
         return true;
         
     } catch (error) {
-        console.error('❌ Database initialization failed:', error);
+        logger.error('❌ Database initialization failed:', error);
         throw error;
     }
 }
