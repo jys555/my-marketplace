@@ -34,10 +34,19 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: amazing store/backend/package-lock.json
+          # Conditional cache: faqat package-lock.json mavjud bo'lsa
+          cache-dependency-path: |
+            amazing store/backend/package-lock.json
+          # Agar fayl yo'q bo'lsa, cache o'chiriladi (xatolik bo'lmaydi)
       
       - name: Install dependencies
-        run: npm ci
+        # package-lock.json yo'q bo'lsa, npm install ishlatamiz
+        run: |
+          if [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            npm install
+          fi
       
       - name: Run tests
         run: npm test
@@ -70,10 +79,18 @@ jobs:
         with:
           node-version: '20.x'
           cache: 'npm'
-          cache-dependency-path: amazing store/backend/package-lock.json
+          # Conditional cache: faqat package-lock.json mavjud bo'lsa
+          cache-dependency-path: |
+            amazing store/backend/package-lock.json
       
       - name: Install dependencies
-        run: npm ci
+        # package-lock.json yo'q bo'lsa, npm install ishlatamiz
+        run: |
+          if [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            npm install
+          fi
       
       - name: Run ESLint
         run: npm run lint
@@ -99,10 +116,18 @@ jobs:
         with:
           node-version: '20.x'
           cache: 'npm'
-          cache-dependency-path: amazing store/backend/package-lock.json
+          # Conditional cache: faqat package-lock.json mavjud bo'lsa
+          cache-dependency-path: |
+            amazing store/backend/package-lock.json
       
       - name: Install dependencies
-        run: npm ci
+        # package-lock.json yo'q bo'lsa, npm install ishlatamiz
+        run: |
+          if [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            npm install
+          fi
       
       - name: Build
         run: npm run build

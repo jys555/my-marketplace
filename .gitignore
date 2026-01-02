@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
-package-lock.json
+# package-lock.json - Git'ga commit qilinishi kerak (versiya qulfi uchun)
+# package-lock.json
 yarn.lock
 
 # Environment variables

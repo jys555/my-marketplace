@@ -8,9 +8,14 @@
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10,
     "watchPatterns": [
-      "amazing store/backend/**",
-      "database/migrations/**",
-      "database/migrate.js"
+      "**/*.js",
+      "**/*.json",
+      "package.json",
+      "package-lock.json",
+      "../database/migrations/**",
+      "../../database/migrations/**",
+      "../database/migrate.js",
+      "../../database/migrate.js"
     ]
   }
 }
