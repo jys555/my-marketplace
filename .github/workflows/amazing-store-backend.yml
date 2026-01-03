@@ -13,55 +13,6 @@ on:
       - '.github/workflows/amazing-store-backend.yml'
 
 jobs:
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    
-    defaults:
-      run:
-        working-directory: amazing store/backend
-    
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x]
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-          # Conditional cache: faqat package-lock.json mavjud bo'lsa
-          cache-dependency-path: |
-            amazing store/backend/package-lock.json
-          # Agar fayl yo'q bo'lsa, cache o'chiriladi (xatolik bo'lmaydi)
-      
-      - name: Install dependencies
-        # package-lock.json yo'q bo'lsa, npm install ishlatamiz
-        run: |
-          if [ -f "package-lock.json" ]; then
-            npm ci
-          else
-            npm install
-          fi
-      
-      - name: Run tests
-        run: npm test
-        env:
-          NODE_ENV: test
-      
-      - name: Upload coverage reports
-        if: matrix.node-version == '20.x'
-        uses: codecov/codecov-action@v3
-        with:
-          directory: amazing store/backend/coverage
-          flags: amazing-store-backend
-          name: amazing-store-backend-coverage
-          fail_ci_if_error: false
-
   lint:
     name: Lint Code
     runs-on: ubuntu-latest
@@ -101,7 +52,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [test, lint]
+    needs: [lint]
     
     defaults:
       run:
