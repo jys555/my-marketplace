@@ -1,6 +1,5 @@
 const express = require('express');
 const pool = require('../db');
-const { authenticate, isAdmin } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
 const router = express.Router();
@@ -86,36 +85,35 @@ const router = express.Router();
  *               $ref: '#/components/schemas/Error'
  */
 // GET /api/products - Fetch all active products with language support and pagination
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
     const allowedLangs = ['uz', 'ru'];
     const lang = allowedLangs.includes(req.query.lang) ? req.query.lang : 'uz';
     const categoryId = req.query.category_id ? parseInt(req.query.category_id) : null;
-    
+
     // PERFORMANCE: Pagination parametrlari
     const limit = parseInt(req.query.limit) || 20; // Default 20 ta
     const offset = parseInt(req.query.offset) || 0; // Default 0 dan boshlash
-    
+
     // Limit va offset validatsiyasi
     const validLimit = Math.min(Math.max(limit, 1), 100); // 1-100 oralig'ida
     const validOffset = Math.max(offset, 0); // 0 dan kichik bo'lmasligi kerak
 
     try {
         // PERFORMANCE: WHERE shartlari (category va active uchun)
-        let whereConditions = ['p.is_active = true'];
+        const whereConditions = ['p.is_active = true'];
         const params = [lang];
         let paramIndex = 2; // $1 = lang, keyingilari $2 dan boshlanadi
-        
+
         // Kategoriya bo'yicha filtrlash
         if (categoryId && !isNaN(categoryId)) {
             whereConditions.push(`p.category_id = $${paramIndex}`);
             params.push(categoryId);
             paramIndex++;
         }
-        
-        const whereClause = whereConditions.length > 0 
-            ? `WHERE ${whereConditions.join(' AND ')}`
-            : '';
-        
+
+        const whereClause =
+            whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
         // PERFORMANCE: Total count olish (pagination uchun)
         const countQuery = `
             SELECT COUNT(*) as total
@@ -125,9 +123,9 @@ router.get('/', async (req, res) => {
         const countParams = params.slice(1); // lang ni olib tashlaymiz count uchun
         const { rows: countRows } = await pool.query(countQuery, countParams);
         const total = parseInt(countRows[0].total);
-        
+
         // PERFORMANCE: Faqat kerakli qismni olish (LIMIT/OFFSET)
-        let query = `
+        const query = `
             SELECT 
                 p.id,
                 CASE 
@@ -148,14 +146,14 @@ router.get('/', async (req, res) => {
             ORDER BY p.created_at DESC
             LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
         `;
-        
+
         params.push(validLimit, validOffset);
-        
+
         const { rows } = await pool.query(query, params);
-        
+
         // PERFORMANCE: Pagination ma'lumotlari bilan javob qaytarish
         const hasMore = validOffset + rows.length < total;
-        
+
         res.json({
             products: rows,
             pagination: {
@@ -163,8 +161,8 @@ router.get('/', async (req, res) => {
                 limit: validLimit,
                 offset: validOffset,
                 hasMore,
-                currentCount: rows.length
-            }
+                currentCount: rows.length,
+            },
         });
     } catch (error) {
         logger.error('Error fetching products:', error);

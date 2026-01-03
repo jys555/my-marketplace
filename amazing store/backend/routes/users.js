@@ -10,7 +10,10 @@ router.post('/validate', authenticate, async (req, res, next) => {
         // User is authenticated via middleware, and telegramUser is on req.
         // Now, check if this user exists in our database.
         const { id: telegram_id } = req.telegramUser;
-        const userResult = await pool.query('SELECT id, first_name, last_name, phone, username, cart, favorites FROM users WHERE telegram_id = $1', [telegram_id]);
+        const userResult = await pool.query(
+            'SELECT id, first_name, last_name, phone, username, cart, favorites FROM users WHERE telegram_id = $1',
+            [telegram_id]
+        );
 
         if (userResult.rows.length > 0) {
             // User exists, send back their data
@@ -18,7 +21,7 @@ router.post('/validate', authenticate, async (req, res, next) => {
             // Ensure cart and favorites are not null
             user.cart = user.cart || {};
             user.favorites = user.favorites || [];
-            res.json({ status: 'existing_user', user: user });
+            res.json({ status: 'existing_user', user });
         } else {
             res.json({ status: 'guest', telegramUser: req.telegramUser });
         }
@@ -87,7 +90,10 @@ router.get('/profile', authenticate, async (req, res, next) => {
         return res.status(404).json({ error: 'User profile not found. Please create a profile.' });
     }
     try {
-        const user = await pool.query('SELECT first_name, last_name, phone, username, cart, favorites FROM users WHERE id = $1', [req.userId]);
+        const user = await pool.query(
+            'SELECT first_name, last_name, phone, username, cart, favorites FROM users WHERE id = $1',
+            [req.userId]
+        );
         if (user.rows.length > 0) {
             const userProfile = user.rows[0];
             // Ensure cart and favorites are not null
@@ -183,14 +189,16 @@ router.put('/profile', authenticate, async (req, res, next) => {
 
     // Validatsiya - telefon formati (+998XXXXXXXXX)
     if (!phone || !phone.match(/^\+998[0-9]{9}$/)) {
-        return res.status(400).json({ error: 'Telefon raqam formati noto\'g\'ri. Namuna: +998901234567' });
+        return res
+            .status(400)
+            .json({ error: "Telefon raqam formati noto'g'ri. Namuna: +998901234567" });
     }
 
     // Validatsiya - O'zbekiston operatorlari
     const operatorCode = phone.slice(4, 6);
     const validOperators = ['90', '91', '93', '94', '95', '97', '98', '99', '33', '88', '71', '77'];
     if (!validOperators.includes(operatorCode)) {
-        return res.status(400).json({ error: 'Noto\'g\'ri O\'zbekiston telefon raqami' });
+        return res.status(400).json({ error: "Noto'g'ri O'zbekiston telefon raqami" });
     }
 
     try {
@@ -247,7 +255,9 @@ router.put('/cart', authenticate, async (req, res, next) => {
                 return res.status(400).json({ error: `Invalid product ID in cart: ${key}` });
             }
             if (isNaN(quantity) || quantity <= 0 || !Number.isInteger(quantity)) {
-                return res.status(400).json({ error: `Invalid quantity for product ID ${key}: must be a positive integer` });
+                return res.status(400).json({
+                    error: `Invalid quantity for product ID ${key}: must be a positive integer`,
+                });
             }
         }
 
@@ -255,7 +265,9 @@ router.put('/cart', authenticate, async (req, res, next) => {
         JSON.stringify(cart);
     } catch (error) {
         if (error instanceof TypeError && error.message.includes('circular')) {
-            return res.status(400).json({ error: 'Invalid cart data: circular reference detected' });
+            return res
+                .status(400)
+                .json({ error: 'Invalid cart data: circular reference detected' });
         }
         return res.status(400).json({ error: 'Invalid cart data format' });
     }
@@ -284,7 +296,9 @@ router.put('/favorites', authenticate, async (req, res, next) => {
     for (let i = 0; i < favorites.length; i++) {
         const productId = parseInt(favorites[i]);
         if (isNaN(productId) || productId <= 0 || !Number.isInteger(productId)) {
-            return res.status(400).json({ error: `Invalid product ID at index ${i}: must be a positive integer` });
+            return res
+                .status(400)
+                .json({ error: `Invalid product ID at index ${i}: must be a positive integer` });
         }
         if (seen.has(productId)) {
             return res.status(400).json({ error: `Duplicate product ID: ${productId}` });

@@ -9,18 +9,18 @@ const swaggerOptions = {
             description: 'API documentation for Seller App - Multi-marketplace management system',
             contact: {
                 name: 'API Support',
-                email: 'support@example.com'
-            }
+                email: 'support@example.com',
+            },
         },
         servers: [
             {
                 url: process.env.API_URL || 'http://localhost:3001',
-                description: 'Development server'
+                description: 'Development server',
             },
             {
                 url: 'https://seller-app-backend.railway.app',
-                description: 'Production server'
-            }
+                description: 'Production server',
+            },
         ],
         components: {
             securitySchemes: {
@@ -28,8 +28,8 @@ const swaggerOptions = {
                     type: 'apiKey',
                     in: 'header',
                     name: 'x-telegram-data',
-                    description: 'Telegram authentication data (from Telegram Mini App)'
-                }
+                    description: 'Telegram authentication data (from Telegram Mini App)',
+                },
             },
             schemas: {
                 Product: {
@@ -37,263 +37,260 @@ const swaggerOptions = {
                     properties: {
                         _id: {
                             type: 'integer',
-                            description: 'Internal product ID (hidden from frontend)'
+                            description: 'Internal product ID (hidden from frontend)',
                         },
                         name_uz: {
                             type: 'string',
-                            description: 'Product name in Uzbek'
+                            description: 'Product name in Uzbek',
                         },
                         name_ru: {
                             type: 'string',
-                            description: 'Product name in Russian'
+                            description: 'Product name in Russian',
                         },
                         description_uz: {
                             type: 'string',
-                            description: 'Product description in Uzbek'
+                            description: 'Product description in Uzbek',
                         },
                         description_ru: {
                             type: 'string',
-                            description: 'Product description in Russian'
+                            description: 'Product description in Russian',
                         },
                         price: {
                             type: 'number',
                             format: 'float',
-                            description: 'Product price'
+                            description: 'Product price',
                         },
                         sale_price: {
                             type: 'number',
                             format: 'float',
-                            description: 'Product sale price (optional)'
+                            description: 'Product sale price (optional)',
                         },
                         image_url: {
                             type: 'string',
                             format: 'uri',
-                            description: 'Product image URL'
+                            description: 'Product image URL',
                         },
                         category_id: {
                             type: 'integer',
-                            description: 'Category ID'
+                            description: 'Category ID',
                         },
                         category_name_uz: {
                             type: 'string',
-                            description: 'Category name in Uzbek'
+                            description: 'Category name in Uzbek',
                         },
                         category_name_ru: {
                             type: 'string',
-                            description: 'Category name in Russian'
+                            description: 'Category name in Russian',
                         },
                         sku: {
                             type: 'string',
-                            description: 'Stock Keeping Unit (unique identifier)'
+                            description: 'Stock Keeping Unit (unique identifier)',
                         },
                         is_active: {
                             type: 'boolean',
-                            description: 'Product active status'
+                            description: 'Product active status',
                         },
                         created_at: {
                             type: 'string',
                             format: 'date-time',
-                            description: 'Product creation date'
-                        }
-                    }
+                            description: 'Product creation date',
+                        },
+                    },
                 },
                 Order: {
                     type: 'object',
                     properties: {
                         id: {
                             type: 'integer',
-                            description: 'Order ID'
+                            description: 'Order ID',
                         },
                         order_number: {
                             type: 'string',
-                            description: 'Order number'
+                            description: 'Order number',
                         },
                         status: {
                             type: 'string',
                             enum: ['new', 'processing', 'ready', 'delivered', 'cancelled'],
-                            description: 'Order status'
+                            description: 'Order status',
                         },
                         total_amount: {
                             type: 'number',
                             format: 'float',
-                            description: 'Total order amount'
+                            description: 'Total order amount',
                         },
                         payment_method: {
                             type: 'string',
-                            description: 'Payment method'
+                            description: 'Payment method',
                         },
                         delivery_method: {
                             type: 'string',
-                            description: 'Delivery method'
+                            description: 'Delivery method',
                         },
                         marketplace_id: {
                             type: 'integer',
-                            description: 'Marketplace ID'
+                            description: 'Marketplace ID',
                         },
                         marketplace_name: {
                             type: 'string',
-                            description: 'Marketplace name'
+                            description: 'Marketplace name',
                         },
                         customer_name: {
                             type: 'string',
-                            description: 'Customer name'
+                            description: 'Customer name',
                         },
                         customer_phone: {
                             type: 'string',
-                            description: 'Customer phone'
+                            description: 'Customer phone',
                         },
                         customer_address: {
                             type: 'string',
-                            description: 'Customer address'
+                            description: 'Customer address',
                         },
                         order_date: {
                             type: 'string',
                             format: 'date-time',
-                            description: 'Order date'
+                            description: 'Order date',
                         },
                         delivery_date: {
                             type: 'string',
                             format: 'date-time',
-                            description: 'Delivery date'
+                            description: 'Delivery date',
                         },
                         items: {
                             type: 'array',
                             items: {
-                                $ref: '#/components/schemas/OrderItem'
-                            }
+                                $ref: '#/components/schemas/OrderItem',
+                            },
                         },
                         items_count: {
                             type: 'integer',
-                            description: 'Number of items in order'
+                            description: 'Number of items in order',
                         },
                         created_at: {
                             type: 'string',
                             format: 'date-time',
-                            description: 'Order creation date'
+                            description: 'Order creation date',
                         },
                         updated_at: {
                             type: 'string',
                             format: 'date-time',
-                            description: 'Order last update date'
-                        }
-                    }
+                            description: 'Order last update date',
+                        },
+                    },
                 },
                 OrderItem: {
                     type: 'object',
                     properties: {
                         id: {
                             type: 'integer',
-                            description: 'Order item ID'
+                            description: 'Order item ID',
                         },
                         product_id: {
                             type: 'integer',
-                            description: 'Product ID'
+                            description: 'Product ID',
                         },
                         quantity: {
                             type: 'integer',
-                            description: 'Item quantity'
+                            description: 'Item quantity',
                         },
                         price: {
                             type: 'number',
                             format: 'float',
-                            description: 'Item price'
+                            description: 'Item price',
                         },
                         product_name_uz: {
                             type: 'string',
-                            description: 'Product name in Uzbek'
+                            description: 'Product name in Uzbek',
                         },
                         product_name_ru: {
                             type: 'string',
-                            description: 'Product name in Russian'
+                            description: 'Product name in Russian',
                         },
                         product_image_url: {
                             type: 'string',
                             format: 'uri',
-                            description: 'Product image URL'
-                        }
-                    }
+                            description: 'Product image URL',
+                        },
+                    },
                 },
                 Marketplace: {
                     type: 'object',
                     properties: {
                         id: {
                             type: 'integer',
-                            description: 'Marketplace ID'
+                            description: 'Marketplace ID',
                         },
                         name: {
                             type: 'string',
-                            description: 'Marketplace name'
+                            description: 'Marketplace name',
                         },
                         api_type: {
                             type: 'string',
-                            description: 'API type'
+                            description: 'API type',
                         },
                         api_url: {
                             type: 'string',
                             format: 'uri',
-                            description: 'API URL'
+                            description: 'API URL',
                         },
                         is_active: {
                             type: 'boolean',
-                            description: 'Marketplace active status'
+                            description: 'Marketplace active status',
                         },
                         created_at: {
                             type: 'string',
                             format: 'date-time',
-                            description: 'Marketplace creation date'
-                        }
-                    }
+                            description: 'Marketplace creation date',
+                        },
+                    },
                 },
                 Error: {
                     type: 'object',
                     properties: {
                         error: {
                             type: 'string',
-                            description: 'Error message'
+                            description: 'Error message',
                         },
                         message: {
                             type: 'string',
-                            description: 'Detailed error message'
-                        }
-                    }
+                            description: 'Detailed error message',
+                        },
+                    },
                 },
                 Pagination: {
                     type: 'object',
                     properties: {
                         total: {
                             type: 'integer',
-                            description: 'Total number of items'
+                            description: 'Total number of items',
                         },
                         limit: {
                             type: 'integer',
-                            description: 'Items per page'
+                            description: 'Items per page',
                         },
                         offset: {
                             type: 'integer',
-                            description: 'Offset for pagination'
+                            description: 'Offset for pagination',
                         },
                         hasMore: {
                             type: 'boolean',
-                            description: 'Whether there are more items'
+                            description: 'Whether there are more items',
                         },
                         currentCount: {
                             type: 'integer',
-                            description: 'Current page item count'
-                        }
-                    }
-                }
-            }
+                            description: 'Current page item count',
+                        },
+                    },
+                },
+            },
         },
         security: [
             {
-                TelegramAuth: []
-            }
-        ]
+                TelegramAuth: [],
+            },
+        ],
     },
-    apis: [
-        './routes/*.js',
-        './app.js'
-    ]
+    apis: ['./routes/*.js', './app.js'],
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);

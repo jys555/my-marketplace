@@ -11,16 +11,18 @@ async function startServer() {
     try {
         // Seller App database migration
         await initializeDatabase();
-        
+
         // Amazing Store narxlarini sync qilish
         try {
             const syncResult = await priceService.syncAmazingStorePrices();
-            logger.info(`✅ Amazing Store prices synced: ${syncResult.created} created, ${syncResult.updated} updated`);
+            logger.info(
+                `✅ Amazing Store prices synced: ${syncResult.created} created, ${syncResult.updated} updated`
+            );
         } catch (error) {
             logger.warn('⚠️  Warning: Could not sync Amazing Store prices:', error.message);
             // Server yaxshi ishlashi uchun xatoni e'tiborsiz qoldiramiz
         }
-        
+
         // Server ishga tushirish
         const server = app.listen(PORT, () => {
             logger.info(`✅ Seller App Server is running on port ${PORT}`);

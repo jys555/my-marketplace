@@ -6,7 +6,7 @@ class AppError extends Error {
         this.statusCode = statusCode;
         this.code = code;
         this.isOperational = true; // Operational errors (expected)
-        
+
         Error.captureStackTrace(this, this.constructor);
     }
 }
@@ -58,19 +58,19 @@ function mapPostgresError(error) {
     switch (error.code) {
         case '23505': // Unique violation
             return new ConflictError('Resource already exists');
-        
+
         case '23503': // Foreign key violation
             return new ValidationError('Referenced resource does not exist');
-        
+
         case '23502': // Not null violation
             return new ValidationError('Required field is missing');
-        
+
         case '42703': // Undefined column
             return new DatabaseError('Database schema error', error);
-        
+
         case '42P01': // Undefined table
             return new DatabaseError('Database table does not exist', error);
-        
+
         default:
             return new DatabaseError('Database operation failed', error);
     }
@@ -84,5 +84,5 @@ module.exports = {
     ForbiddenError,
     DatabaseError,
     ConflictError,
-    mapPostgresError
+    mapPostgresError,
 };

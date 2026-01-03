@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "C:\\Users\\juman\\Downloads\\my-marketplace\\seller-app\\backend\\logs\\.3f2e4ba5ca5e81571325f74289946be5c5297f9b-audit.json",
+    "files": [
+        {
+            "date": 1767464314708,
+            "name": "C:\\Users\\juman\\Downloads\\my-marketplace\\seller-app\\backend\\logs\\app-2026-01-03.log",
+            "hash": "efd3f511ee1837371ffae4ac706dfa71eb56c9e314dc5c602a6bcd500a37b5ff"
+        }
+    ],
+    "hashType": "sha256"
+}

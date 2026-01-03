@@ -2,7 +2,16 @@ const express = require('express');
 const pool = require('../db');
 const cache = require('../utils/cache');
 const router = express.Router();
-const { validateBody, validateParams, required, string, optional, url, boolean, integer } = require('../middleware/validate');
+const {
+    validateBody,
+    validateParams,
+    required,
+    string,
+    optional,
+    url,
+    boolean,
+    integer,
+} = require('../middleware/validate');
 const { NotFoundError, ConflictError } = require('../utils/errors');
 const logger = require('../utils/logger');
 
@@ -27,10 +36,10 @@ router.get('/', async (req, res) => {
             FROM marketplaces
             ORDER BY name ASC
         `);
-        
+
         // PERFORMANCE: Cache'ga saqlash
         cache.set(CACHE_KEY, rows, CACHE_TTL);
-        
+
         res.json(rows);
     } catch (error) {
         logger.error('Error fetching marketplaces:', error);
@@ -42,13 +51,16 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { rows } = await pool.query(`
+        const { rows } = await pool.query(
+            `
             SELECT 
                 id, name, api_type, marketplace_code, is_active,
                 created_at, updated_at
             FROM marketplaces
             WHERE id = $1
-        `, [id]);
+        `,
+            [id]
+        );
 
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Marketplace not found' });
@@ -62,52 +74,59 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/seller/marketplaces - Yangi marketplace
-router.post('/',
+router.post(
+    '/',
     validateBody({
         name: required(string),
         api_type: required(string),
         marketplace_code: optional(string),
-        is_active: optional(boolean)
+        is_active: optional(boolean),
     }),
     async (req, res, next) => {
-    try {
-        const { name, api_type, marketplace_code, is_active = true } = req.body;
+        try {
+            const { name, api_type, marketplace_code, is_active = true } = req.body;
 
-        const { rows } = await pool.query(`
+            const { rows } = await pool.query(
+                `
             INSERT INTO marketplaces (name, api_type, marketplace_code, is_active)
             VALUES ($1, $2, $3, $4)
             RETURNING id, name, api_type, marketplace_code, is_active, created_at, updated_at
-        `, [name, api_type, marketplace_code || null, is_active]);
+        `,
+                [name, api_type, marketplace_code || null, is_active]
+            );
 
-        // PERFORMANCE: Marketplaces cache'ni tozalash (yangi marketplace qo'shildi)
-        cache.delete(CACHE_KEY);
+            // PERFORMANCE: Marketplaces cache'ni tozalash (yangi marketplace qo'shildi)
+            cache.delete(CACHE_KEY);
 
-        res.status(201).json(rows[0]);
-    } catch (error) {
-        if (error.code === '23505') {
-            return next(new ConflictError('Marketplace with this name already exists'));
+            res.status(201).json(rows[0]);
+        } catch (error) {
+            if (error.code === '23505') {
+                return next(new ConflictError('Marketplace with this name already exists'));
+            }
+            next(error);
         }
-        next(error);
     }
-});
+);
 
 // PUT /api/seller/marketplaces/:id - Marketplace yangilash
-router.put('/:id',
+router.put(
+    '/:id',
     validateParams({
-        id: required(integer)
+        id: required(integer),
     }),
     validateBody({
         name: optional(string),
         api_type: optional(string),
         marketplace_code: optional(string),
-        is_active: optional(boolean)
+        is_active: optional(boolean),
     }),
     async (req, res, next) => {
-    try {
-        const { id } = req.params;
-        const { name, api_type, marketplace_code, is_active } = req.body;
+        try {
+            const { id } = req.params;
+            const { name, api_type, marketplace_code, is_active } = req.body;
 
-        const { rows } = await pool.query(`
+            const { rows } = await pool.query(
+                `
             UPDATE marketplaces
             SET 
                 name = COALESCE($1, name),
@@ -117,34 +136,40 @@ router.put('/:id',
                 updated_at = NOW()
             WHERE id = $5
             RETURNING id, name, api_type, marketplace_code, is_active, created_at, updated_at
-        `, [name, api_type, marketplace_code, is_active, id]);
+        `,
+                [name, api_type, marketplace_code, is_active, id]
+            );
 
-        if (rows.length === 0) {
-            return next(new NotFoundError('Marketplace'));
+            if (rows.length === 0) {
+                return next(new NotFoundError('Marketplace'));
+            }
+
+            // PERFORMANCE: Marketplaces cache'ni tozalash (marketplace o'zgartirildi)
+            cache.delete(CACHE_KEY);
+
+            res.json(rows[0]);
+        } catch (error) {
+            if (error.code === '23505') {
+                return next(new ConflictError('Marketplace with this name already exists'));
+            }
+            next(error);
         }
-
-        // PERFORMANCE: Marketplaces cache'ni tozalash (marketplace o'zgartirildi)
-        cache.delete(CACHE_KEY);
-
-        res.json(rows[0]);
-    } catch (error) {
-        if (error.code === '23505') {
-            return next(new ConflictError('Marketplace with this name already exists'));
-        }
-        next(error);
     }
-});
+);
 
 // DELETE /api/seller/marketplaces/:id - Marketplace o'chirish
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
-        const { rows } = await pool.query(`
+        const { rows } = await pool.query(
+            `
             DELETE FROM marketplaces
             WHERE id = $1
             RETURNING id
-        `, [id]);
+        `,
+            [id]
+        );
 
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Marketplace not found' });
@@ -161,4 +186,3 @@ router.delete('/:id', async (req, res) => {
 });
 
 module.exports = router;
-

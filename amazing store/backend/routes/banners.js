@@ -22,10 +22,10 @@ router.get('/', async (req, res, next) => {
         const { rows } = await pool.query(
             'SELECT id, title, image_url, link_url, is_active, sort_order FROM banners WHERE is_active = TRUE ORDER BY sort_order ASC'
         );
-        
+
         // PERFORMANCE: Cache'ga saqlash
         cache.set(CACHE_KEY, rows, CACHE_TTL);
-        
+
         res.json(rows);
     } catch (error) {
         logger.error('Error fetching banners:', error);

@@ -22,9 +22,7 @@ describe('Products API', () => {
 
     describe('GET /api/seller/products', () => {
         test('should return 401 without authentication', async () => {
-            const response = await request(app)
-                .get('/api/seller/products')
-                .expect(401);
+            const response = await request(app).get('/api/seller/products').expect(401);
         });
 
         // Note: Real authentication tests require mock auth middleware
@@ -34,7 +32,7 @@ describe('Products API', () => {
     describe('POST /api/seller/products', () => {
         test('should return 401 without authentication', async () => {
             const productData = createTestProductData();
-            
+
             const response = await request(app)
                 .post('/api/seller/products')
                 .send(productData)

@@ -26,7 +26,9 @@ for (const dir of possibleSourceDirs) {
         const files = fs.readdirSync(dir).filter(f => f.endsWith('.sql'));
         if (files.length > 0) {
             sourceDir = dir;
-            logger.info(`📁 Found source migrations directory: ${sourceDir} (${files.length} files)`);
+            logger.info(
+                `📁 Found source migrations directory: ${sourceDir} (${files.length} files)`
+            );
             break;
         }
     }
@@ -37,7 +39,9 @@ if (!sourceDir) {
     possibleSourceDirs.forEach(dir => logger.error(`   - ${dir}`));
     // Railway'da build script ishlamayapti bo'lsa, xatolikni ko'rsatish
     // Lekin server ishga tushishi kerak (migration runner fallback ishlatadi)
-    logger.warn('⚠️  Build script failed, but server will continue (migration runner will use fallback)');
+    logger.warn(
+        '⚠️  Build script failed, but server will continue (migration runner will use fallback)'
+    );
     process.exit(0); // Exit code 0 - server ishga tushishi kerak
 }
 
@@ -54,7 +58,7 @@ let copied = 0;
 files.forEach(file => {
     const sourceFile = path.join(sourceDir, file);
     const destFile = path.join(destDir, file);
-    
+
     try {
         fs.copyFileSync(sourceFile, destFile);
         logger.info(`✅ Copied ${file}`);
@@ -65,4 +69,3 @@ files.forEach(file => {
 });
 
 logger.info(`\n🎉 Copied ${copied}/${files.length} migration files to ${destDir}`);
-

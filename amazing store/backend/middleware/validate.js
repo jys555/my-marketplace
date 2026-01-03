@@ -26,7 +26,7 @@ function validateBody(schema) {
             } catch (error) {
                 errors.push({
                     field,
-                    message: error.message || `Invalid value for ${field}`
+                    message: error.message || `Invalid value for ${field}`,
                 });
             }
         }
@@ -58,7 +58,7 @@ function validateQuery(schema) {
             } catch (error) {
                 errors.push({
                     field,
-                    message: error.message || `Invalid query parameter: ${field}`
+                    message: error.message || `Invalid query parameter: ${field}`,
                 });
             }
         }
@@ -90,7 +90,7 @@ function validateParams(schema) {
             } catch (error) {
                 errors.push({
                     field,
-                    message: error.message || `Invalid parameter: ${field}`
+                    message: error.message || `Invalid parameter: ${field}`,
                 });
             }
         }
@@ -136,7 +136,9 @@ function string(value, fieldName) {
 function stringLength(min, max) {
     return (value, fieldName) => {
         const str = string(value, fieldName);
-        if (str === undefined) return undefined;
+        if (str === undefined) {
+            return undefined;
+        }
         if (str.length < min) {
             throw new Error(`${fieldName} must be at least ${min} characters`);
         }
@@ -166,7 +168,9 @@ function number(value, fieldName) {
  */
 function integer(value, fieldName) {
     const num = number(value, fieldName);
-    if (num === undefined) return undefined;
+    if (num === undefined) {
+        return undefined;
+    }
     if (!Number.isInteger(num)) {
         throw new Error(`${fieldName} must be an integer`);
     }
@@ -179,7 +183,9 @@ function integer(value, fieldName) {
 function numberRange(min, max) {
     return (value, fieldName) => {
         const num = number(value, fieldName);
-        if (num === undefined) return undefined;
+        if (num === undefined) {
+            return undefined;
+        }
         if (num < min || num > max) {
             throw new Error(`${fieldName} must be between ${min} and ${max}`);
         }
@@ -199,7 +205,9 @@ function positive(value, fieldName) {
  */
 function email(value, fieldName) {
     const str = string(value, fieldName);
-    if (str === undefined) return undefined;
+    if (str === undefined) {
+        return undefined;
+    }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(str)) {
         throw new Error(`${fieldName} must be a valid email address`);
@@ -212,8 +220,11 @@ function email(value, fieldName) {
  */
 function url(value, fieldName) {
     const str = string(value, fieldName);
-    if (str === undefined) return undefined;
+    if (str === undefined) {
+        return undefined;
+    }
     try {
+        // eslint-disable-next-line no-new
         new URL(str);
         return str;
     } catch {
@@ -232,8 +243,12 @@ function boolean(value, fieldName) {
         return value;
     }
     if (typeof value === 'string') {
-        if (value.toLowerCase() === 'true') return true;
-        if (value.toLowerCase() === 'false') return false;
+        if (value.toLowerCase() === 'true') {
+            return true;
+        }
+        if (value.toLowerCase() === 'false') {
+            return false;
+        }
     }
     throw new Error(`${fieldName} must be a boolean`);
 }
@@ -257,7 +272,9 @@ function array(value, fieldName) {
 function oneOf(allowedValues) {
     return (value, fieldName) => {
         const str = string(value, fieldName);
-        if (str === undefined) return undefined;
+        if (str === undefined) {
+            return undefined;
+        }
         if (!allowedValues.includes(str)) {
             throw new Error(`${fieldName} must be one of: ${allowedValues.join(', ')}`);
         }
@@ -294,5 +311,5 @@ module.exports = {
     boolean,
     array,
     oneOf,
-    optional
+    optional,
 };

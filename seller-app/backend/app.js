@@ -61,20 +61,22 @@ const allowedOrigins = [
     'https://web.telegram.org',
     'https://telegram.org',
     'http://localhost:3001',
-    process.env.FRONTEND_URL
+    process.env.FRONTEND_URL,
 ].filter(Boolean);
 
-app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            logger.warn(`CORS blocked request from: ${origin}`);
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true
-}));
+app.use(
+    cors({
+        origin: (origin, callback) => {
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                logger.warn(`CORS blocked request from: ${origin}`);
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
+        credentials: true,
+    })
+);
 
 app.use(express.json());
 
@@ -85,10 +87,14 @@ app.get('/health', healthRoutes.healthCheck);
 app.get('/metrics', metricsRoutes.getMetrics);
 
 // Swagger API Documentation (rate limit'dan oldin, authentication'dan oldin)
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Seller App API Documentation'
-}));
+app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+        customCss: '.swagger-ui .topbar { display: none }',
+        customSiteTitle: 'Seller App API Documentation',
+    })
+);
 
 app.use('/api/', apiLimiter);
 

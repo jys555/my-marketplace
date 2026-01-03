@@ -1,7 +1,16 @@
 const express = require('express');
 const pool = require('../db');
 const router = express.Router();
-const { validateParams, validateBody, required, oneOf, optional, integer, array, positive } = require('../middleware/validate');
+const {
+    validateParams,
+    validateBody,
+    required,
+    oneOf,
+    optional,
+    integer,
+    array,
+    positive,
+} = require('../middleware/validate');
 const { NotFoundError } = require('../utils/errors');
 const logger = require('../utils/logger');
 
@@ -172,7 +181,8 @@ router.get('/:id', async (req, res) => {
         const { id } = req.params;
 
         // Order ma'lumotlari
-        const { rows: orderRows } = await pool.query(`
+        const { rows: orderRows } = await pool.query(
+            `
             SELECT 
                 o.id, o.order_number, o.status, o.total_amount,
                 o.payment_method, o.delivery_method,
@@ -184,14 +194,17 @@ router.get('/:id', async (req, res) => {
             FROM orders o
             LEFT JOIN marketplaces m ON o.marketplace_id = m.id
             WHERE o.id = $1
-        `, [id]);
+        `,
+            [id]
+        );
 
         if (orderRows.length === 0) {
             return res.status(404).json({ error: 'Order not found' });
         }
 
         // Order items
-        const { rows: itemsRows } = await pool.query(`
+        const { rows: itemsRows } = await pool.query(
+            `
             SELECT 
                 oi.id, oi.product_id, oi.quantity, oi.price,
                 p.name_uz as product_name_uz, p.name_ru as product_name_ru,
@@ -200,11 +213,13 @@ router.get('/:id', async (req, res) => {
             INNER JOIN products p ON oi.product_id = p.id
             WHERE oi.order_id = $1
             ORDER BY oi.id ASC
-        `, [id]);
+        `,
+            [id]
+        );
 
         res.json({
             ...orderRows[0],
-            items: itemsRows
+            items: itemsRows,
         });
     } catch (error) {
         logger.error('Error fetching order:', error);
@@ -286,84 +301,105 @@ router.get('/:id', async (req, res) => {
  *               $ref: '#/components/schemas/Error'
  */
 // PUT /api/seller/orders/:id/status - Buyurtma statusini yangilash
-router.put('/:id/status',
+router.put(
+    '/:id/status',
     validateParams({
-        id: required(integer)
+        id: required(integer),
     }),
     validateBody({
-        status: required(oneOf(['new', 'processing', 'ready', 'delivered', 'cancelled']))
+        status: required(oneOf(['new', 'processing', 'ready', 'delivered', 'cancelled'])),
     }),
     async (req, res, next) => {
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
 
-        const { id } = req.params;
-        const { status } = req.body;
+            const { id } = req.params;
+            const { status } = req.body;
 
-        // Order statusini yangilash
-        const { rows } = await client.query(`
+            // Order statusini yangilash
+            const { rows } = await client.query(
+                `
             UPDATE orders
             SET status = $1, updated_at = NOW()
             WHERE id = $2
             RETURNING id, order_number, status, total_amount, updated_at
-        `, [status, id]);
+        `,
+                [status, id]
+            );
 
-        if (rows.length === 0) {
-            await client.query('ROLLBACK');
-            return next(new NotFoundError('Order'));
-        }
+            if (rows.length === 0) {
+                await client.query('ROLLBACK');
+                return next(new NotFoundError('Order'));
+            }
 
-        // Agar buyurtma bekor qilinsa yoki yetkazib berilsa, inventory'ni yangilash
-        if (status === 'cancelled' || status === 'delivered') {
-            const { rows: itemsRows } = await client.query(`
+            // Agar buyurtma bekor qilinsa yoki yetkazib berilsa, inventory'ni yangilash
+            if (status === 'cancelled' || status === 'delivered') {
+                const { rows: itemsRows } = await client.query(
+                    `
                 SELECT product_id, quantity
                 FROM order_items
                 WHERE order_id = $1
-            `, [id]);
+            `,
+                    [id]
+                );
 
-            for (const item of itemsRows) {
-                if (status === 'cancelled') {
-                    // Bekor qilingan buyurtma - qoldiqni qaytarish
-                    await client.query(`
+                for (const item of itemsRows) {
+                    if (status === 'cancelled') {
+                        // Bekor qilingan buyurtma - qoldiqni qaytarish
+                        await client.query(
+                            `
                         UPDATE inventory
                         SET quantity = quantity + $1,
                             last_updated_at = NOW()
                         WHERE product_id = $2
-                    `, [item.quantity, item.product_id]);
+                    `,
+                            [item.quantity, item.product_id]
+                        );
 
-                    // Inventory movement yozish
-                    const { rows: invRows } = await client.query(`
+                        // Inventory movement yozish
+                        const { rows: invRows } = await client.query(
+                            `
                         SELECT quantity FROM inventory WHERE product_id = $1
-                    `, [item.product_id]);
-                    const quantityAfter = invRows.length > 0 ? invRows[0].quantity : item.quantity;
-                    const quantityBefore = quantityAfter - item.quantity;
+                    `,
+                            [item.product_id]
+                        );
+                        const quantityAfter =
+                            invRows.length > 0 ? invRows[0].quantity : item.quantity;
+                        const quantityBefore = quantityAfter - item.quantity;
 
-                    await client.query(`
+                        await client.query(
+                            `
                         INSERT INTO inventory_movements (product_id, order_id, movement_type, quantity_change, quantity_before, quantity_after, notes)
                         VALUES ($1, $2, 'return', $3, $4, $5, 'Order cancelled')
-                    `, [item.product_id, id, item.quantity, quantityBefore, quantityAfter]);
-                } else if (status === 'delivered') {
-                    // Yetkazib berilgan buyurtma - rezervni kamaytirish
-                    await client.query(`
+                    `,
+                            [item.product_id, id, item.quantity, quantityBefore, quantityAfter]
+                        );
+                    } else if (status === 'delivered') {
+                        // Yetkazib berilgan buyurtma - rezervni kamaytirish
+                        await client.query(
+                            `
                         UPDATE inventory
                         SET reserved_quantity = GREATEST(0, reserved_quantity - $1),
                             last_updated_at = NOW()
                         WHERE product_id = $2
-                    `, [item.quantity, item.product_id]);
+                    `,
+                            [item.quantity, item.product_id]
+                        );
+                    }
                 }
             }
-        }
 
-        await client.query('COMMIT');
-        res.json(rows[0]);
-    } catch (error) {
-        await client.query('ROLLBACK');
-        next(error);
-    } finally {
-        client.release();
+            await client.query('COMMIT');
+            res.json(rows[0]);
+        } catch (error) {
+            await client.query('ROLLBACK');
+            next(error);
+        } finally {
+            client.release();
+        }
     }
-});
+);
 
 /**
  * @swagger
@@ -461,7 +497,15 @@ router.post('/', async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        const { marketplace_id, items, customer_name, customer_phone, customer_address, payment_method, delivery_method } = req.body;
+        const {
+            marketplace_id,
+            items,
+            customer_name,
+            customer_phone,
+            customer_address,
+            payment_method,
+            delivery_method,
+        } = req.body;
 
         if (!items || !Array.isArray(items) || items.length === 0) {
             await client.query('ROLLBACK');
@@ -470,11 +514,14 @@ router.post('/', async (req, res) => {
 
         // Product narxlarini olish
         const productIds = items.map(item => item.product_id);
-        const { rows: productsRows } = await client.query(`
+        const { rows: productsRows } = await client.query(
+            `
             SELECT id, price, sale_price
             FROM products
             WHERE id = ANY($1::int[])
-        `, [productIds]);
+        `,
+            [productIds]
+        );
 
         if (productsRows.length !== productIds.length) {
             await client.query('ROLLBACK');
@@ -491,7 +538,9 @@ router.post('/', async (req, res) => {
             const price = productPriceMap[item.product_id];
             if (!price || item.quantity <= 0) {
                 await client.query('ROLLBACK');
-                return res.status(400).json({ error: `Invalid data for product ID ${item.product_id}` });
+                return res
+                    .status(400)
+                    .json({ error: `Invalid data for product ID ${item.product_id}` });
             }
             totalAmount += price * item.quantity;
         }
@@ -499,7 +548,8 @@ router.post('/', async (req, res) => {
         const orderNumber = `MANUAL-${Date.now()}`;
 
         // Order yaratish
-        const { rows: orderRows } = await client.query(`
+        const { rows: orderRows } = await client.query(
+            `
             INSERT INTO orders (
                 marketplace_id, order_number, total_amount, status,
                 payment_method, delivery_method,
@@ -508,7 +558,18 @@ router.post('/', async (req, res) => {
             )
             VALUES ($1, $2, $3, 'new', $4, $5, $6, $7, $8, NOW())
             RETURNING id, order_number, status, total_amount, created_at
-        `, [marketplace_id || null, orderNumber, totalAmount, payment_method || null, delivery_method || null, customer_name || null, customer_phone || null, customer_address || null]);
+        `,
+            [
+                marketplace_id || null,
+                orderNumber,
+                totalAmount,
+                payment_method || null,
+                delivery_method || null,
+                customer_name || null,
+                customer_phone || null,
+                customer_address || null,
+            ]
+        );
 
         const orderId = orderRows[0].id;
 
@@ -516,13 +577,17 @@ router.post('/', async (req, res) => {
         for (const item of items) {
             const price = productPriceMap[item.product_id];
 
-            await client.query(`
+            await client.query(
+                `
                 INSERT INTO order_items (order_id, product_id, quantity, price)
                 VALUES ($1, $2, $3, $4)
-            `, [orderId, item.product_id, item.quantity, price]);
+            `,
+                [orderId, item.product_id, item.quantity, price]
+            );
 
             // Inventory'ni yangilash (qoldiqni kamaytirish, rezervni oshirish)
-            await client.query(`
+            await client.query(
+                `
                 INSERT INTO inventory (product_id, quantity, reserved_quantity, last_updated_at)
                 VALUES ($1, -$2, $2, NOW())
                 ON CONFLICT (product_id) 
@@ -530,19 +595,28 @@ router.post('/', async (req, res) => {
                     quantity = GREATEST(0, inventory.quantity - $2),
                     reserved_quantity = inventory.reserved_quantity + $2,
                     last_updated_at = NOW()
-            `, [item.product_id, item.quantity]);
+            `,
+                [item.product_id, item.quantity]
+            );
 
             // Inventory movement yozish
-            const { rows: invRows } = await client.query(`
+            const { rows: invRows } = await client.query(
+                `
                 SELECT quantity, reserved_quantity FROM inventory WHERE product_id = $1
-            `, [item.product_id]);
-            const quantityBefore = invRows.length > 0 ? invRows[0].quantity + item.quantity : item.quantity;
+            `,
+                [item.product_id]
+            );
+            const quantityBefore =
+                invRows.length > 0 ? invRows[0].quantity + item.quantity : item.quantity;
             const quantityAfter = invRows.length > 0 ? invRows[0].quantity : 0;
 
-            await client.query(`
+            await client.query(
+                `
                 INSERT INTO inventory_movements (product_id, order_id, movement_type, quantity_change, quantity_before, quantity_after, notes)
                 VALUES ($1, $2, 'sale', $3, $4, $5, 'Order created')
-            `, [item.product_id, orderId, -item.quantity, quantityBefore, quantityAfter]);
+            `,
+                [item.product_id, orderId, -item.quantity, quantityBefore, quantityAfter]
+            );
         }
 
         await client.query('COMMIT');
@@ -557,4 +631,3 @@ router.post('/', async (req, res) => {
 });
 
 module.exports = router;
-

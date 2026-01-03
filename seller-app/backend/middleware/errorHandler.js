@@ -10,17 +10,13 @@ function errorHandler(err, req, res, next) {
     let error = err;
 
     // PostgreSQL error'larini map qilish
-    if (error.code && error.code.startsWith('23') || error.code.startsWith('42')) {
+    if ((error.code && error.code.startsWith('23')) || error.code.startsWith('42')) {
         error = mapPostgresError(error);
     }
 
     // Agar error AppError emas bo'lsa, InternalServerError qilamiz
     if (!(error instanceof AppError)) {
-        error = new AppError(
-            error.message || 'Internal Server Error',
-            500,
-            'INTERNAL_ERROR'
-        );
+        error = new AppError(error.message || 'Internal Server Error', 500, 'INTERNAL_ERROR');
     }
 
     // Development vs Production
@@ -34,15 +30,17 @@ function errorHandler(err, req, res, next) {
             ...(error.details && { details: error.details }),
             ...(isDevelopment && {
                 stack: error.stack,
-                originalError: error.originalError ? {
-                    message: error.originalError.message,
-                    code: error.originalError.code
-                } : undefined
+                originalError: error.originalError
+                    ? {
+                          message: error.originalError.message,
+                          code: error.originalError.code,
+                      }
+                    : undefined,
             }),
             timestamp: new Date().toISOString(),
             path: req.originalUrl,
-            method: req.method
-        }
+            method: req.method,
+        },
     };
 
     // Logging to FILE (NOT database)
@@ -59,8 +57,8 @@ function errorHandler(err, req, res, next) {
                 method: req.method,
                 url: req.originalUrl || req.url,
                 ip: req.ip || req.connection.remoteAddress,
-                userId: req.telegramUser?.id || null
-            }
+                userId: req.telegramUser?.id || null,
+            },
         });
     }
 

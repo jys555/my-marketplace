@@ -13,7 +13,8 @@ class InventoryService {
      */
     async getInventory(productId) {
         try {
-            const { rows } = await pool.query(`
+            const { rows } = await pool.query(
+                `
                 SELECT 
                     i.id, i.product_id, i.quantity, i.reserved_quantity,
                     i.last_updated_at, i.created_at,
@@ -21,7 +22,9 @@ class InventoryService {
                 FROM inventory i
                 INNER JOIN products p ON i.product_id = p.id
                 WHERE i.product_id = $1
-            `, [productId]);
+            `,
+                [productId]
+            );
 
             if (rows.length === 0) {
                 // Agar inventory yo'q bo'lsa, 0 qoldiq bilan yaratish
@@ -29,14 +32,14 @@ class InventoryService {
                     product_id: productId,
                     quantity: 0,
                     reserved_quantity: 0,
-                    available_quantity: 0
+                    available_quantity: 0,
                 };
             }
 
             const inventory = rows[0];
             return {
                 ...inventory,
-                available_quantity: inventory.quantity - inventory.reserved_quantity
+                available_quantity: inventory.quantity - inventory.reserved_quantity,
             };
         } catch (error) {
             logger.error('Error getting inventory:', error);
@@ -72,7 +75,7 @@ class InventoryService {
             const { rows } = await pool.query(query, params);
             return rows.map(inv => ({
                 ...inv,
-                available_quantity: inv.quantity - inv.reserved_quantity
+                available_quantity: inv.quantity - inv.reserved_quantity,
             }));
         } catch (error) {
             logger.error('Error getting all inventory:', error);
@@ -93,15 +96,19 @@ class InventoryService {
             await client.query('BEGIN');
 
             // Eski qoldiqni olish
-            const { rows: oldRows } = await client.query(`
+            const { rows: oldRows } = await client.query(
+                `
                 SELECT quantity FROM inventory WHERE product_id = $1
-            `, [productId]);
+            `,
+                [productId]
+            );
 
             const quantityBefore = oldRows.length > 0 ? oldRows[0].quantity : 0;
             const quantityAfter = quantityBefore + quantity;
 
             // Inventory yangilash
-            const { rows } = await client.query(`
+            const { rows } = await client.query(
+                `
                 INSERT INTO inventory (product_id, quantity, last_updated_at)
                 VALUES ($1, $2, NOW())
                 ON CONFLICT (product_id) 
@@ -109,17 +116,22 @@ class InventoryService {
                     quantity = inventory.quantity + $2,
                     last_updated_at = NOW()
                 RETURNING id, product_id, quantity, reserved_quantity, last_updated_at
-            `, [productId, quantity]);
+            `,
+                [productId, quantity]
+            );
 
             // Inventory movement yozish
-            await client.query(`
+            await client.query(
+                `
                 INSERT INTO inventory_movements (
                     product_id, purchase_id, movement_type,
                     quantity_change, quantity_before, quantity_after,
                     notes
                 )
                 VALUES ($1, $2, 'purchase', $3, $4, $5, 'Purchase added')
-            `, [productId, purchaseId, quantity, quantityBefore, quantityAfter]);
+            `,
+                [productId, purchaseId, quantity, quantityBefore, quantityAfter]
+            );
 
             await client.query('COMMIT');
             return rows[0];
@@ -145,9 +157,12 @@ class InventoryService {
             await client.query('BEGIN');
 
             // Eski qoldiqni olish
-            const { rows: oldRows } = await client.query(`
+            const { rows: oldRows } = await client.query(
+                `
                 SELECT quantity, reserved_quantity FROM inventory WHERE product_id = $1
-            `, [productId]);
+            `,
+                [productId]
+            );
 
             if (oldRows.length === 0) {
                 throw new Error('Inventory not found');
@@ -164,7 +179,8 @@ class InventoryService {
             const reservedAfter = Math.max(0, reservedBefore - quantity);
 
             // Inventory yangilash
-            const { rows } = await client.query(`
+            const { rows } = await client.query(
+                `
                 UPDATE inventory
                 SET 
                     quantity = $1,
@@ -172,17 +188,22 @@ class InventoryService {
                     last_updated_at = NOW()
                 WHERE product_id = $3
                 RETURNING id, product_id, quantity, reserved_quantity, last_updated_at
-            `, [quantityAfter, reservedAfter, productId]);
+            `,
+                [quantityAfter, reservedAfter, productId]
+            );
 
             // Inventory movement yozish
-            await client.query(`
+            await client.query(
+                `
                 INSERT INTO inventory_movements (
                     product_id, order_id, movement_type,
                     quantity_change, quantity_before, quantity_after,
                     notes
                 )
                 VALUES ($1, $2, 'sale', $3, $4, $5, 'Order processed')
-            `, [productId, orderId, -quantity, quantityBefore, quantityAfter]);
+            `,
+                [productId, orderId, -quantity, quantityBefore, quantityAfter]
+            );
 
             await client.query('COMMIT');
             return rows[0];
@@ -208,9 +229,12 @@ class InventoryService {
             await client.query('BEGIN');
 
             // Eski qoldiqni olish
-            const { rows: oldRows } = await client.query(`
+            const { rows: oldRows } = await client.query(
+                `
                 SELECT quantity, reserved_quantity FROM inventory WHERE product_id = $1
-            `, [productId]);
+            `,
+                [productId]
+            );
 
             if (oldRows.length === 0) {
                 throw new Error('Inventory not found');
@@ -224,14 +248,17 @@ class InventoryService {
             const reservedAfter = oldRows[0].reserved_quantity + quantity;
 
             // Inventory yangilash
-            const { rows } = await client.query(`
+            const { rows } = await client.query(
+                `
                 UPDATE inventory
                 SET 
                     reserved_quantity = $1,
                     last_updated_at = NOW()
                 WHERE product_id = $2
                 RETURNING id, product_id, quantity, reserved_quantity, last_updated_at
-            `, [reservedAfter, productId]);
+            `,
+                [reservedAfter, productId]
+            );
 
             await client.query('COMMIT');
             return rows[0];
@@ -257,15 +284,19 @@ class InventoryService {
             await client.query('BEGIN');
 
             // Eski qoldiqni olish
-            const { rows: oldRows } = await client.query(`
+            const { rows: oldRows } = await client.query(
+                `
                 SELECT quantity FROM inventory WHERE product_id = $1
-            `, [productId]);
+            `,
+                [productId]
+            );
 
             const quantityBefore = oldRows.length > 0 ? oldRows[0].quantity : 0;
             const quantityChange = quantity - quantityBefore;
 
             // Inventory yangilash
-            const { rows } = await client.query(`
+            const { rows } = await client.query(
+                `
                 INSERT INTO inventory (product_id, quantity, last_updated_at)
                 VALUES ($1, $2, NOW())
                 ON CONFLICT (product_id) 
@@ -273,17 +304,22 @@ class InventoryService {
                     quantity = $2,
                     last_updated_at = NOW()
                 RETURNING id, product_id, quantity, reserved_quantity, last_updated_at
-            `, [productId, quantity]);
+            `,
+                [productId, quantity]
+            );
 
             // Inventory movement yozish
-            await client.query(`
+            await client.query(
+                `
                 INSERT INTO inventory_movements (
                     product_id, movement_type,
                     quantity_change, quantity_before, quantity_after,
                     notes
                 )
                 VALUES ($1, 'adjustment', $2, $3, $4, $5)
-            `, [productId, quantityChange, quantityBefore, quantity, notes]);
+            `,
+                [productId, quantityChange, quantityBefore, quantity, notes]
+            );
 
             await client.query('COMMIT');
             return rows[0];
@@ -304,7 +340,8 @@ class InventoryService {
      */
     async getInventoryMovements(productId, limit = 50) {
         try {
-            const { rows } = await pool.query(`
+            const { rows } = await pool.query(
+                `
                 SELECT 
                     im.id, im.movement_type, im.quantity_change,
                     im.quantity_before, im.quantity_after, im.notes,
@@ -315,7 +352,9 @@ class InventoryService {
                 WHERE im.product_id = $1
                 ORDER BY im.created_at DESC
                 LIMIT $2
-            `, [productId, limit]);
+            `,
+                [productId, limit]
+            );
 
             return rows;
         } catch (error) {
@@ -326,4 +365,3 @@ class InventoryService {
 }
 
 module.exports = new InventoryService();
-

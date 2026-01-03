@@ -16,12 +16,12 @@ class MetricsCollector {
             requests: {
                 total: 0,
                 startTime: Date.now(),
-                responses: [] // Response times for calculation
+                responses: [], // Response times for calculation
             },
             errors: {
                 total: 0,
-                byStatus: {} // Errors by status code (400, 404, 500, etc.)
-            }
+                byStatus: {}, // Errors by status code (400, 404, 500, etc.)
+            },
         };
     }
 
@@ -34,7 +34,7 @@ class MetricsCollector {
      */
     incrementRequest(method, path, statusCode, responseTime) {
         this.metrics.requests.total++;
-        
+
         // Track response time (keep last 1000 for calculation)
         if (responseTime !== undefined && responseTime !== null) {
             this.metrics.requests.responses.push(responseTime);
@@ -77,7 +77,7 @@ class MetricsCollector {
         let responseTime = {
             avg: 0,
             min: 0,
-            max: 0
+            max: 0,
         };
 
         if (responses.length > 0) {
@@ -85,27 +85,31 @@ class MetricsCollector {
             responseTime = {
                 avg: Math.round(sum / responses.length),
                 min: Math.min(...responses),
-                max: Math.max(...responses)
+                max: Math.max(...responses),
             };
         }
 
         // Calculate requests per minute/hour
-        const requestsPerMinute = uptimeMinutes > 0 
-            ? Math.round(this.metrics.requests.total / uptimeMinutes) 
-            : this.metrics.requests.total;
-        const requestsPerHour = uptimeHours > 0 
-            ? Math.round(this.metrics.requests.total / uptimeHours) 
-            : this.metrics.requests.total;
+        const requestsPerMinute =
+            uptimeMinutes > 0
+                ? Math.round(this.metrics.requests.total / uptimeMinutes)
+                : this.metrics.requests.total;
+        const requestsPerHour =
+            uptimeHours > 0
+                ? Math.round(this.metrics.requests.total / uptimeHours)
+                : this.metrics.requests.total;
 
         // Calculate error rate (%)
-        const errorRate = this.metrics.requests.total > 0
-            ? Math.round((this.metrics.errors.total / this.metrics.requests.total) * 100 * 10) / 10
-            : 0;
+        const errorRate =
+            this.metrics.requests.total > 0
+                ? Math.round((this.metrics.errors.total / this.metrics.requests.total) * 100 * 10) /
+                  10
+                : 0;
 
         // Group errors by type (4xx, 5xx)
         const errorsByType = {
             '4xx': 0,
-            '5xx': 0
+            '5xx': 0,
         };
         Object.keys(this.metrics.errors.byStatus).forEach(status => {
             const code = parseInt(status);
@@ -120,21 +124,21 @@ class MetricsCollector {
             timestamp: new Date().toISOString(),
             uptime: {
                 seconds: uptime,
-                formatted: formatUptime(uptime)
+                formatted: formatUptime(uptime),
             },
             requests: {
                 total: this.metrics.requests.total,
                 perMinute: requestsPerMinute,
-                perHour: requestsPerHour
+                perHour: requestsPerHour,
             },
-            responseTime: responseTime,
+            responseTime,
             errors: {
                 total: this.metrics.errors.total,
                 rate: errorRate,
                 '4xx': errorsByType['4xx'],
                 '5xx': errorsByType['5xx'],
-                byStatus: { ...this.metrics.errors.byStatus }
-            }
+                byStatus: { ...this.metrics.errors.byStatus },
+            },
         };
     }
 }
@@ -150,10 +154,18 @@ function formatUptime(seconds) {
     const secs = Math.floor(seconds % 60);
 
     const parts = [];
-    if (days > 0) parts.push(`${days}d`);
-    if (hours > 0) parts.push(`${hours}h`);
-    if (minutes > 0) parts.push(`${minutes}m`);
-    if (secs > 0 || parts.length === 0) parts.push(`${secs}s`);
+    if (days > 0) {
+        parts.push(`${days}d`);
+    }
+    if (hours > 0) {
+        parts.push(`${hours}h`);
+    }
+    if (minutes > 0) {
+        parts.push(`${minutes}m`);
+    }
+    if (secs > 0 || parts.length === 0) {
+        parts.push(`${secs}s`);
+    }
 
     return parts.join(' ');
 }

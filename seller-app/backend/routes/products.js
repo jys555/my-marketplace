@@ -1,7 +1,18 @@
 const express = require('express');
 const pool = require('../db');
 const router = express.Router();
-const { validateBody, validateParams, required, string, optional, number, positive, integer, url, boolean } = require('../middleware/validate');
+const {
+    validateBody,
+    validateParams,
+    required,
+    string,
+    optional,
+    number,
+    positive,
+    integer,
+    url,
+    boolean,
+} = require('../middleware/validate');
 const { NotFoundError, ConflictError } = require('../utils/errors');
 const logger = require('../utils/logger');
 
@@ -71,16 +82,16 @@ const logger = require('../utils/logger');
 router.get('/', async (req, res) => {
     try {
         const { marketplace_id, search, category_id } = req.query;
-        
+
         // PERFORMANCE: Pagination parametrlari
         const limit = parseInt(req.query.limit) || 50; // Seller App'da default 50 ta (ko'proq ko'rsatish uchun)
         const offset = parseInt(req.query.offset) || 0;
-        
+
         // Limit va offset validatsiyasi
         const validLimit = Math.min(Math.max(limit, 1), 200); // 1-200 oralig'ida
         const validOffset = Math.max(offset, 0);
 
-        let whereConditions = ['1=1']; // Base condition
+        const whereConditions = ['1=1']; // Base condition
         const params = [];
         let paramIndex = 1;
 
@@ -91,7 +102,9 @@ router.get('/', async (req, res) => {
         }
 
         if (search) {
-            whereConditions.push(`(p.name_uz ILIKE $${paramIndex} OR p.name_ru ILIKE $${paramIndex} OR p.sku ILIKE $${paramIndex})`);
+            whereConditions.push(
+                `(p.name_uz ILIKE $${paramIndex} OR p.name_ru ILIKE $${paramIndex} OR p.sku ILIKE $${paramIndex})`
+            );
             params.push(`%${search}%`);
             paramIndex++;
         }
@@ -108,7 +121,7 @@ router.get('/', async (req, res) => {
         const total = parseInt(countRows[0].total);
 
         // PERFORMANCE: Faqat kerakli qismni olish (LIMIT/OFFSET)
-        let query = `
+        const query = `
             SELECT 
                 p.id, p.name_uz, p.name_ru, p.description_uz, p.description_ru,
                 p.price, p.sale_price, p.image_url, p.category_id, p.is_active,
@@ -121,32 +134,32 @@ router.get('/', async (req, res) => {
             ORDER BY p.created_at DESC
             LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
         `;
-        
+
         params.push(validLimit, validOffset);
-        
+
         const { rows } = await pool.query(query, params);
-        
+
         // ID'ni yashirish (frontend uchun SKU asosiy identifier)
         const products = rows.map(row => {
             const { id, ...rest } = row;
             return {
                 ...rest,
-                _id: id  // Yashirilgan ID (ichki ishlatish uchun)
+                _id: id, // Yashirilgan ID (ichki ishlatish uchun)
             };
         });
-        
+
         // PERFORMANCE: Pagination ma'lumotlari bilan javob qaytarish
         const hasMore = validOffset + rows.length < total;
-        
+
         res.json({
-            products: products,
+            products,
             pagination: {
                 total,
                 limit: validLimit,
                 offset: validOffset,
                 hasMore,
-                currentCount: products.length
-            }
+                currentCount: products.length,
+            },
         });
     } catch (error) {
         logger.error('Error fetching products:', error);
@@ -200,7 +213,8 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { rows } = await pool.query(`
+        const { rows } = await pool.query(
+            `
             SELECT 
                 p.id, p.name_uz, p.name_ru, p.description_uz, p.description_ru,
                 p.price, p.sale_price, p.image_url, p.category_id, p.is_active,
@@ -210,7 +224,9 @@ router.get('/:id', async (req, res) => {
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
             WHERE p.id = $1 OR p.sku = $1
-        `, [id]);
+        `,
+            [id]
+        );
 
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Product not found' });
@@ -220,7 +236,7 @@ router.get('/:id', async (req, res) => {
         const { id: productId, ...rest } = rows[0];
         res.json({
             ...rest,
-            _id: productId  // Yashirilgan ID (ichki ishlatish uchun)
+            _id: productId, // Yashirilgan ID (ichki ishlatish uchun)
         });
     } catch (error) {
         logger.error('Error fetching product:', error);
@@ -313,7 +329,8 @@ router.get('/:id', async (req, res) => {
  *               $ref: '#/components/schemas/Error'
  */
 // POST /api/seller/products - Yangi tovar (Amazing Store)
-router.post('/',
+router.post(
+    '/',
     validateBody({
         name_uz: required(string),
         name_ru: optional(string),
@@ -324,51 +341,80 @@ router.post('/',
         image_url: optional(url),
         category_id: optional(integer),
         sku: optional(string),
-        is_active: optional(boolean)
+        is_active: optional(boolean),
     }),
     async (req, res, next) => {
-    try {
-        const { name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, sku, is_active } = req.body;
+        try {
+            const {
+                name_uz,
+                name_ru,
+                description_uz,
+                description_ru,
+                price,
+                sale_price,
+                image_url,
+                category_id,
+                sku,
+                is_active,
+            } = req.body;
 
-        // SKU majburiy, agar berilmagan bo'lsa avtomatik generatsiya qilish
-        let finalSku = sku;
-        if (!finalSku || finalSku.trim() === '') {
-            // Avtomatik SKU generatsiya qilish
-            const timestamp = Date.now();
-            finalSku = `PROD-${timestamp}`;
-            
-            // SKU unique bo'lishini tekshirish
-            let counter = 1;
-            while (true) {
-                const { rows: existing } = await pool.query(
-                    'SELECT id FROM products WHERE sku = $1',
-                    [finalSku]
-                );
-                if (existing.length === 0) break;
-                finalSku = `PROD-${timestamp}-${counter}`;
-                counter++;
+            // SKU majburiy, agar berilmagan bo'lsa avtomatik generatsiya qilish
+            let finalSku = sku;
+            if (!finalSku || finalSku.trim() === '') {
+                // Avtomatik SKU generatsiya qilish
+                const timestamp = Date.now();
+                finalSku = `PROD-${timestamp}`;
+
+                // SKU unique bo'lishini tekshirish
+                let counter = 1;
+                while (true) {
+                    const { rows: existing } = await pool.query(
+                        'SELECT id FROM products WHERE sku = $1',
+                        [finalSku]
+                    );
+                    if (existing.length === 0) {
+                        break;
+                    }
+                    finalSku = `PROD-${timestamp}-${counter}`;
+                    counter++;
+                }
             }
-        }
 
-        const { rows } = await pool.query(`
+            const { rows } = await pool.query(
+                `
             INSERT INTO products (name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, is_active, sku)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             RETURNING id, name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, is_active, sku, created_at
-        `, [name_uz, name_ru || null, description_uz || null, description_ru || null, price, sale_price || null, image_url || null, category_id || null, true, finalSku]);
+        `,
+                [
+                    name_uz,
+                    name_ru || null,
+                    description_uz || null,
+                    description_ru || null,
+                    price,
+                    sale_price || null,
+                    image_url || null,
+                    category_id || null,
+                    true,
+                    finalSku,
+                ]
+            );
 
-        // ID'ni yashirish (frontend uchun SKU asosiy identifier)
-        const { id, ...rest } = rows[0];
-        res.status(201).json({
-            ...rest,
-            _id: id  // Yashirilgan ID (ichki ishlatish uchun)
-        });
-    } catch (error) {
-        if (error.code === '23505') { // Unique violation
-            return next(new ConflictError('SKU already exists'));
+            // ID'ni yashirish (frontend uchun SKU asosiy identifier)
+            const { id, ...rest } = rows[0];
+            res.status(201).json({
+                ...rest,
+                _id: id, // Yashirilgan ID (ichki ishlatish uchun)
+            });
+        } catch (error) {
+            if (error.code === '23505') {
+                // Unique violation
+                return next(new ConflictError('SKU already exists'));
+            }
+            next(error);
         }
-        next(error);
     }
-});
+);
 
 /**
  * @swagger
@@ -459,9 +505,10 @@ router.post('/',
  *               $ref: '#/components/schemas/Error'
  */
 // PUT /api/seller/products/:id - Tovar yangilash (id yoki sku orqali)
-router.put('/:id',
+router.put(
+    '/:id',
     validateParams({
-        id: required(string) // id yoki sku bo'lishi mumkin
+        id: required(string), // id yoki sku bo'lishi mumkin
     }),
     validateBody({
         name_uz: optional(string),
@@ -473,25 +520,37 @@ router.put('/:id',
         image_url: optional(url),
         category_id: optional(integer),
         sku: optional(string),
-        is_active: optional(boolean)
+        is_active: optional(boolean),
     }),
     async (req, res, next) => {
-    try {
-        const { id } = req.params;
-        const { name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, sku, is_active } = req.body;
+        try {
+            const { id } = req.params;
+            const {
+                name_uz,
+                name_ru,
+                description_uz,
+                description_ru,
+                price,
+                sale_price,
+                image_url,
+                category_id,
+                sku,
+                is_active,
+            } = req.body;
 
-        // SKU yangilash bo'lsa, unique tekshirish
-        if (sku) {
-            const { rows: existing } = await pool.query(
-                'SELECT id FROM products WHERE sku = $1 AND (id != $2 OR id::text != $2)',
-                [sku, id]
-            );
-            if (existing.length > 0) {
-                return next(new ConflictError('SKU already exists'));
+            // SKU yangilash bo'lsa, unique tekshirish
+            if (sku) {
+                const { rows: existing } = await pool.query(
+                    'SELECT id FROM products WHERE sku = $1 AND (id != $2 OR id::text != $2)',
+                    [sku, id]
+                );
+                if (existing.length > 0) {
+                    return next(new ConflictError('SKU already exists'));
+                }
             }
-        }
 
-        const { rows } = await pool.query(`
+            const { rows } = await pool.query(
+                `
             UPDATE products
             SET 
                 name_uz = COALESCE($1, name_uz),
@@ -505,25 +564,40 @@ router.put('/:id',
                 sku = COALESCE($9, sku)
             WHERE id = $10 OR sku = $10
             RETURNING id, name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, is_active, sku, created_at
-        `, [name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, sku, id]);
+        `,
+                [
+                    name_uz,
+                    name_ru,
+                    description_uz,
+                    description_ru,
+                    price,
+                    sale_price,
+                    image_url,
+                    category_id,
+                    sku,
+                    id,
+                ]
+            );
 
-        if (rows.length === 0) {
-            return next(new NotFoundError('Product'));
-        }
+            if (rows.length === 0) {
+                return next(new NotFoundError('Product'));
+            }
 
-        // ID'ni yashirish (frontend uchun SKU asosiy identifier)
-        const { id: productId, ...rest } = rows[0];
-        res.json({
-            ...rest,
-            _id: productId  // Yashirilgan ID (ichki ishlatish uchun)
-        });
-    } catch (error) {
-        if (error.code === '23505') { // Unique violation
-            return next(new ConflictError('SKU already exists'));
+            // ID'ni yashirish (frontend uchun SKU asosiy identifier)
+            const { id: productId, ...rest } = rows[0];
+            res.json({
+                ...rest,
+                _id: productId, // Yashirilgan ID (ichki ishlatish uchun)
+            });
+        } catch (error) {
+            if (error.code === '23505') {
+                // Unique violation
+                return next(new ConflictError('SKU already exists'));
+            }
+            next(error);
         }
-        next(error);
     }
-});
+);
 
 /**
  * @swagger
@@ -579,20 +653,23 @@ router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
-        const { rows } = await pool.query(`
+        const { rows } = await pool.query(
+            `
             DELETE FROM products
             WHERE id = $1 OR sku = $1
             RETURNING id, sku
-        `, [id]);
+        `,
+            [id]
+        );
 
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Product not found' });
         }
 
         // ID'ni yashirish (frontend uchun SKU asosiy identifier)
-        res.json({ 
+        res.json({
             message: 'Product deleted successfully',
-            sku: rows[0].sku  // SKU'ni qaytarish (ID emas)
+            sku: rows[0].sku, // SKU'ni qaytarish (ID emas)
         });
     } catch (error) {
         logger.error('Error deleting product:', error);
@@ -601,4 +678,3 @@ router.delete('/:id', async (req, res) => {
 });
 
 module.exports = router;
-

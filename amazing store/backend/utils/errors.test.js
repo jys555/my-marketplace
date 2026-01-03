@@ -11,11 +11,10 @@ const {
     ForbiddenError,
     DatabaseError,
     ConflictError,
-    mapPostgresError
+    mapPostgresError,
 } = require('./errors');
 
 describe('Error Classes', () => {
-    
     describe('AppError', () => {
         test('creates error with default status code 500', () => {
             const error = new AppError('Something went wrong');
@@ -106,7 +105,7 @@ describe('Error Classes', () => {
         test('maps unique violation (23505) to ConflictError', () => {
             const pgError = {
                 code: '23505',
-                detail: 'Key (sku)=(TEST-123) already exists.'
+                detail: 'Key (sku)=(TEST-123) already exists.',
             };
             const error = mapPostgresError(pgError);
             expect(error).toBeInstanceOf(ConflictError);
@@ -116,7 +115,7 @@ describe('Error Classes', () => {
         test('maps not null violation (23502) to ValidationError', () => {
             const pgError = {
                 code: '23502',
-                column: 'name_uz'
+                column: 'name_uz',
             };
             const error = mapPostgresError(pgError);
             expect(error).toBeInstanceOf(ValidationError);
@@ -126,7 +125,7 @@ describe('Error Classes', () => {
         test('maps foreign key violation (23503) to ValidationError', () => {
             const pgError = {
                 code: '23503',
-                detail: 'Key (category_id)=(999) is not present in table "categories".'
+                detail: 'Key (category_id)=(999) is not present in table "categories".',
             };
             const error = mapPostgresError(pgError);
             expect(error).toBeInstanceOf(ValidationError);
@@ -136,7 +135,7 @@ describe('Error Classes', () => {
         test('maps undefined column (42703) to DatabaseError', () => {
             const pgError = {
                 code: '42703',
-                message: 'column "unknown_column" does not exist'
+                message: 'column "unknown_column" does not exist',
             };
             const error = mapPostgresError(pgError);
             expect(error).toBeInstanceOf(DatabaseError);
@@ -146,7 +145,7 @@ describe('Error Classes', () => {
         test('returns DatabaseError for unknown error codes', () => {
             const pgError = {
                 code: '99999',
-                message: 'Unknown error'
+                message: 'Unknown error',
             };
             const error = mapPostgresError(pgError);
             expect(error).toBeInstanceOf(DatabaseError);

@@ -45,7 +45,7 @@ class PriceService {
 
             let created = 0;
             let updated = 0;
-            let skipped = 0;
+            const skipped = 0;
 
             // 3. Har bir tovar uchun product_prices da yozuv yaratish/yangilash
             for (const product of products) {
@@ -59,29 +59,39 @@ class PriceService {
                 // Agar ustunlar mavjud bo'lmasa, NULL qaytaradi (migration hali bajarilmagan bo'lsa)
                 let productCostPrice = null;
                 let productCommissionRate = null;
-                
+
                 try {
-                    const { rows: productRows } = await pool.query(`
+                    const { rows: productRows } = await pool.query(
+                        `
                         SELECT cost_price, commission_rate FROM products WHERE id = $1
-                    `, [product.id]);
-                    
+                    `,
+                        [product.id]
+                    );
+
                     productCostPrice = productRows[0]?.cost_price || null;
                     productCommissionRate = productRows[0]?.commission_rate || null;
                 } catch (error) {
                     // Agar cost_price yoki commission_rate ustunlari mavjud bo'lmasa, NULL qoldiramiz
                     // Bu migration 005 hali bajarilmagan bo'lsa bo'ladi
-                    logger.warn(`⚠️  Could not fetch cost_price/commission_rate for product ${product.id}:`, error.message);
+                    logger.warn(
+                        `⚠️  Could not fetch cost_price/commission_rate for product ${product.id}:`,
+                        error.message
+                    );
                 }
 
                 // 5. product_prices da yozuv bor-yo'qligini tekshirish (marketplace_id bilan)
-                const { rows: existing } = await pool.query(`
+                const { rows: existing } = await pool.query(
+                    `
                     SELECT id FROM product_prices
                     WHERE product_id = $1 AND marketplace_id = $2
-                `, [product.id, marketplaceId]);
+                `,
+                    [product.id, marketplaceId]
+                );
 
                 if (existing.length === 0) {
                     // Yangi yozuv yaratish (products jadvalidan cost_price va commission_rate ni olish)
-                    await pool.query(`
+                    await pool.query(
+                        `
                         INSERT INTO product_prices (
                             product_id, 
                             marketplace_id, 
@@ -93,9 +103,18 @@ class PriceService {
                             profitability_percentage
                         )
                         VALUES ($1, $2, $3, $4, $5, $6, NULL, NULL)
-                    `, [product.id, marketplaceId, sellingPrice, strikethroughPrice, productCostPrice, productCommissionRate]);
+                    `,
+                        [
+                            product.id,
+                            marketplaceId,
+                            sellingPrice,
+                            strikethroughPrice,
+                            productCostPrice,
+                            productCommissionRate,
+                        ]
+                    );
                     created++;
-                    
+
                     // Rentabillikni hisoblash
                     if (productCostPrice && sellingPrice && parseFloat(productCostPrice) > 0) {
                         await this.recalculateProfitability(product.id, marketplaceId);
@@ -103,7 +122,8 @@ class PriceService {
                 } else {
                     // Mavjud yozuvni yangilash (faqat Amazing Store narxlari)
                     // cost_price va commission_rate products jadvalidan yangilanadi
-                    await pool.query(`
+                    await pool.query(
+                        `
                         UPDATE product_prices
                         SET 
                             selling_price = $1,
@@ -112,9 +132,18 @@ class PriceService {
                             commission_rate = COALESCE($6, commission_rate),
                             updated_at = NOW()
                         WHERE product_id = $3 AND marketplace_id = $4
-                    `, [sellingPrice, strikethroughPrice, product.id, marketplaceId, productCostPrice, productCommissionRate]);
+                    `,
+                        [
+                            sellingPrice,
+                            strikethroughPrice,
+                            product.id,
+                            marketplaceId,
+                            productCostPrice,
+                            productCommissionRate,
+                        ]
+                    );
                     updated++;
-                    
+
                     // Rentabillikni qayta hisoblash
                     if (productCostPrice && sellingPrice && parseFloat(productCostPrice) > 0) {
                         await this.recalculateProfitability(product.id, marketplaceId);
@@ -122,7 +151,9 @@ class PriceService {
                 }
             }
 
-            logger.info(`✅ Price sync completed: ${created} created, ${updated} updated, ${skipped} skipped`);
+            logger.info(
+                `✅ Price sync completed: ${created} created, ${updated} updated, ${skipped} skipped`
+            );
             return { created, updated, skipped, total: products.length };
         } catch (error) {
             logger.error('❌ Error syncing Amazing Store prices:', error);
@@ -146,11 +177,14 @@ class PriceService {
 
             const marketplaceId = marketplaceRows[0].id;
 
-            const { rows: products } = await pool.query(`
+            const { rows: products } = await pool.query(
+                `
                 SELECT id, price, sale_price
                 FROM products
                 WHERE id = $1
-            `, [productId]);
+            `,
+                [productId]
+            );
 
             if (products.length === 0) {
                 throw new Error(`Product ${productId} not found`);
@@ -160,7 +194,8 @@ class PriceService {
             const sellingPrice = product.sale_price || product.price;
             const strikethroughPrice = product.sale_price ? product.price : null;
 
-            await pool.query(`
+            await pool.query(
+                `
                 INSERT INTO product_prices (
                     product_id, 
                     marketplace_id, 
@@ -173,7 +208,9 @@ class PriceService {
                     selling_price = EXCLUDED.selling_price,
                     strikethrough_price = EXCLUDED.strikethrough_price,
                     updated_at = NOW()
-            `, [productId, marketplaceId, sellingPrice, strikethroughPrice]);
+            `,
+                [productId, marketplaceId, sellingPrice, strikethroughPrice]
+            );
 
             return { success: true, productId, sellingPrice, strikethroughPrice };
         } catch (error) {
@@ -187,11 +224,14 @@ class PriceService {
      */
     async recalculateProfitability(productId, marketplaceId = null) {
         try {
-            const { rows } = await pool.query(`
+            const { rows } = await pool.query(
+                `
                 SELECT cost_price, selling_price, commission_rate
                 FROM product_prices
                 WHERE product_id = $1 AND (marketplace_id = $2 OR ($2 IS NULL AND marketplace_id IS NULL))
-            `, [productId, marketplaceId]);
+            `,
+                [productId, marketplaceId]
+            );
 
             if (rows.length === 0) {
                 return null;
@@ -204,27 +244,31 @@ class PriceService {
             // Rentabillikni hisoblash (miqdor)
             if (price.cost_price && price.selling_price) {
                 const profit = parseFloat(price.selling_price) - parseFloat(price.cost_price);
-                const commission = price.commission_rate 
-                    ? (parseFloat(price.selling_price) * parseFloat(price.commission_rate) / 100) 
+                const commission = price.commission_rate
+                    ? (parseFloat(price.selling_price) * parseFloat(price.commission_rate)) / 100
                     : 0;
                 profitability = profit - commission;
 
                 // Rentabillik foizini hisoblash
                 // Formula: ((selling_price - cost_price - commission) / selling_price) * 100
                 if (parseFloat(price.selling_price) > 0) {
-                    profitabilityPercentage = (profitability / parseFloat(price.selling_price)) * 100;
+                    profitabilityPercentage =
+                        (profitability / parseFloat(price.selling_price)) * 100;
                 }
             }
 
             // Rentabillikni yangilash (miqdor va foiz)
-            await pool.query(`
+            await pool.query(
+                `
                 UPDATE product_prices
                 SET 
                     profitability = $1, 
                     profitability_percentage = $2,
                     updated_at = NOW()
                 WHERE product_id = $3 AND (marketplace_id = $4 OR ($4 IS NULL AND marketplace_id IS NULL))
-            `, [profitability, profitabilityPercentage, productId, marketplaceId]);
+            `,
+                [profitability, profitabilityPercentage, productId, marketplaceId]
+            );
 
             return { profitability, profitabilityPercentage };
         } catch (error) {
@@ -235,4 +279,3 @@ class PriceService {
 }
 
 module.exports = new PriceService();
-

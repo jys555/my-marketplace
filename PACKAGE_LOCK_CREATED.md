@@ -66,3 +66,4 @@ Keyingi commit'da:
 
 Barcha package-lock.json fayllari yaratildi va Git'ga qo'shildi. Endi CI/CD pipeline muvaffaqiyatli ishlaydi!
 
+

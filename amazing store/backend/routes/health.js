@@ -13,7 +13,7 @@ const serverStartTime = Date.now();
 /**
  * Health check endpoint
  * GET /health
- * 
+ *
  * Returns comprehensive health information:
  * - Overall status (healthy/unhealthy/degraded)
  * - Database connection and pool stats
@@ -38,12 +38,12 @@ async function healthCheck(req, res) {
             uptime: {
                 seconds: Math.floor(process.uptime()),
                 formatted: formatUptime(process.uptime()),
-                started: new Date(serverStartTime).toISOString()
+                started: new Date(serverStartTime).toISOString(),
             },
-            memory: memory,
-            database: database,
+            memory,
+            database,
             cache: cacheStats,
-            environment: environment
+            environment,
         };
 
         // Determine overall status based on critical components
@@ -59,16 +59,16 @@ async function healthCheck(req, res) {
         }
 
         // Return appropriate status code
-        const statusCode = health.status === 'healthy' ? 200 : 
-                          health.status === 'degraded' ? 200 : 503;
-        
+        const statusCode =
+            health.status === 'healthy' ? 200 : health.status === 'degraded' ? 200 : 503;
+
         res.status(statusCode).json(health);
     } catch (error) {
         res.status(503).json({
             status: 'unhealthy',
             timestamp: new Date().toISOString(),
             error: error.message,
-            service: 'amazing-store-backend'
+            service: 'amazing-store-backend',
         });
     }
 }
@@ -87,7 +87,7 @@ async function checkDatabase() {
         const poolStats = {
             totalCount: pool.totalCount || 0,
             idleCount: pool.idleCount || 0,
-            waitingCount: pool.waitingCount || 0
+            waitingCount: pool.waitingCount || 0,
         };
 
         return {
@@ -97,13 +97,13 @@ async function checkDatabase() {
                 total: poolStats.totalCount,
                 idle: poolStats.idleCount,
                 active: poolStats.totalCount - poolStats.idleCount,
-                waiting: poolStats.waitingCount
-            }
+                waiting: poolStats.waitingCount,
+            },
         };
     } catch (error) {
         return {
             status: 'disconnected',
-            error: error.message
+            error: error.message,
         };
     }
 }
@@ -118,7 +118,7 @@ function getMemoryUsage() {
         heapTotal: formatBytes(memory.heapTotal),
         rss: formatBytes(memory.rss),
         external: formatBytes(memory.external),
-        percentage: Math.round((memory.heapUsed / memory.heapTotal) * 100)
+        percentage: Math.round((memory.heapUsed / memory.heapTotal) * 100),
     };
 }
 
@@ -126,11 +126,13 @@ function getMemoryUsage() {
  * Format bytes to human readable format
  */
 function formatBytes(bytes) {
-    if (bytes === 0) return '0 B';
+    if (bytes === 0) {
+        return '0 B';
+    }
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 }
 
 /**
@@ -147,12 +149,12 @@ function getCacheStats() {
         return {
             enabled: true,
             size: 'N/A',
-            hitRate: 'N/A'
+            hitRate: 'N/A',
         };
     } catch (error) {
         return {
             enabled: false,
-            error: 'Cache stats unavailable'
+            error: 'Cache stats unavailable',
         };
     }
 }
@@ -165,12 +167,12 @@ function getEnvironmentInfo() {
         nodeVersion: process.version,
         platform: process.platform,
         env: process.env.NODE_ENV || 'development',
-        pid: process.pid
+        pid: process.pid,
     };
 }
 
 // formatUptime funksiyasi utils/metrics.js'dan import qilingan
 
 module.exports = {
-    healthCheck
+    healthCheck,
 };

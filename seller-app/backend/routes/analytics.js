@@ -56,8 +56,8 @@ router.get('/dashboard', async (req, res) => {
             monthly: {
                 total_orders: parseInt(monthlyRows[0]?.total_orders || 0),
                 total_revenue: parseFloat(monthlyRows[0]?.total_revenue || 0),
-                total_profit: parseFloat(monthlyRows[0]?.total_profit || 0)
-            }
+                total_profit: parseFloat(monthlyRows[0]?.total_profit || 0),
+            },
         });
     } catch (error) {
         logger.error('Error fetching dashboard analytics:', error);
@@ -166,4 +166,3 @@ router.get('/products', async (req, res) => {
 });
 
 module.exports = router;
-

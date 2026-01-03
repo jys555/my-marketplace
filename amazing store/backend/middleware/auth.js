@@ -2,7 +2,6 @@ const crypto = require('crypto');
 const pool = require('../db');
 const logger = require('../utils/logger');
 
-
 async function authenticate(req, res, next) {
     const authHeader = req.headers['x-telegram-data'];
 
@@ -25,7 +24,7 @@ async function authenticate(req, res, next) {
         const now = Math.floor(Date.now() / 1000);
         const maxAge = 86400;
 
-        if (!authDate || (now - authDate) > maxAge) {
+        if (!authDate || now - authDate > maxAge) {
             return res.status(403).json({ message: 'Authentication data expired' });
         }
 
@@ -35,7 +34,10 @@ async function authenticate(req, res, next) {
             .join('\n');
 
         const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
-        const calculatedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+        const calculatedHash = crypto
+            .createHmac('sha256', secretKey)
+            .update(dataCheckString)
+            .digest('hex');
 
         if (calculatedHash !== hash) {
             return res.status(403).json({ message: 'Invalid data signature' });
@@ -45,7 +47,10 @@ async function authenticate(req, res, next) {
         req.telegramUser = user;
 
         if (user && user.id) {
-            const { rows: userRows } = await pool.query('SELECT id FROM users WHERE telegram_id = $1', [user.id]);
+            const { rows: userRows } = await pool.query(
+                'SELECT id FROM users WHERE telegram_id = $1',
+                [user.id]
+            );
             if (userRows.length > 0) {
                 req.userId = userRows[0].id;
             }
@@ -73,10 +78,9 @@ const isAdmin = async (req, res, next) => {
 
     try {
         // 1. Database'dan is_admin field'ni tekshirish (asosiy usul)
-        const { rows } = await pool.query(
-            'SELECT is_admin FROM users WHERE telegram_id = $1',
-            [telegramId]
-        );
+        const { rows } = await pool.query('SELECT is_admin FROM users WHERE telegram_id = $1', [
+            telegramId,
+        ]);
 
         if (rows.length > 0 && rows[0].is_admin === true) {
             // Database'da admin sifatida topildi

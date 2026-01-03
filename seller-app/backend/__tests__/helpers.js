@@ -27,7 +27,7 @@ function authenticatedRequest(app, method, path, data = null, options = {}) {
 
     // Set default headers
     req = req.set('Accept', 'application/json');
-    
+
     // Set mock authentication header (for test purposes)
     // In real tests, you might need to mock the auth middleware
     if (options.auth !== false) {
@@ -68,7 +68,7 @@ function createTestProductData(overrides = {}) {
         image_url: 'https://example.com/image.jpg',
         category_id: 1,
         sku: `TEST-${Date.now()}`,
-        ...overrides
+        ...overrides,
     };
 }
 
@@ -80,7 +80,7 @@ function createTestCategoryData(overrides = {}) {
         name_uz: 'Test Category',
         name_ru: 'Тестовая категория',
         image_url: 'https://example.com/category.jpg',
-        ...overrides
+        ...overrides,
     };
 }
 
@@ -113,13 +113,13 @@ async function insertTestData(table, data) {
     const columns = Object.keys(data);
     const values = Object.values(data);
     const placeholders = values.map((_, index) => `$${index + 1}`).join(', ');
-    
+
     const query = `
         INSERT INTO ${table} (${columns.join(', ')})
         VALUES (${placeholders})
         RETURNING *
     `;
-    
+
     const result = await db.query(query, values);
     return result.rows[0];
 }
@@ -130,5 +130,5 @@ module.exports = {
     createTestProductData,
     createTestCategoryData,
     cleanupTestData,
-    insertTestData
+    insertTestData,
 };

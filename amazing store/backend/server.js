@@ -53,36 +53,40 @@ const allowedOrigins = [
     'https://web.telegram.org',
     'https://telegram.org',
     'https://amazing-store-frontend.vercel.app', // Amazing Store Vercel URL
-    process.env.FRONTEND_URL // Railway'da o'rnatilgan frontend URL
+    process.env.FRONTEND_URL, // Railway'da o'rnatilgan frontend URL
 ].filter(Boolean); // null/undefined qiymatlarni tozalash
 
-app.use(cors({
-    origin: (origin, callback) => {
-        // Production'da origin null'ni bloklash (xavfsizlik)
-        const isProduction = process.env.NODE_ENV === 'production';
-        
-        // Origin yo'q bo'lsa (Telegram Mini App yoki boshqa client)
-        if (!origin) {
-            // Development'da ruxsat berish, production'da bloklash
-            if (!isProduction) {
-                logger.debug('CORS: Allowing request without origin (development mode)');
-                return callback(null, true);
-            } else {
-                logger.warn('CORS blocked: Request without origin in production mode');
-                return callback(new Error('Not allowed by CORS: Origin required in production'));
+app.use(
+    cors({
+        origin: (origin, callback) => {
+            // Production'da origin null'ni bloklash (xavfsizlik)
+            const isProduction = process.env.NODE_ENV === 'production';
+
+            // Origin yo'q bo'lsa (Telegram Mini App yoki boshqa client)
+            if (!origin) {
+                // Development'da ruxsat berish, production'da bloklash
+                if (!isProduction) {
+                    logger.debug('CORS: Allowing request without origin (development mode)');
+                    return callback(null, true);
+                } else {
+                    logger.warn('CORS blocked: Request without origin in production mode');
+                    return callback(
+                        new Error('Not allowed by CORS: Origin required in production')
+                    );
+                }
             }
-        }
-        
-        // Allowed origins ro'yxatida bo'lsa, ruxsat berish
-        if (allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            logger.warn(`CORS blocked request from: ${origin}`);
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true // Cookie'larni qo'llab-quvvatlash
-}));
+
+            // Allowed origins ro'yxatida bo'lsa, ruxsat berish
+            if (allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                logger.warn(`CORS blocked request from: ${origin}`);
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
+        credentials: true, // Cookie'larni qo'llab-quvvatlash
+    })
+);
 
 // Webhook endpoint (agar webhook ishlatilsa) - express.json() dan oldin
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -90,7 +94,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
         // Bot hali initialize bo'lmagan yoki disabled
         return res.sendStatus(200); // Telegram'ga 200 qaytarish kerak
     }
-    
+
     try {
         // express.raw() Buffer qaytaradi, Grammy JSON object kutadi
         const update = JSON.parse(req.body.toString());
@@ -111,10 +115,14 @@ app.get('/health', healthRoutes.healthCheck);
 app.get('/metrics', metricsRoutes.getMetrics);
 
 // Swagger API Documentation (rate limit'dan oldin, authentication'dan oldin)
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Amazing Store API Documentation'
-}));
+app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+        customCss: '.swagger-ui .topbar { display: none }',
+        customSiteTitle: 'Amazing Store API Documentation',
+    })
+);
 
 app.use('/api/', apiLimiter); // API endpointlariga rate limit qo'llash
 
@@ -141,10 +149,10 @@ async function startServer() {
     try {
         // Amazing Store database migration
         await initializeDatabase();
-        
+
         // Bot'ni ishga tushirish
         await botService.initialize();
-        
+
         // Server ishga tushirish
         app.listen(PORT, () => {
             logger.info(`✅ Amazing Store Server is running on port ${PORT}`);

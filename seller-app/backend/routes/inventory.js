@@ -1,7 +1,14 @@
 const express = require('express');
 const pool = require('../db');
 const router = express.Router();
-const { validateParams, validateBody, required, integer, optional, string } = require('../middleware/validate');
+const {
+    validateParams,
+    validateBody,
+    required,
+    integer,
+    optional,
+    string,
+} = require('../middleware/validate');
 const { NotFoundError } = require('../utils/errors');
 const logger = require('../utils/logger');
 
@@ -40,7 +47,8 @@ router.get('/', async (req, res) => {
 router.get('/:product_id', async (req, res) => {
     try {
         const { product_id } = req.params;
-        const { rows } = await pool.query(`
+        const { rows } = await pool.query(
+            `
             SELECT 
                 i.id, i.product_id, i.quantity, i.reserved_quantity,
                 i.last_updated_at, i.created_at,
@@ -48,7 +56,9 @@ router.get('/:product_id', async (req, res) => {
             FROM inventory i
             INNER JOIN products p ON i.product_id = p.id
             WHERE i.product_id = $1
-        `, [product_id]);
+        `,
+            [product_id]
+        );
 
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Inventory not found' });
@@ -62,32 +72,37 @@ router.get('/:product_id', async (req, res) => {
 });
 
 // PUT /api/seller/inventory/:product_id/adjust - Qoldiqni tuzatish
-router.put('/:product_id/adjust',
+router.put(
+    '/:product_id/adjust',
     validateParams({
-        product_id: required(integer)
+        product_id: required(integer),
     }),
     validateBody({
         quantity: required(integer),
-        reason: optional(string)
+        reason: optional(string),
     }),
     async (req, res, next) => {
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
 
-        const { product_id } = req.params;
-        const { quantity, reason } = req.body;
+            const { product_id } = req.params;
+            const { quantity, reason } = req.body;
 
-        // Eski qoldiqni olish
-        const { rows: oldRows } = await client.query(`
+            // Eski qoldiqni olish
+            const { rows: oldRows } = await client.query(
+                `
             SELECT quantity FROM inventory WHERE product_id = $1
-        `, [product_id]);
+        `,
+                [product_id]
+            );
 
-        const quantityBefore = oldRows.length > 0 ? oldRows[0].quantity : 0;
-        const quantityChange = parseFloat(quantity) - quantityBefore;
+            const quantityBefore = oldRows.length > 0 ? oldRows[0].quantity : 0;
+            const quantityChange = parseFloat(quantity) - quantityBefore;
 
-        // Qoldiqni yangilash
-        const { rows } = await client.query(`
+            // Qoldiqni yangilash
+            const { rows } = await client.query(
+                `
             INSERT INTO inventory (product_id, quantity, last_updated_at)
             VALUES ($1, $2, NOW())
             ON CONFLICT (product_id) 
@@ -95,32 +110,47 @@ router.put('/:product_id/adjust',
                 quantity = $2,
                 last_updated_at = NOW()
             RETURNING id, product_id, quantity, reserved_quantity, last_updated_at
-        `, [product_id, quantity]);
+        `,
+                [product_id, quantity]
+            );
 
-        // Inventory movement yozish
-        await client.query(`
+            // Inventory movement yozish
+            await client.query(
+                `
             INSERT INTO inventory_movements (product_id, movement_type, quantity_change, quantity_before, quantity_after, notes)
             VALUES ($1, 'adjustment', $2, $3, $4, $5)
-        `, [product_id, quantityChange, quantityBefore, quantity, notes || 'Manual adjustment']);
+        `,
+                [
+                    product_id,
+                    quantityChange,
+                    quantityBefore,
+                    quantity,
+                    reason || 'Manual adjustment',
+                ]
+            );
 
-        // Product status'ni yangilash (Amazing Store'da)
-        // Agar qoldiq > 0 bo'lsa, product active bo'ladi
-        // Agar qoldiq = 0 bo'lsa, product noactive bo'ladi
-        await client.query(`
+            // Product status'ni yangilash (Amazing Store'da)
+            // Agar qoldiq > 0 bo'lsa, product active bo'ladi
+            // Agar qoldiq = 0 bo'lsa, product noactive bo'ladi
+            await client.query(
+                `
             UPDATE products
             SET is_active = $1
             WHERE id = $2
-        `, [quantity > 0, product_id]);
+        `,
+                [quantity > 0, product_id]
+            );
 
-        await client.query('COMMIT');
-        res.json(rows[0]);
-    } catch (error) {
-        await client.query('ROLLBACK');
-        next(error);
-    } finally {
-        client.release();
+            await client.query('COMMIT');
+            res.json(rows[0]);
+        } catch (error) {
+            await client.query('ROLLBACK');
+            next(error);
+        } finally {
+            client.release();
+        }
     }
-});
+);
 
 // GET /api/seller/inventory/:product_id/movements - Tovar harakatlari
 router.get('/:product_id/movements', async (req, res) => {
@@ -128,7 +158,8 @@ router.get('/:product_id/movements', async (req, res) => {
         const { product_id } = req.params;
         const { limit = 50 } = req.query;
 
-        const { rows } = await pool.query(`
+        const { rows } = await pool.query(
+            `
             SELECT 
                 im.id, im.movement_type, im.quantity_change,
                 im.quantity_before, im.quantity_after, im.notes,
@@ -139,7 +170,9 @@ router.get('/:product_id/movements', async (req, res) => {
             WHERE im.product_id = $1
             ORDER BY im.created_at DESC
             LIMIT $2
-        `, [product_id, limit]);
+        `,
+            [product_id, limit]
+        );
 
         res.json(rows);
     } catch (error) {
@@ -149,4 +182,3 @@ router.get('/:product_id/movements', async (req, res) => {
 });
 
 module.exports = router;
-

@@ -2,7 +2,15 @@ const express = require('express');
 const pool = require('../db');
 const { authenticate, isAdmin } = require('../middleware/auth');
 const cache = require('../utils/cache');
-const { validateBody, validateParams, required, string, optional, url, integer, boolean } = require('../middleware/validate');
+const {
+    validateBody,
+    validateParams,
+    required,
+    string,
+    optional,
+    integer,
+    boolean,
+} = require('../middleware/validate');
 const { NotFoundError } = require('../utils/errors');
 
 const router = express.Router();
@@ -27,7 +35,8 @@ router.get('/', async (req, res, next) => {
         }
 
         // Cache'da yo'q bo'lsa, database'dan olish
-        const { rows } = await pool.query(`
+        const { rows } = await pool.query(
+            `
             SELECT 
                 id,
                 CASE 
@@ -40,11 +49,13 @@ router.get('/', async (req, res, next) => {
             FROM categories
             WHERE is_active = TRUE
             ORDER BY sort_order ASC
-        `, [lang]);
-        
+        `,
+            [lang]
+        );
+
         // PERFORMANCE: Cache'ga saqlash
         cache.set(cacheKey, rows, CACHE_TTL);
-        
+
         res.json(rows);
     } catch (error) {
         next(error);
@@ -52,39 +63,46 @@ router.get('/', async (req, res, next) => {
 });
 
 // POST /api/categories - Yangi kategoriya qo'shish (admin uchun)
-router.post('/', authenticate, isAdmin,
+router.post(
+    '/',
+    authenticate,
+    isAdmin,
     validateBody({
         name_uz: required(string),
         name_ru: required(string),
         icon: optional(string),
         color: optional(string),
-        sort_order: optional(integer)
+        sort_order: optional(integer),
     }),
     async (req, res, next) => {
-    const { name_uz, name_ru, icon, color, sort_order } = req.body;
+        const { name_uz, name_ru, icon, color, sort_order } = req.body;
 
-    try {
-        const { rows } = await pool.query(
-            `INSERT INTO categories (name_uz, name_ru, icon, color, sort_order)
+        try {
+            const { rows } = await pool.query(
+                `INSERT INTO categories (name_uz, name_ru, icon, color, sort_order)
              VALUES ($1, $2, $3, $4, $5)
              RETURNING *`,
-            [name_uz, name_ru, icon || '📦', color || '#999', sort_order || 0]
-        );
-        
-        // PERFORMANCE: Categories va products cache'ni tozalash (yangi kategoriya qo'shildi)
-        cache.deletePattern('categories:*');
-        cache.deletePattern('products:*'); // Category o'zgarganda products cache ham eskirgan bo'lishi mumkin
-        
-        res.status(201).json(rows[0]);
-    } catch (error) {
-        next(error);
+                [name_uz, name_ru, icon || '📦', color || '#999', sort_order || 0]
+            );
+
+            // PERFORMANCE: Categories va products cache'ni tozalash (yangi kategoriya qo'shildi)
+            cache.deletePattern('categories:*');
+            cache.deletePattern('products:*'); // Category o'zgarganda products cache ham eskirgan bo'lishi mumkin
+
+            res.status(201).json(rows[0]);
+        } catch (error) {
+            next(error);
+        }
     }
-});
+);
 
 // PUT /api/categories/:id - Kategoriyani yangilash (admin uchun)
-router.put('/:id', authenticate, isAdmin,
+router.put(
+    '/:id',
+    authenticate,
+    isAdmin,
     validateParams({
-        id: required(integer)
+        id: required(integer),
     }),
     validateBody({
         name_uz: optional(string),
@@ -92,15 +110,15 @@ router.put('/:id', authenticate, isAdmin,
         icon: optional(string),
         color: optional(string),
         sort_order: optional(integer),
-        is_active: optional(boolean)
+        is_active: optional(boolean),
     }),
     async (req, res, next) => {
-    const { id } = req.params;
-    const { name_uz, name_ru, icon, color, sort_order, is_active } = req.body;
+        const { id } = req.params;
+        const { name_uz, name_ru, icon, color, sort_order, is_active } = req.body;
 
-    try {
-        const { rows } = await pool.query(
-            `UPDATE categories 
+        try {
+            const { rows } = await pool.query(
+                `UPDATE categories 
              SET name_uz = COALESCE($1, name_uz),
                  name_ru = COALESCE($2, name_ru),
                  icon = COALESCE($3, icon),
@@ -109,22 +127,22 @@ router.put('/:id', authenticate, isAdmin,
                  is_active = COALESCE($6, is_active)
              WHERE id = $7
              RETURNING *`,
-            [name_uz, name_ru, icon, color, sort_order, is_active, id]
-        );
-        
-        if (rows.length === 0) {
-            return next(new NotFoundError('Category'));
+                [name_uz, name_ru, icon, color, sort_order, is_active, id]
+            );
+
+            if (rows.length === 0) {
+                return next(new NotFoundError('Category'));
+            }
+
+            // PERFORMANCE: Categories va products cache'ni tozalash (kategoriya o'zgartirildi)
+            cache.deletePattern('categories:*');
+            cache.deletePattern('products:*'); // Category o'zgarganda products cache ham eskirgan bo'lishi mumkin
+
+            res.json(rows[0]);
+        } catch (error) {
+            next(error);
         }
-        
-        // PERFORMANCE: Categories va products cache'ni tozalash (kategoriya o'zgartirildi)
-        cache.deletePattern('categories:*');
-        cache.deletePattern('products:*'); // Category o'zgarganda products cache ham eskirgan bo'lishi mumkin
-        
-        res.json(rows[0]);
-    } catch (error) {
-        next(error);
     }
-});
+);
 
 module.exports = router;
-

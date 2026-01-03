@@ -13,11 +13,14 @@ class IntegrationService {
      */
     async fetchMarketplaceProducts(marketplaceId) {
         try {
-            const { rows: marketplaceRows } = await pool.query(`
+            const { rows: marketplaceRows } = await pool.query(
+                `
                 SELECT id, name, api_type, api_key, api_secret, access_token
                 FROM marketplaces
                 WHERE id = $1 AND is_active = true
-            `, [marketplaceId]);
+            `,
+                [marketplaceId]
+            );
 
             if (marketplaceRows.length === 0) {
                 throw new Error('Marketplace not found or inactive');
@@ -51,7 +54,7 @@ class IntegrationService {
         // TODO: Uzum API integratsiyasi
         // Hozircha mock data qaytaradi
         logger.info('Fetching Uzum products...', marketplace.name);
-        
+
         // Keyinroq Uzum API bilan integratsiya qilinadi
         // const response = await fetch('https://api.uzum.uz/...', {
         //     headers: {
@@ -72,7 +75,7 @@ class IntegrationService {
         // TODO: Yandex Market API integratsiyasi
         // Hozircha mock data qaytaradi
         logger.info('Fetching Yandex Market products...', marketplace.name);
-        
+
         // Keyinroq Yandex Market API bilan integratsiya qilinadi
         // const response = await fetch('https://api.partner.market.yandex.ru/...', {
         //     headers: {
@@ -104,7 +107,9 @@ class IntegrationService {
                 marketplace_sku: null,
                 marketplace_name: product.name_uz,
                 marketplace_price: parseFloat(product.sale_price || product.price),
-                marketplace_strikethrough_price: product.sale_price ? parseFloat(product.price) : null
+                marketplace_strikethrough_price: product.sale_price
+                    ? parseFloat(product.price)
+                    : null,
             }));
         } catch (error) {
             logger.error('Error fetching Amazing Store products:', error);
@@ -120,9 +125,15 @@ class IntegrationService {
      * @param {Object} marketplaceData - Marketplace'dan olingan ma'lumotlar
      * @returns {Promise<Object>} - Integratsiya qilingan ma'lumotlar
      */
-    async linkMarketplaceProduct(marketplaceId, productId, marketplaceProductId, marketplaceData = {}) {
+    async linkMarketplaceProduct(
+        marketplaceId,
+        productId,
+        marketplaceProductId,
+        marketplaceData = {}
+    ) {
         try {
-            const { rows } = await pool.query(`
+            const { rows } = await pool.query(
+                `
                 INSERT INTO marketplace_products (
                     product_id, marketplace_id, marketplace_product_id,
                     marketplace_sku, marketplace_name, marketplace_price,
@@ -140,17 +151,19 @@ class IntegrationService {
                     last_synced_at = NOW(),
                     updated_at = NOW()
                 RETURNING *
-            `, [
-                productId,
-                marketplaceId,
-                marketplaceProductId,
-                marketplaceData.marketplace_sku || null,
-                marketplaceData.marketplace_name || null,
-                marketplaceData.marketplace_price || null,
-                marketplaceData.marketplace_strikethrough_price || null,
-                marketplaceData.commission_rate || null,
-                marketplaceData.status || 'active'
-            ]);
+            `,
+                [
+                    productId,
+                    marketplaceId,
+                    marketplaceProductId,
+                    marketplaceData.marketplace_sku || null,
+                    marketplaceData.marketplace_name || null,
+                    marketplaceData.marketplace_price || null,
+                    marketplaceData.marketplace_strikethrough_price || null,
+                    marketplaceData.commission_rate || null,
+                    marketplaceData.status || 'active',
+                ]
+            );
 
             return rows[0];
         } catch (error) {
@@ -173,11 +186,14 @@ class IntegrationService {
             for (const mp of marketplaceProducts) {
                 try {
                     // Amazing Store'dagi mos tovarni topish (name bo'yicha)
-                    const { rows: productRows } = await pool.query(`
+                    const { rows: productRows } = await pool.query(
+                        `
                         SELECT id FROM products
                         WHERE name_uz ILIKE $1 OR name_ru ILIKE $1
                         LIMIT 1
-                    `, [`%${mp.marketplace_name}%`]);
+                    `,
+                        [`%${mp.marketplace_name}%`]
+                    );
 
                     if (productRows.length > 0) {
                         await this.linkMarketplaceProduct(
@@ -201,7 +217,7 @@ class IntegrationService {
                 marketplace_id: marketplaceId,
                 synced,
                 errors,
-                total: marketplaceProducts.length
+                total: marketplaceProducts.length,
             };
         } catch (error) {
             logger.error('Error syncing marketplace products:', error);
@@ -211,4 +227,3 @@ class IntegrationService {
 }
 
 module.exports = new IntegrationService();
-

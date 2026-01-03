@@ -63,13 +63,13 @@ class AnalyticsService {
                     date: row.date,
                     orders_count: parseInt(row.total_orders || 0),
                     orders_sum: parseFloat(row.total_revenue || 0),
-                    profit: parseFloat(row.total_profit || 0)
+                    profit: parseFloat(row.total_profit || 0),
                 })),
                 monthly: {
                     total_orders: parseInt(monthlyRows[0]?.total_orders || 0),
                     total_revenue: parseFloat(monthlyRows[0]?.total_revenue || 0),
-                    total_profit: parseFloat(monthlyRows[0]?.total_profit || 0)
-                }
+                    total_profit: parseFloat(monthlyRows[0]?.total_profit || 0),
+                },
             };
         } catch (error) {
             logger.error('Error getting dashboard data:', error);
@@ -133,7 +133,7 @@ class AnalyticsService {
 
             // Cost va profit hisoblash
             let totalCost = 0;
-            let totalRevenue = parseFloat(ordersRows[0]?.total_revenue || 0);
+            const totalRevenue = parseFloat(ordersRows[0]?.total_revenue || 0);
 
             for (const item of itemsRows) {
                 const costPrice = parseFloat(item.cost_price || 0);
@@ -144,7 +144,8 @@ class AnalyticsService {
             const totalOrders = parseInt(ordersRows[0]?.orders_count || 0);
 
             // Daily analytics'ni saqlash yoki yangilash
-            const { rows: analyticsRows } = await client.query(`
+            const { rows: analyticsRows } = await client.query(
+                `
                 INSERT INTO daily_analytics (
                     date, marketplace_id, total_orders, total_revenue, total_cost, total_profit
                 )
@@ -157,7 +158,9 @@ class AnalyticsService {
                     total_profit = EXCLUDED.total_profit,
                     updated_at = NOW()
                 RETURNING *
-            `, [dateStr, marketplaceId, totalOrders, totalRevenue, totalCost, totalProfit]);
+            `,
+                [dateStr, marketplaceId, totalOrders, totalRevenue, totalCost, totalProfit]
+            );
 
             await client.query('COMMIT');
             return analyticsRows[0];
@@ -281,7 +284,8 @@ class AnalyticsService {
             const profit = revenue - cost;
 
             // Product analytics'ni saqlash yoki yangilash
-            const { rows: analyticsRows } = await client.query(`
+            const { rows: analyticsRows } = await client.query(
+                `
                 INSERT INTO product_analytics (
                     product_id, marketplace_id, date,
                     orders_count, quantity_sold, quantity_returned,
@@ -297,7 +301,19 @@ class AnalyticsService {
                     cost = EXCLUDED.cost,
                     profit = EXCLUDED.profit
                 RETURNING *
-            `, [productId, marketplaceId, dateStr, ordersCount, quantitySold, quantityReturned, revenue, cost, profit]);
+            `,
+                [
+                    productId,
+                    marketplaceId,
+                    dateStr,
+                    ordersCount,
+                    quantitySold,
+                    quantityReturned,
+                    revenue,
+                    cost,
+                    profit,
+                ]
+            );
 
             await client.query('COMMIT');
             return analyticsRows[0];
@@ -324,7 +340,7 @@ class AnalyticsService {
 
             const results = {
                 daily: [],
-                products: []
+                products: [],
             };
 
             // Umumiy analitika
@@ -338,15 +354,22 @@ class AnalyticsService {
             }
 
             // Tovar analitikalari
-            const { rows: products } = await pool.query(`
+            const { rows: products } = await pool.query(
+                `
                 SELECT DISTINCT product_id FROM order_items oi
                 INNER JOIN orders o ON oi.order_id = o.id
                 WHERE DATE(o.order_date) = $1
-            `, [date.toISOString().split('T')[0]]);
+            `,
+                [date.toISOString().split('T')[0]]
+            );
 
             for (const product of products) {
                 // Umumiy
-                const productAll = await this.calculateProductAnalytics(product.product_id, null, date);
+                const productAll = await this.calculateProductAnalytics(
+                    product.product_id,
+                    null,
+                    date
+                );
                 results.products.push(productAll);
 
                 // Har bir marketplace uchun
@@ -369,4 +392,3 @@ class AnalyticsService {
 }
 
 module.exports = new AnalyticsService();
-

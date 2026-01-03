@@ -186,3 +186,4 @@ git push
 
 **Endi yaratish kerak!** (yuqoridagi qadamlarni bajaring)
 
+

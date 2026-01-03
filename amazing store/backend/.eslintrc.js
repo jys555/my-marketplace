@@ -7,15 +7,15 @@ module.exports = {
     env: {
         node: true,
         es2021: true,
-        jest: true
+        jest: true,
     },
     extends: [
         'standard',
-        'prettier' // Disable ESLint rules that conflict with Prettier
+        'prettier', // Disable ESLint rules that conflict with Prettier
     ],
     parserOptions: {
         ecmaVersion: 2021,
-        sourceType: 'module'
+        sourceType: 'module',
     },
     rules: {
         // Custom rules
@@ -23,14 +23,17 @@ module.exports = {
         'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }], // Allow unused vars with _ prefix
         'prefer-const': 'warn', // Prefer const over let
         'no-var': 'error', // Use let/const instead of var
-        
+
         // Best practices
-        'eqeqeq': ['error', 'always'], // Always use ===
-        'curly': ['error', 'all'], // Always use curly braces
-        
+        eqeqeq: ['error', 'always'], // Always use ===
+        curly: ['error', 'all'], // Always use curly braces
+
+        // Naming conventions
+        camelcase: 'off', // Disable camelcase (database fields use snake_case)
+
         // Node.js specific
         'no-process-exit': 'off', // Allow process.exit (server.js)
-        'no-path-concat': 'warn' // Warn on path concatenation
+        'no-path-concat': 'warn', // Warn on path concatenation
     },
     ignorePatterns: [
         'node_modules/',
@@ -41,6 +44,6 @@ module.exports = {
         'build/',
         'scripts/**',
         'utils/migrate.js',
-        'utils/initDb.js'
-    ]
+        'utils/initDb.js',
+    ],
 };

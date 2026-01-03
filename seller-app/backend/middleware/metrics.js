@@ -14,7 +14,7 @@ function metricsMiddleware(req, res, next) {
 
     // Override res.end to capture response time and status code
     const originalEnd = res.end;
-    res.end = function(...args) {
+    res.end = function (...args) {
         const responseTime = Date.now() - startTime;
         const statusCode = res.statusCode;
         const method = req.method;

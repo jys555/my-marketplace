@@ -14,12 +14,12 @@ function requestLogger(req, res, next) {
 
     // Override res.end to capture response time and status code
     const originalEnd = res.end;
-    res.end = function(...args) {
+    res.end = function (...args) {
         const responseTime = Date.now() - startTime;
-        
+
         // Log request using logger helper
         logger.logRequest(req, res, responseTime);
-        
+
         // Call original end
         originalEnd.apply(this, args);
     };

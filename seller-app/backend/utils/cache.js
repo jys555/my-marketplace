@@ -13,7 +13,9 @@ class MemoryCache {
      */
     get(key) {
         const item = this.cache.get(key);
-        if (!item) return null;
+        if (!item) {
+            return null;
+        }
 
         // TTL (Time To Live) tekshirish
         const age = (Date.now() - item.timestamp) / 1000; // soniyalarda
@@ -36,7 +38,7 @@ class MemoryCache {
         this.cache.set(key, {
             data,
             timestamp: Date.now(),
-            ttl
+            ttl,
         });
     }
 
@@ -75,7 +77,7 @@ class MemoryCache {
         const stats = {
             totalKeys: this.cache.size,
             keys: [],
-            totalSize: 0 // Tahminiy (JSON.stringify orqali)
+            totalSize: 0, // Tahminiy (JSON.stringify orqali)
         };
 
         for (const [key, item] of this.cache.entries()) {
@@ -87,7 +89,7 @@ class MemoryCache {
                 key,
                 age: Math.round(age),
                 remainingTTL: Math.round(remainingTTL),
-                size
+                size,
             });
             stats.totalSize += size;
         }

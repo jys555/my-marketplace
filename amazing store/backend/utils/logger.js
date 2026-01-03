@@ -44,7 +44,7 @@ const dailyRotateFileTransport = new DailyRotateFile({
     maxSize: '20m',
     maxFiles: '14d', // Keep logs for 14 days
     format: logFormat,
-    level: 'info'
+    level: 'info',
 });
 
 // Daily rotate file transport for error logs
@@ -54,13 +54,13 @@ const dailyRotateErrorTransport = new DailyRotateFile({
     maxSize: '20m',
     maxFiles: '30d', // Keep error logs for 30 days
     format: logFormat,
-    level: 'error'
+    level: 'error',
 });
 
 // Console transport (only in development)
 const consoleTransport = new winston.transports.Console({
     format: consoleFormat,
-    level: process.env.NODE_ENV === 'production' ? 'warn' : 'debug'
+    level: process.env.NODE_ENV === 'production' ? 'warn' : 'debug',
 });
 
 // Create logger instance
@@ -68,12 +68,9 @@ const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
     format: logFormat,
     defaultMeta: { service: 'amazing-store-backend' },
-    transports: [
-        dailyRotateFileTransport,
-        dailyRotateErrorTransport
-    ],
+    transports: [dailyRotateFileTransport, dailyRotateErrorTransport],
     // Don't exit on handled exceptions
-    exitOnError: false
+    exitOnError: false,
 });
 
 // Add console transport in development
@@ -86,7 +83,7 @@ if (process.env.NODE_ENV !== 'production') {
 /**
  * Log HTTP request
  */
-logger.logRequest = function(req, res, responseTime) {
+logger.logRequest = function (req, res, responseTime) {
     this.info('HTTP request', {
         method: req.method,
         url: req.originalUrl || req.url,
@@ -94,19 +91,19 @@ logger.logRequest = function(req, res, responseTime) {
         responseTime: `${responseTime}ms`,
         ip: req.ip || req.connection.remoteAddress,
         userAgent: req.get('user-agent'),
-        userId: req.telegramUser?.id || req.userId || null
+        userId: req.telegramUser?.id || req.userId || null,
     });
 };
 
 /**
  * Log HTTP error
  */
-logger.logError = function(error, req = null) {
+logger.logError = function (error, req = null) {
     const errorInfo = {
         message: error.message,
         stack: error.stack,
         code: error.code,
-        statusCode: error.statusCode
+        statusCode: error.statusCode,
     };
 
     if (req) {
@@ -117,7 +114,7 @@ logger.logError = function(error, req = null) {
             query: req.query,
             params: req.params,
             ip: req.ip || req.connection.remoteAddress,
-            userId: req.telegramUser?.id || req.userId || null
+            userId: req.telegramUser?.id || req.userId || null,
         };
     }
 
@@ -127,22 +124,22 @@ logger.logError = function(error, req = null) {
 /**
  * Log database error
  */
-logger.logDatabaseError = function(error, query = null) {
+logger.logDatabaseError = function (error, query = null) {
     this.error('Database error', {
         message: error.message,
         code: error.code,
-        query: query,
-        stack: error.stack
+        query,
+        stack: error.stack,
     });
 };
 
 /**
  * Log cache operation
  */
-logger.logCache = function(operation, key, hit = null) {
+logger.logCache = function (operation, key, hit = null) {
     const logData = {
-        operation: operation, // 'get', 'set', 'delete', 'clear'
-        key: key
+        operation, // 'get', 'set', 'delete', 'clear'
+        key,
     };
 
     if (hit !== null) {

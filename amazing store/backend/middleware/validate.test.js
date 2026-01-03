@@ -16,11 +16,10 @@ const {
     oneOf,
     optional,
     stringLength,
-    numberRange
+    numberRange,
 } = require('./validate');
 
 describe('Validation Helpers', () => {
-    
     describe('required', () => {
         test('throws error if value is undefined', () => {
             expect(() => required(undefined, 'name')).toThrow('name is required');
@@ -129,7 +128,9 @@ describe('Validation Helpers', () => {
         });
 
         test('throws error if value is invalid email', () => {
-            expect(() => email('not-an-email', 'email')).toThrow('email must be a valid email address');
+            expect(() => email('not-an-email', 'email')).toThrow(
+                'email must be a valid email address'
+            );
         });
     });
 
@@ -180,7 +181,9 @@ describe('Validation Helpers', () => {
 
         test('throws error if value is not in allowed values', () => {
             const validator = oneOf(['new', 'processing', 'completed']);
-            expect(() => validator('invalid', 'status')).toThrow('status must be one of: new, processing, completed');
+            expect(() => validator('invalid', 'status')).toThrow(
+                'status must be one of: new, processing, completed'
+            );
         });
     });
 

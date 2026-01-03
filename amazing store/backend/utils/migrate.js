@@ -20,10 +20,10 @@ function createInlineRunner() {
         inlineRunnerPool = new Pool({
             connectionString: process.env.DATABASE_URL,
             ssl: {
-                rejectUnauthorized: false
+                rejectUnauthorized: false,
             },
             max: 5,
-            idleTimeoutMillis: 30000
+            idleTimeoutMillis: 30000,
         });
     }
 
@@ -75,11 +75,11 @@ function createInlineRunner() {
                     // 6. Fallback migrations
                     path.join(__dirname, '../migrations'),
                 ];
-                
+
                 let migrationsDir = null;
                 let maxFiles = 0;
                 const foundDirs = [];
-                
+
                 for (const dir of possibleMigrationDirs) {
                     if (fs.existsSync(dir)) {
                         const files = fs.readdirSync(dir).filter(f => f.endsWith('.sql'));
@@ -92,7 +92,7 @@ function createInlineRunner() {
                         }
                     }
                 }
-                
+
                 // Debug: Barcha topilgan papkalarni ko'rsatish
                 if (foundDirs.length > 0) {
                     logger.debug('📂 Found migration directories:');
@@ -100,18 +100,21 @@ function createInlineRunner() {
                         logger.debug(`   - ${dir} (${files} files)`);
                     });
                 }
-                
+
                 if (migrationsDir) {
-                    logger.info(`📁 Selected migrations directory: ${migrationsDir} (${maxFiles} files)`);
+                    logger.info(
+                        `📁 Selected migrations directory: ${migrationsDir} (${maxFiles} files)`
+                    );
                 }
-                
+
                 if (!migrationsDir) {
                     logger.error('❌ Migrations directory not found. Tried paths:');
                     possibleMigrationDirs.forEach(dir => logger.error(`   - ${dir}`));
                     throw new Error('Migrations directory not found');
                 }
 
-                const files = fs.readdirSync(migrationsDir)
+                const files = fs
+                    .readdirSync(migrationsDir)
                     .filter(f => f.endsWith('.sql'))
                     .sort();
 
@@ -169,7 +172,7 @@ function createInlineRunner() {
                 logger.error('❌ Migration error:', error);
                 throw error;
             }
-        }
+        },
     };
 }
 
@@ -185,7 +188,7 @@ function getMigrationRunner() {
 
     // 1. Try to load from root database/migrate.js (local development)
     const rootMigratePath = path.join(__dirname, '../../../database/migrate.js');
-    
+
     if (fs.existsSync(rootMigratePath)) {
         try {
             cachedRunner = require(rootMigratePath);
@@ -195,14 +198,14 @@ function getMigrationRunner() {
             logger.warn('⚠️  Could not load root migration runner:', error.message);
         }
     }
-    
+
     // 2. Fallback: Try to find migration runner in parent directories
     // This handles Railway deployment where root might be different
     const possiblePaths = [
         path.join(__dirname, '../../../../database/migrate.js'), // Railway root
         path.join(__dirname, '../../../../../database/migrate.js'), // Alternative Railway root
     ];
-    
+
     for (const possiblePath of possiblePaths) {
         if (fs.existsSync(possiblePath)) {
             try {
@@ -214,7 +217,7 @@ function getMigrationRunner() {
             }
         }
     }
-    
+
     // 3. Fallback: Use inline migration runner (Railway deployment)
     // Markazlashtirilgan runner topilmasa, wrapper o'zining migration logikasini ishlatadi
     logger.warn('⚠️  Centralized migration runner not found, using inline runner');
@@ -251,10 +254,9 @@ process.on('SIGTERM', async () => {
 
 // Export wrapper functions (lazy loading)
 module.exports = {
-    runMigrations: async function() {
+    runMigrations: async function () {
         const runner = getMigrationRunner();
         return await runner.runMigrations();
     },
-    cleanup
+    cleanup,
 };
-
