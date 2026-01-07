@@ -1,14 +1,33 @@
+console.log('=== AMAZING STORE SERVER STARTING ===');
+console.log('Step 1: Loading dotenv...');
 require('dotenv').config();
+console.log('Step 2: dotenv loaded');
+
+console.log('Step 3: Loading express...');
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+console.log('Step 4: express loaded');
+
+console.log('Step 5: Checking DATABASE_URL...');
+console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET (hidden)' : 'NOT SET');
+console.log('PORT:', process.env.PORT || 3000);
+console.log('NODE_ENV:', process.env.NODE_ENV || 'development');
+
+console.log('Step 6: Loading database utilities...');
 const { initializeDatabase } = require('./utils/initDb');
 const botService = require('./services/bot');
+console.log('Step 7: Database utilities loaded');
+
+console.log('Step 8: Loading logger...');
 const logger = require('./utils/logger');
+console.log('Step 9: Logger loaded');
+
 const requestLogger = require('./middleware/requestLogger');
 const metricsMiddleware = require('./middleware/metrics');
+console.log('Step 10: Middleware loaded');
 
 // Amazing Store routes
 const bannerRoutes = require('./routes/banners');
