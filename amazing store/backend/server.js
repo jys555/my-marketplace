@@ -158,6 +158,7 @@ async function startServer() {
             logger.info(`✅ Amazing Store Server is running on port ${PORT}`);
             logger.info(`📱 Frontend: http://localhost:${PORT}`);
             logger.info(`🤖 Telegram Bot: ${botService.bot ? 'Active' : 'Disabled'}`);
+            logger.info(`🚀 Auto-deploy test: ${new Date().toISOString()}`);
         });
     } catch (error) {
         logger.error('❌ Failed to start server:', error);
