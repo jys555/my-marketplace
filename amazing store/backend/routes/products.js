@@ -99,6 +99,17 @@ router.get('/', async (req, res, next) => {
     const validOffset = Math.max(offset, 0); // 0 dan kichik bo'lmasligi kerak
 
     try {
+        // Database connection'ni tekshirish
+        if (!pool) {
+            logger.error('Database pool is not initialized');
+            return res.status(500).json({
+                error: {
+                    code: 'DATABASE_ERROR',
+                    message: 'Database connection not available',
+                },
+            });
+        }
+
         // PERFORMANCE: WHERE shartlari (category va active uchun)
         const whereConditions = ['p.is_active = true'];
         const params = [lang];

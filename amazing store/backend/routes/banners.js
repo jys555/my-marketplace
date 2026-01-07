@@ -12,6 +12,17 @@ const CACHE_KEY = 'banners:active';
 // GET /api/banners - Fetch all active banners
 router.get('/', async (req, res, next) => {
     try {
+        // Database connection'ni tekshirish
+        if (!pool) {
+            logger.error('Database pool is not initialized');
+            return res.status(500).json({
+                error: {
+                    code: 'DATABASE_ERROR',
+                    message: 'Database connection not available',
+                },
+            });
+        }
+
         // PERFORMANCE: Avval cache'dan tekshirish
         const cached = cache.get(CACHE_KEY);
         if (cached !== null) {
