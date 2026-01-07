@@ -7,13 +7,7 @@
   "deploy": {
     "startCommand": "npm start",
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10,
-    "watchPatterns": [
-      "amazing store/backend/**",
-      "seller-app/backend/**",
-      "database/migrations/**",
-      "database/migrate.js"
-    ]
+    "restartPolicyMaxRetries": 10
   }
 }
 
