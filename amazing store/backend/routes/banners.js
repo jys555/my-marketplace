@@ -4,7 +4,7 @@ const cache = require('../utils/cache');
 const logger = require('../utils/logger');
 
 const router = express.Router();
-//test comment
+
 // PERFORMANCE: Cache TTL (Time To Live) - 5 daqiqada bir marta yangilanadi
 const CACHE_TTL = 5 * 60; // 300 soniya
 const CACHE_KEY = 'banners:active';
