@@ -1,7 +1,7 @@
 {
     "name": "my-marketplace-backend",
     "version": "1.0.0",
-    "description": "Backend for the marketplace application",
+    "description": "Backend for the marketplace application - Amazing Store",
     "main": "server.js",
     "scripts": {
         "prebuild": "node scripts/copy-migrations.js",
