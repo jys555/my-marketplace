@@ -147,23 +147,39 @@ app.use(errorHandler);
 // Database'ni initialize qilib, keyin serverni ishga tushirish
 async function startServer() {
     try {
+        logger.info('🚀 Starting Amazing Store Server...');
+        logger.info(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
+        logger.info(`🔌 Port: ${PORT}`);
+
         // Amazing Store database migration
+        logger.info('🔄 Initializing database...');
         await initializeDatabase();
+        logger.info('✅ Database initialized successfully');
 
         // Bot'ni ishga tushirish
+        logger.info('🤖 Initializing Telegram bot...');
         await botService.initialize();
+        logger.info('✅ Bot initialization completed');
 
         // Server ishga tushirish
         app.listen(PORT, () => {
             logger.info(`✅ Amazing Store Server is running on port ${PORT}`);
             logger.info(`📱 Frontend: http://localhost:${PORT}`);
             logger.info(`🤖 Telegram Bot: ${botService.bot ? 'Active' : 'Disabled'}`);
-            logger.info(`🚀 Auto-deploy test: ${new Date().toISOString()}`);
+            logger.info(`🚀 Server started at: ${new Date().toISOString()}`);
         });
     } catch (error) {
         logger.error('❌ Failed to start server:', error);
+        logger.error('❌ Error stack:', error.stack);
+        console.error('❌ Failed to start server:', error);
         process.exit(1);
     }
 }
 
-startServer();
+// Start server
+logger.info('📝 Server script loaded, calling startServer()...');
+startServer().catch(error => {
+    logger.error('❌ Unhandled error in startServer():', error);
+    console.error('❌ Unhandled error in startServer():', error);
+    process.exit(1);
+});
