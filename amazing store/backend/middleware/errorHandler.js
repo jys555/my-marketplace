@@ -10,7 +10,11 @@ function errorHandler(err, req, res, _next) {
     let error = err;
 
     // PostgreSQL error'larini map qilish
-    if ((error.code && error.code.startsWith('23')) || error.code.startsWith('42')) {
+    // error.code bo'lmagan hollarda (masalan, oddiy JS error'lar) startsWith chaqirmaymiz
+    if (
+        error.code &&
+        (error.code.startsWith('23') || error.code.startsWith('42'))
+    ) {
         error = mapPostgresError(error);
     }
 
