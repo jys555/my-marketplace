@@ -7,6 +7,12 @@
         "startCommand": "npm start",
         "restartPolicyType": "ON_FAILURE",
         "restartPolicyMaxRetries": 10,
-        "watchPatterns": ["seller-app/backend/**"]
+        "watchPatterns": [
+            "**",
+            "**/*.js",
+            "**/*.json",
+            "package.json",
+            "package-lock.json"
+        ]
     }
 }
