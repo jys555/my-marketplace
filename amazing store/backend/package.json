@@ -1,5 +1,6 @@
 {
     "name": "my-marketplace-backend",
+    // amaing store backend test for railway
     "version": "1.0.0",
     "description": "Backend for the marketplace application - Amazing Store",
     "main": "server.js",
