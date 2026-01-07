@@ -1,6 +1,8 @@
 /**
  * Health Check Route
  * Comprehensive server health check: database, memory, uptime, cache, environment
+ * 
+ * Last updated: 2024-12-XX - Auto-deploy test
  */
 
 const db = require('../db');
