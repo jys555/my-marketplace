@@ -151,6 +151,18 @@ async function startServer() {
         logger.info(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
         logger.info(`🔌 Port: ${PORT}`);
 
+        // Test database connection
+        logger.info('🔄 Testing database connection...');
+        const pool = require('./db');
+        try {
+            await pool.query('SELECT NOW()');
+            logger.info('✅ Database connection established successfully');
+        } catch (err) {
+            logger.error('❌ Database connection failed:', err);
+            logger.error('❌ DATABASE_URL:', process.env.DATABASE_URL ? 'Set (hidden)' : 'NOT SET');
+            throw err;
+        }
+
         // Amazing Store database migration
         logger.info('🔄 Initializing database...');
         await initializeDatabase();
