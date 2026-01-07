@@ -57,10 +57,10 @@ const dailyRotateErrorTransport = new DailyRotateFile({
     level: 'error',
 });
 
-// Console transport (only in development)
+// Console transport (always enabled for Railway logs)
 const consoleTransport = new winston.transports.Console({
     format: consoleFormat,
-    level: process.env.NODE_ENV === 'production' ? 'warn' : 'debug',
+    level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
 });
 
 // Create logger instance
@@ -68,15 +68,10 @@ const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
     format: logFormat,
     defaultMeta: { service: 'amazing-store-backend' },
-    transports: [dailyRotateFileTransport, dailyRotateErrorTransport],
+    transports: [dailyRotateFileTransport, dailyRotateErrorTransport, consoleTransport],
     // Don't exit on handled exceptions
     exitOnError: false,
 });
-
-// Add console transport in development
-if (process.env.NODE_ENV !== 'production') {
-    logger.add(consoleTransport);
-}
 
 // Helper methods for structured logging
 
