@@ -320,7 +320,9 @@ router.put('/favorites', authenticate, async (req, res, next) => {
 
     try {
         logger.info('💾 Updating favorites in database:', favorites);
-        await pool.query('UPDATE users SET favorites = $1 WHERE id = $2', [favorites, req.userId]);
+        // CRITICAL FIX: PostgreSQL expects array type, not JSONB
+        // Use array literal format for PostgreSQL
+        await pool.query('UPDATE users SET favorites = $1::integer[] WHERE id = $2', [favorites, req.userId]);
         logger.info('✅ Favorites updated successfully');
         res.status(200).json({ message: 'Favorites updated successfully' });
     } catch (error) {
