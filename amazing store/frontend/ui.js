@@ -868,6 +868,9 @@ export function closeRegisterModal() {
 
 // YANGI: Savatga qo'shish modali - User screenshot style
 export function openCartModal(productId) {
+    // CRITICAL FIX: Close any existing modal first
+    closeCartModal();
+    
     const product = getProductById(productId);
     if (!product) {
         console.error('Product not found:', productId);
@@ -905,7 +908,9 @@ export function openCartModal(productId) {
     `;
     
     // Body ga qo'shish
+    console.log('📝 Inserting modal HTML');
     document.body.insertAdjacentHTML('beforeend', modalHtml);
+    console.log('✅ Modal HTML inserted');
 }
 
 export function closeCartModal() {

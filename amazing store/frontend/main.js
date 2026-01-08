@@ -796,6 +796,7 @@ async function handleToggleFavorite(event) {
 
         try {
             console.log('🌐 Updating favorites on server...');
+            console.log('📦 Sending favorites:', state.getFavorites());
             await api.updateFavorites(state.getFavorites());
             console.log('✅ Favorites updated successfully');
             if (state.getCurrentPage() === 'favorites') {
@@ -804,11 +805,17 @@ async function handleToggleFavorite(event) {
         } catch (err) {
             // O'ZGARTIRILDI: Foydalanuvchiga tushunarli xabar
             console.error('❌ Toggle favorite error:', err);
+            console.error('❌ Error details:', {
+                message: err.message,
+                status: err.status,
+                stack: err.stack
+            });
+            
             let userMessage = ui.t('error_saving');
             if (err.status === 401 || err.status === 403) {
                 userMessage = ui.t('error_auth');
             } else if (err.status === 500) {
-                userMessage = ui.t('error_server');
+                userMessage = ui.t('error_server') + ': ' + err.message;
             }
             WebApp.showAlert(userMessage);
             // Revert state change on failure
