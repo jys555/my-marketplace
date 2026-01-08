@@ -1,5 +1,5 @@
 // PERFORMANCE: Pagination importlar
-import { getLang, getUser, isRegistered as isUserRegistered, getProducts, getCart, getProductById, isFavorite, getOrders, getBanners, getGuestTelegramUser, getFavorites, getCategories, getSelectedCategory, getProductsPagination, setProductsLoading } from './state.js';
+import { getLang, getUser, isRegistered as isUserRegistered, getProducts, getCart, getProductById, isFavorite, getOrders, getBanners, getGuestTelegramUser, getFavorites, getCategories, getSelectedCategory, getProductsPagination, setProductsLoading, getCartItems, getCartSummary } from './state.js';
 
 // XSS himoyasi uchun HTML escape funksiyasi
 function escapeHtml(str) {
