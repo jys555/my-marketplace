@@ -287,10 +287,15 @@ async function loadInitialData() {
 
         if (state.isRegistered()) {
             try {
-                const orders = await api.getOrders();
+                const [orders, cartData] = await Promise.all([
+                    api.getOrders(),
+                    api.getCartItems()
+                ]);
                 state.setOrders(orders);
+                state.setCartItems(cartData.items);
+                state.setCartSummary(cartData.summary);
             } catch (orderError) {
-                console.error("Could not load user orders:", orderError);
+                console.error("Could not load user data:", orderError);
             }
         }
     } catch (err) {
@@ -457,31 +462,25 @@ function attachPageEventListeners(pageName) {
             attachPhoneFormatting();
             break;
         case 'cart':
-            // O'ZGARTIRILDI: Yangi cart dizayni uchun event listenerlar
+            // YANGI: Cart page event listeners (server-based API)
             // Quantity buttons
-            document.querySelectorAll('.cart-qty-btn').forEach(btn => {
-                btn.addEventListener('click', handleUpdateCartItem);
+            document.querySelectorAll('.cart-item-qty-btn').forEach(btn => {
+                btn.addEventListener('click', handleCartQuantityChange);
             });
             
-            // Remove buttons
-            document.querySelectorAll('.cart-item-remove').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    const productId = parseInt(e.currentTarget.dataset.id);
-                    await handleRemoveCartItem(productId);
-                });
+            // Delete buttons
+            document.querySelectorAll('.cart-item-delete-btn').forEach(btn => {
+                btn.addEventListener('click', handleDeleteCartItem);
             });
             
-            // Favorite buttons
-            document.querySelectorAll('.cart-item-favorite').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    handleToggleFavorite(e);
-                });
+            // Like buttons
+            document.querySelectorAll('.cart-item-like-btn').forEach(btn => {
+                btn.addEventListener('click', handleCartItemLike);
             });
             
-            // Checkbox (tanlash)
+            // Checkboxes
             document.querySelectorAll('.cart-item-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', handleCartItemSelect);
+                checkbox.addEventListener('change', handleCartItemCheckbox);
             });
             
             // Checkout button
@@ -704,33 +703,38 @@ function attachCartModalEventListeners(productId) {
     }
 }
 
-// O'ZGARTIRILDI: Modal yopilganda savatga qo'shish (xabar ko'rsatmasdan)
+// YANGI: Modal yopilganda savatga qo'shish (yangi API)
 async function addToCartSilently(productId, quantity) {
     try {
-        for (let i = 0; i < quantity; i++) {
-            state.addToCart(productId);
-        }
-        await api.updateCart(state.getCart());
+        // Yangi API: server'ga saqlash
+        await api.addToCartAPI(productId, quantity);
+        
+        // Cart'ni yangilash (optionally reload cart from server)
+        const cartData = await api.getCartItems();
+        state.setCartItems(cartData.items);
+        state.setCartSummary(cartData.summary);
     } catch (err) {
         console.error('Add to cart error:', err);
         // Xato bo'lsa ham davom etadi (modal yopiladi)
     }
 }
 
-// Savatga qo'shish va checkout
+// YANGI: Savatga qo'shish va checkout (yangi API)
 async function addToCartAndCheckout(productId, quantity) {
     try {
-        // Avval savatga qo'shish
-        for (let i = 0; i < quantity; i++) {
-            state.addToCart(productId);
-        }
-        await api.updateCart(state.getCart());
+        // Yangi API: server'ga saqlash
+        await api.addToCartAPI(productId, quantity);
+        
+        // Cart'ni yangilash
+        const cartData = await api.getCartItems();
+        state.setCartItems(cartData.items);
+        state.setCartSummary(cartData.summary);
+        
         ui.closeCartModal();
         
         // Cart sahifasiga o'tish
         navigateTo('cart');
     } catch (err) {
-        // O'ZGARTIRILDI: Foydalanuvchiga tushunarli xabar
         console.error('Add to cart error:', err);
         let userMessage = ui.t('error_saving');
         if (err.status === 401 || err.status === 403) {
@@ -792,64 +796,100 @@ async function handleToggleFavorite(event) {
     }
 }
 
-async function handleUpdateCartItem(event) {
-    const productId = parseInt(event.target.dataset.id);
-    const change = parseInt(event.target.dataset.change);
-    const currentQuantity = state.getCart()[productId] || 0;
-    const newQuantity = currentQuantity + change;
+// YANGI: Cart quantity change handler
+async function handleCartQuantityChange(event) {
+    const btn = event.currentTarget;
+    const cartItemId = parseInt(btn.dataset.cartId);
+    const action = btn.dataset.action; // 'increase' or 'decrease'
     
-    if (newQuantity <= 0) {
-        await handleRemoveCartItem(productId);
-        return;
-    }
+    const cartItem = state.getCartItems().find(item => item.id === cartItemId);
+    if (!cartItem) return;
     
-    state.updateCartItemQuantity(productId, newQuantity);
+    const newQuantity = action === 'increase' ? cartItem.quantity + 1 : cartItem.quantity - 1;
+    
+    if (newQuantity < 1) return; // Minimum 1
+    
     try {
-        await api.updateCart(state.getCart());
-        navigateTo('cart');
+        await api.updateCartItem(cartItemId, { quantity: newQuantity });
+        
+        // Update state
+        state.updateCartItemInState(cartItemId, { quantity: newQuantity });
+        
+        // Re-render cart
+        navigateTo('cart', false);
     } catch (err) {
-        // O'ZGARTIRILDI: Foydalanuvchiga tushunarli xabar
-        console.error('Update cart error:', err);
-        let userMessage = ui.t('error_saving');
-        if (err.status === 401 || err.status === 403) {
-            userMessage = ui.t('error_auth');
-        } else if (err.status === 500) {
-            userMessage = ui.t('error_server');
-        }
-        WebApp.showAlert(userMessage);
-        // Revert state change
-        state.updateCartItemQuantity(productId, currentQuantity);
-        navigateTo('cart');
+        console.error('Update cart item error:', err);
+        WebApp.showAlert('Xatolik yuz berdi');
     }
 }
 
-// O'ZGARTIRILDI: Mahsulotni savatdan o'chirish
-async function handleRemoveCartItem(productId) {
+// YANGI: Cart item delete handler
+async function handleDeleteCartItem(event) {
+    const btn = event.currentTarget;
+    const cartItemId = parseInt(btn.dataset.cartId);
+    
     try {
-        state.updateCartItemQuantity(productId, 0); // 0 = o'chirish
-        await api.updateCart(state.getCart());
-        navigateTo('cart');
+        await api.deleteCartItem(cartItemId);
+        
+        // Update state
+        state.removeCartItemFromState(cartItemId);
+        
+        // Re-render cart
+        navigateTo('cart', false);
     } catch (err) {
-        console.error('Remove cart item error:', err);
-        WebApp.showAlert(ui.t('error_saving'));
-        // Revert - mahsulotni qaytarish
-        const cart = state.getCart();
-        const previousQty = Object.keys(cart).length > 0 ? 1 : 0;
-        state.updateCartItemQuantity(productId, previousQty);
-        navigateTo('cart');
+        console.error('Delete cart item error:', err);
+        WebApp.showAlert('Xatolik yuz berdi');
     }
 }
 
-// O'ZGARTIRILDI: Checkbox tanlash (hozircha faqat UI, keyinroq filtrlash uchun ishlatiladi)
-function handleCartItemSelect(event) {
-    const checkbox = event.target;
-    const cartItem = checkbox.closest('.cart-item-new');
-    if (cartItem) {
-        if (checkbox.checked) {
-            cartItem.classList.add('selected');
-        } else {
-            cartItem.classList.remove('selected');
+// YANGI: Cart item like handler
+async function handleCartItemLike(event) {
+    const btn = event.currentTarget;
+    const cartItemId = parseInt(btn.dataset.cartId);
+    
+    const cartItem = state.getCartItems().find(item => item.id === cartItemId);
+    if (!cartItem) return;
+    
+    const newLikedState = !cartItem.is_liked;
+    
+    try {
+        await api.updateCartItem(cartItemId, { is_liked: newLikedState });
+        
+        // Update state
+        state.updateCartItemInState(cartItemId, { is_liked: newLikedState });
+        
+        // Update UI
+        btn.classList.toggle('liked', newLikedState);
+        const svg = btn.querySelector('svg');
+        if (svg) {
+            svg.setAttribute('fill', newLikedState ? '#ff3b5c' : 'none');
+            svg.setAttribute('stroke', newLikedState ? '#ff3b5c' : '#999');
         }
+    } catch (err) {
+        console.error('Update cart item like error:', err);
+    }
+}
+
+// YANGI: Cart item checkbox handler
+async function handleCartItemCheckbox(event) {
+    const checkbox = event.currentTarget;
+    const cartItem = checkbox.closest('.cart-item');
+    const cartItemId = parseInt(cartItem.dataset.cartId);
+    
+    const isSelected = checkbox.checked;
+    
+    try {
+        await api.updateCartItem(cartItemId, { is_selected: isSelected });
+        
+        // Update state
+        state.updateCartItemInState(cartItemId, { is_selected: isSelected });
+        
+        // Re-render to update summary
+        navigateTo('cart', false);
+    } catch (err) {
+        console.error('Update cart item selection error:', err);
+        // Revert checkbox
+        checkbox.checked = !isSelected;
     }
 }
 

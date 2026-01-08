@@ -59,6 +59,7 @@ export function updateUser(userData) {
     });
 }
 
+// DEPRECATED: Old cart update (for backward compatibility)
 export function updateCart(cart) {
     return apiFetch('/users/cart', {
         method: 'PUT',
@@ -70,6 +71,75 @@ export function updateFavorites(favorites) {
     return apiFetch('/users/favorites', {
         method: 'PUT',
         body: JSON.stringify({ favorites }),
+    });
+}
+
+// --- NEW CART API ENDPOINTS ---
+
+/**
+ * Get user's cart items
+ * @returns {Promise<{items: Array, summary: Object}>}
+ */
+export function getCartItems() {
+    return apiFetch('/cart');
+}
+
+/**
+ * Add product to cart or update quantity
+ * @param {number} productId - Product ID
+ * @param {number} quantity - Quantity
+ * @returns {Promise<Object>}
+ */
+export function addToCartAPI(productId, quantity = 1) {
+    return apiFetch('/cart', {
+        method: 'POST',
+        body: JSON.stringify({ product_id: productId, quantity }),
+    });
+}
+
+/**
+ * Update cart item (quantity, is_selected, is_liked)
+ * @param {number} cartItemId - Cart item ID
+ * @param {Object} updates - Fields to update
+ * @returns {Promise<Object>}
+ */
+export function updateCartItem(cartItemId, updates) {
+    return apiFetch(`/cart/${cartItemId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
+    });
+}
+
+/**
+ * Delete item from cart
+ * @param {number} cartItemId - Cart item ID
+ * @returns {Promise<Object>}
+ */
+export function deleteCartItem(cartItemId) {
+    return apiFetch(`/cart/${cartItemId}`, {
+        method: 'DELETE',
+    });
+}
+
+/**
+ * Clear entire cart
+ * @returns {Promise<Object>}
+ */
+export function clearCartAPI() {
+    return apiFetch('/cart', {
+        method: 'DELETE',
+    });
+}
+
+/**
+ * Select/deselect all cart items
+ * @param {boolean} isSelected - true to select all, false to deselect all
+ * @returns {Promise<Object>}
+ */
+export function selectAllCartItems(isSelected) {
+    return apiFetch('/cart/select-all', {
+        method: 'PATCH',
+        body: JSON.stringify({ is_selected: isSelected }),
     });
 }
 

@@ -23,7 +23,13 @@ let state = {
     filteredProducts: null, // O'ZGARTIRILDI: Search uchun filter
     categories: [], // O'ZGARTIRILDI: Kategoriyalar
     selectedCategory: null, // O'ZGARTIRILDI: Tanlangan kategoriya ID
-    cart: {},
+    cart: {}, // DEPRECATED: Eski cart (backward compatibility)
+    cartItems: [], // YANGI: Server'dan kelgan cart items (array of objects)
+    cartSummary: {
+        totalItems: 0,
+        totalSelectedItems: 0,
+        totalAmount: 0,
+    },
     favorites: [],
     orders: [],
     currentPage: 'home',
@@ -188,8 +194,54 @@ export function clearHistory() {
     state.navigationHistory = [];
 }
 
-// --- Cart Logic (Savatcha mantig'i) ---
+// --- NEW Cart Logic (Server-based) ---
+export function setCartItems(items) {
+    state.cartItems = items || [];
+}
+
+export function setCartSummary(summary) {
+    state.cartSummary = summary || {
+        totalItems: 0,
+        totalSelectedItems: 0,
+        totalAmount: 0,
+    };
+}
+
+export function getCartItems() {
+    return state.cartItems;
+}
+
+export function getCartSummary() {
+    return state.cartSummary;
+}
+
+export function getCartItemsCount() {
+    return state.cartItems.length;
+}
+
+export function updateCartItemInState(cartItemId, updates) {
+    const index = state.cartItems.findIndex(item => item.id === cartItemId);
+    if (index !== -1) {
+        state.cartItems[index] = { ...state.cartItems[index], ...updates };
+    }
+}
+
+export function removeCartItemFromState(cartItemId) {
+    state.cartItems = state.cartItems.filter(item => item.id !== cartItemId);
+}
+
+export function clearCartState() {
+    state.cartItems = [];
+    state.cartSummary = {
+        totalItems: 0,
+        totalSelectedItems: 0,
+        totalAmount: 0,
+    };
+}
+
+// --- DEPRECATED Cart Logic (Backward compatibility) ---
 export function addToCart(productId, quantity = 1) {
+    // This is deprecated, but kept for backward compatibility
     state.cart[productId] = (state.cart[productId] || 0) + quantity;
 }
 

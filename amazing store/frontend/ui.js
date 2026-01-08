@@ -565,65 +565,58 @@ export function renderOrders(filter = 'active') {
     `).join('');
 }
 
-// O'ZGARTIRILDI: Cart sahifasi - Uzum style dizayn
+// YANGI: Cart sahifasi - User screenshot style (server-based)
 function getCartContent() {
-    const cart = getCart();
-    const productIds = Object.keys(cart);
+    const cartItems = getCartItems();
+    const summary = getCartSummary();
 
-    // Jami mahsulotlar soni
-    const totalItems = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
-
-    if (productIds.length === 0) {
+    if (cartItems.length === 0) {
         return `
-            <div class="page-header simple-header">
-                <h2 class="page-title">${t('cart_title')}</h2>
+            <div class="cart-page">
+                <div class="cart-page-header">
+                    <h2 class="cart-page-title">Savat</h2>
+                    <p class="cart-page-subtitle">Savatda hech narsa yo'q</p>
+                </div>
+                <div class="cart-empty">
+                    <div class="cart-empty-icon">🛒</div>
+                    <p class="cart-empty-text">Savatingiz bo'sh</p>
+                    <p class="cart-empty-subtext">Mahsulotlarni qo'shing</p>
+                    <button class="cart-empty-btn" onclick="navigateTo('home')">Bosh sahifaga</button>
+                </div>
             </div>
-            <div class="empty-state"><p>${t('cart_empty')}</p></div>
         `;
     }
 
-    let totalPrice = 0;
-    const itemsHtml = productIds.map(id => {
-        const product = getProductById(parseInt(id));
-        if (!product) return '';
-        const quantity = cart[id];
-        const itemPrice = product.display_price || product.sale_price || product.price;
-        const itemTotal = itemPrice * quantity;
-        totalPrice += itemTotal;
-        
-        const safeName = escapeHtml(product.name);
-        const safeImage = escapeHtml(product.image) || 'https://via.placeholder.com/100';
-        const isFav = isFavorite(parseInt(id));
+    const itemsHtml = cartItems.map(item => {
+        const safeName = escapeHtml(item.name_uz);
+        const safeImage = escapeHtml(item.image_url) || 'https://via.placeholder.com/100';
+        const price = item.sale_price || item.price;
         
         return `
-            <div class="cart-item-new" data-id="${id}">
-                <div class="cart-item-checkbox-wrapper">
-                    <input type="checkbox" class="cart-item-checkbox" id="cart-check-${id}" checked>
-                    <label for="cart-check-${id}" class="cart-checkbox-label"></label>
-                </div>
+            <div class="cart-item" data-cart-id="${item.id}" data-product-id="${item.product_id}">
+                <input type="checkbox" class="cart-item-checkbox" ${item.is_selected ? 'checked' : ''}>
                 <div class="cart-item-image-wrapper">
                     <img src="${safeImage}" alt="${safeName}" class="cart-item-image">
                 </div>
                 <div class="cart-item-info">
                     <h4 class="cart-item-name">${safeName}</h4>
-                    <p class="cart-item-stock">Qolgan ${Math.floor(Math.random() * 5) + 1} dona</p>
-                    <p class="cart-item-price">${Number(itemPrice).toLocaleString()} so'm</p>
-                </div>
-                <div class="cart-item-actions">
-                    <button class="cart-item-favorite ${isFav ? 'active' : ''}" data-id="${id}">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="${isFav ? '#ff3b5c' : 'none'}" stroke="${isFav ? '#ff3b5c' : '#999'}" stroke-width="2">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                        </svg>
-                    </button>
-                    <button class="cart-item-remove" data-id="${id}">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2">
-                            <path d="M18 6L6 18M6 6l12 12"/>
-                        </svg>
-                    </button>
-                    <div class="cart-item-quantity">
-                        <button class="cart-qty-btn cart-qty-minus" data-id="${id}" data-change="-1">−</button>
-                        <span class="cart-qty-value">${quantity}</span>
-                        <button class="cart-qty-btn cart-qty-plus" data-id="${id}" data-change="1">+</button>
+                    <p class="cart-item-price">${Number(price).toLocaleString()} so'm</p>
+                    <div class="cart-item-actions">
+                        <button class="cart-item-like-btn ${item.is_liked ? 'liked' : ''}" data-cart-id="${item.id}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="${item.is_liked ? '#ff3b5c' : 'none'}" stroke="${item.is_liked ? '#ff3b5c' : '#999'}" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            </svg>
+                        </button>
+                        <button class="cart-item-delete-btn" data-cart-id="${item.id}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
+                        <div class="cart-item-quantity">
+                            <button class="cart-item-qty-btn" data-cart-id="${item.id}" data-action="decrease" ${item.quantity <= 1 ? 'disabled' : ''}>−</button>
+                            <span class="cart-item-qty-value">${item.quantity}</span>
+                            <button class="cart-item-qty-btn" data-cart-id="${item.id}" data-action="increase">+</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -631,9 +624,10 @@ function getCartContent() {
     }).join('');
 
     return `
-        <div class="cart-page-new">
-            <div class="cart-header-new">
-                <h2 class="cart-header-title">${totalItems} ta tovar</h2>
+        <div class="cart-page">
+            <div class="cart-page-header">
+                <h2 class="cart-page-title">Savat</h2>
+                <p class="cart-page-subtitle">${summary.totalItems} ta mahsulot</p>
             </div>
             
             <div class="cart-items-list">
@@ -641,15 +635,17 @@ function getCartContent() {
             </div>
             
             <div class="cart-bottom-bar">
-                <div class="cart-bar-left">
-                    <span class="cart-bar-items">${totalItems} ta tovar</span>
+                <div class="cart-summary">
+                    <div class="cart-summary-left">
+                        Tanlangan: ${summary.totalSelectedItems} ta
+                    </div>
+                    <div class="cart-summary-right">
+                        ${Number(summary.totalAmount).toLocaleString()} so'm
+                    </div>
                 </div>
-                <button class="cart-bar-checkout-btn" id="confirm-order-btn">
-                    ${t('proceed_to_checkout') || 'Rasmiylashtirishga o\'tish'}
+                <button class="cart-checkout-btn" id="confirm-order-btn" ${summary.totalSelectedItems === 0 ? 'disabled' : ''}>
+                    Rasmiylashtirish
                 </button>
-                <div class="cart-bar-right">
-                    <span class="cart-bar-total">${Number(totalPrice).toLocaleString()} so'm</span>
-                </div>
             </div>
         </div>
     `;
@@ -870,7 +866,7 @@ export function closeRegisterModal() {
     modal.innerHTML = '';
 }
 
-// Savatga qo'shish modali - Uzum style
+// YANGI: Savatga qo'shish modali - User screenshot style
 export function openCartModal(productId) {
     const product = getProductById(productId);
     if (!product) {
@@ -884,68 +880,39 @@ export function openCartModal(productId) {
         ? product.sale_price 
         : product.price;
     
-    const hasSale = product.sale_price && product.price > product.sale_price;
-    
-    // O'ZGARTIRILDI: Joriy savatdagi miqdorni olish
-    const cart = getCart();
-    const currentQuantity = cart[productId] || 1;
-    
-    // O'ZGARTIRILDI: Modal HTML'ni body ga to'g'ridan-to'g'ri qo'shish
-    // registerModal ichiga emas, chunki u hidden bo'lsa ichidagi elementlar ham ko'rinmaydi
+    // Modal HTML - User screenshot style
     const modalHtml = `
-      <div class="cart-modal-overlay" id="cart-modal-overlay">
-        <div class="cart-modal-content slide-up">
-          <div class="cart-modal-header">
-            <div class="cart-modal-drag-handle"></div>
-          </div>
-          
-          <div class="cart-modal-product-section">
-            <div class="cart-modal-image-wrapper">
-              <img src="${safeImage}" alt="${safeName}" class="cart-modal-product-image">
-            </div>
-            <div class="cart-modal-product-details">
-              <h3 class="cart-modal-product-name">${safeName}</h3>
-            </div>
-          </div>
-          
-          <div class="cart-modal-footer">
-            <button class="cart-modal-buy-btn" data-id="${productId}">
-              <span>${t('buy_now')}</span>
-            </button>
-            <div class="cart-modal-quantity-controls">
-              <button class="qty-btn qty-minus" data-id="${productId}" data-change="-1">−</button>
-              <span class="qty-value" id="qty-value-${productId}">${currentQuantity}</span>
-              <button class="qty-btn qty-plus" data-id="${productId}" data-change="1">+</button>
-            </div>
+      <div class="cart-modal-overlay active" id="cart-modal-overlay"></div>
+      <div class="cart-modal active" id="cart-modal">
+        <div class="cart-modal-header">
+          <img src="${safeImage}" alt="${safeName}" class="cart-modal-image">
+          <div class="cart-modal-info">
+            <h3 class="cart-modal-name">${safeName}</h3>
+            <p class="cart-modal-price">${Number(displayPrice).toLocaleString()} so'm</p>
           </div>
         </div>
+        
+        <div class="cart-modal-quantity">
+          <button class="cart-modal-qty-btn" data-id="${productId}" data-change="-1">−</button>
+          <span class="cart-modal-qty-value" id="qty-value-${productId}">1</span>
+          <button class="cart-modal-qty-btn" data-id="${productId}" data-change="1">+</button>
+        </div>
+        
+        <button class="cart-modal-add-btn" data-id="${productId}">
+          Savatga qo'shish
+        </button>
       </div>
     `;
     
-    // Body ga to'g'ridan-to'g'ri qo'shish
+    // Body ga qo'shish
     document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
-    // O'ZGARTIRILDI: Animatsiya va event listenerlar uchun kechikish
-    setTimeout(() => {
-        const modalContent = document.querySelector('.cart-modal-content');
-        if (modalContent) {
-            modalContent.classList.add('show');
-        }
-    }, 10);
 }
 
 export function closeCartModal() {
-    // O'ZGARTIRILDI: Modal HTML'ni body dan olib tashlash
+    // Modal'ni olib tashlash
     const overlay = document.getElementById('cart-modal-overlay');
-    if (overlay) {
-        const modalContent = overlay.querySelector('.cart-modal-content');
-        if (modalContent) {
-            modalContent.classList.remove('show');
-            setTimeout(() => {
-                overlay.remove();
-            }, 300); // Animatsiya tugashini kutish
-        } else {
-            overlay.remove();
-        }
-    }
+    const modal = document.getElementById('cart-modal');
+    
+    if (overlay) overlay.remove();
+    if (modal) modal.remove();
 }

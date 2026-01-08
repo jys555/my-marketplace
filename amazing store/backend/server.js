@@ -35,6 +35,7 @@ const productRoutes = require('./routes/products');
 const userRoutes = require('./routes/users');
 const orderRoutes = require('./routes/orders');
 const categoryRoutes = require('./routes/categories');
+const cartRoutes = require('./routes/cart');
 const healthRoutes = require('./routes/health');
 const metricsRoutes = require('./routes/metrics');
 const errorHandler = require('./middleware/errorHandler');
@@ -144,6 +145,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/cart', cartRoutes);
 
 // Frontend marshrutizatsiyasi (Amazing Store)
 app.get('*', (req, res) => {
