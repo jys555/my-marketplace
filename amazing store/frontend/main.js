@@ -610,6 +610,7 @@ async function handleSaveProfile() {
 }
 
 function handleAddToCart(event) {
+    console.log('🛒 handleAddToCart called', event.target);
     event.stopPropagation();
     event.preventDefault();
     
@@ -619,23 +620,27 @@ function handleAddToCart(event) {
         // Agar to'g'ridan-to'g'ri tugma bosilgan bo'lsa
         btn = event.target;
         if (!btn.classList.contains('add-to-cart-btn')) {
-            console.error('Add to cart button not found!', event.target);
+            console.error('❌ Add to cart button not found!', event.target);
             return;
         }
     }
     
     const productId = parseInt(btn.dataset.id);
+    console.log('📦 Product ID:', productId, 'Button:', btn);
+    
     if (!productId || isNaN(productId)) {
-        console.error('Invalid product ID:', productId, btn);
+        console.error('❌ Invalid product ID:', productId, btn);
         return;
     }
     
     // Modal ochish
+    console.log('🔓 Opening cart modal for product:', productId);
     ui.openCartModal(productId);
     
     // O'ZGARTIRILDI: Modal DOM'ga qo'shilgandan keyin event listenerlar qo'shish
     // setTimeout ishlatamiz - DOM yangilanishini kafolatlaydi
     setTimeout(() => {
+        console.log('🔗 Attaching cart modal event listeners');
         attachCartModalEventListeners(productId);
     }, 50);
 }
@@ -747,13 +752,23 @@ async function addToCartAndCheckout(productId, quantity) {
 }
 
 async function handleToggleFavorite(event) {
+    console.log('❤️ handleToggleFavorite called', event.target);
     event.stopPropagation();
     const btn = event.target.closest('.like-btn');
+    
+    if (!btn) {
+        console.error('❌ Like button not found!', event.target);
+        return;
+    }
+    
     const productId = parseInt(btn.dataset.id);
+    console.log('📦 Product ID:', productId, 'Button:', btn);
+    
     const svg = btn.querySelector('svg');
     
     const action = async () => {
         const added = state.toggleFavorite(productId);
+        console.log('💾 Toggle favorite - added:', added);
         btn.classList.toggle('liked', added);
         
         // SVG rangini o'zgartirish
@@ -763,13 +778,15 @@ async function handleToggleFavorite(event) {
         }
 
         try {
+            console.log('🌐 Updating favorites on server...');
             await api.updateFavorites(state.getFavorites());
+            console.log('✅ Favorites updated successfully');
             if (state.getCurrentPage() === 'favorites') {
                 navigateTo('favorites');
             }
         } catch (err) {
             // O'ZGARTIRILDI: Foydalanuvchiga tushunarli xabar
-            console.error('Toggle favorite error:', err);
+            console.error('❌ Toggle favorite error:', err);
             let userMessage = ui.t('error_saving');
             if (err.status === 401 || err.status === 403) {
                 userMessage = ui.t('error_auth');
@@ -787,9 +804,14 @@ async function handleToggleFavorite(event) {
         }
     };
 
-    if (state.isRegistered()) {
+    const isUserRegistered = state.isRegistered();
+    console.log('👤 Is user registered:', isUserRegistered);
+    
+    if (isUserRegistered) {
+        console.log('✅ User is registered, executing action...');
         await action();
     } else {
+        console.log('❌ User not registered, opening register modal...');
         pendingAction = action;
         ui.openRegisterModal();
         attachModalEventListeners();
