@@ -11,16 +11,24 @@ router.post('/validate', authenticate, async (req, res, next) => {
         // Now, check if this user exists in our database.
         const { id: telegram_id } = req.telegramUser;
         const userResult = await pool.query(
-            'SELECT id, first_name, last_name, phone, username, cart, favorites FROM users WHERE telegram_id = $1',
+            'SELECT id, first_name, last_name, phone, username FROM users WHERE telegram_id = $1',
             [telegram_id]
         );
 
         if (userResult.rows.length > 0) {
             // User exists, send back their data
             const user = userResult.rows[0];
-            // Ensure cart and favorites are not null
-            user.cart = user.cart || {};
-            user.favorites = user.favorites || [];
+            
+            // REFACTORED: Get favorites from user_favorites table
+            const favoritesResult = await pool.query(
+                'SELECT product_id FROM user_favorites WHERE user_id = $1 ORDER BY created_at DESC',
+                [user.id]
+            );
+            user.favorites = favoritesResult.rows.map(row => row.product_id);
+            
+            // Deprecated cart JSONB - will be removed
+            user.cart = {};
+            
             res.json({ status: 'existing_user', user });
         } else {
             res.json({ status: 'guest', telegramUser: req.telegramUser });
@@ -91,14 +99,22 @@ router.get('/profile', authenticate, async (req, res, next) => {
     }
     try {
         const user = await pool.query(
-            'SELECT first_name, last_name, phone, username, cart, favorites FROM users WHERE id = $1',
+            'SELECT first_name, last_name, phone, username FROM users WHERE id = $1',
             [req.userId]
         );
         if (user.rows.length > 0) {
             const userProfile = user.rows[0];
-            // Ensure cart and favorites are not null
-            userProfile.cart = userProfile.cart || {};
-            userProfile.favorites = userProfile.favorites || [];
+            
+            // REFACTORED: Get favorites from user_favorites table
+            const favoritesResult = await pool.query(
+                'SELECT product_id FROM user_favorites WHERE user_id = $1 ORDER BY created_at DESC',
+                [req.userId]
+            );
+            userProfile.favorites = favoritesResult.rows.map(row => row.product_id);
+            
+            // Deprecated cart JSONB - will be removed
+            userProfile.cart = {};
+            
             res.json(userProfile);
         } else {
             // This case should not be hit if req.userId is correctly set for existing users.
@@ -207,22 +223,32 @@ router.put('/profile', authenticate, async (req, res, next) => {
         if (req.userId) {
             // Update existing user
             const updatedUser = await pool.query(
-                'UPDATE users SET first_name = $1, last_name = $2, phone = $3 WHERE id = $4 RETURNING id, first_name, last_name, phone, username, cart, favorites',
+                'UPDATE users SET first_name = $1, last_name = $2, phone = $3 WHERE id = $4 RETURNING id, first_name, last_name, phone, username',
                 [first_name, last_name, phone, req.userId]
             );
             const user = updatedUser.rows[0];
-            user.cart = user.cart || {};
-            user.favorites = user.favorites || [];
+            
+            // REFACTORED: Get favorites from user_favorites table
+            const favoritesResult = await pool.query(
+                'SELECT product_id FROM user_favorites WHERE user_id = $1 ORDER BY created_at DESC',
+                [user.id]
+            );
+            user.favorites = favoritesResult.rows.map(row => row.product_id);
+            user.cart = {};
+            
             res.json(user);
         } else {
             // Create new user
             const newUser = await pool.query(
-                'INSERT INTO users (telegram_id, first_name, last_name, phone, username) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, phone, username, cart, favorites',
+                'INSERT INTO users (telegram_id, first_name, last_name, phone, username) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, phone, username',
                 [telegram_id, first_name, last_name, phone, username || null]
             );
             const user = newUser.rows[0];
-            user.cart = user.cart || {};
-            user.favorites = user.favorites || [];
+            
+            // New users have empty favorites and cart
+            user.favorites = [];
+            user.cart = {};
+            
             res.status(201).json(user);
         }
     } catch (error) {
@@ -281,52 +307,127 @@ router.put('/cart', authenticate, async (req, res, next) => {
     }
 });
 
-// New route to update favorites
-router.put('/favorites', authenticate, async (req, res, next) => {
-    logger.info('📥 Update favorites request:', {
-        userId: req.userId,
-        body: req.body,
-        favoritesType: typeof req.body.favorites,
-        isArray: Array.isArray(req.body.favorites)
-    });
-    
+// REFACTORED: Get user favorites (from user_favorites table)
+router.get('/favorites', authenticate, async (req, res, next) => {
     if (!req.userId) {
-        logger.warn('⚠️ User not registered');
+        return res.status(403).json({ error: 'User not registered' });
+    }
+
+    try {
+        const result = await pool.query(
+            `SELECT product_id FROM user_favorites 
+             WHERE user_id = $1 
+             ORDER BY created_at DESC`,
+            [req.userId]
+        );
+        
+        // Return array of product IDs (for backward compatibility)
+        const favorites = result.rows.map(row => row.product_id);
+        res.json({ favorites });
+    } catch (error) {
+        logger.error('Error fetching favorites:', error);
+        next(error);
+    }
+});
+
+// REFACTORED: Update favorites (sync with user_favorites table)
+router.put('/favorites', authenticate, async (req, res, next) => {
+    if (!req.userId) {
         return res.status(403).json({ error: 'User not registered' });
     }
     
     const { favorites } = req.body;
     if (!Array.isArray(favorites)) {
-        logger.error('❌ Invalid favorites data - not an array:', typeof favorites);
         return res.status(400).json({ error: 'Invalid favorites data: must be an array' });
     }
 
-    // Validation: Array elementlari integer ekanligi va unique ekanligi
+    // Validation
     const seen = new Set();
     for (let i = 0; i < favorites.length; i++) {
         const productId = parseInt(favorites[i]);
-        if (isNaN(productId) || productId <= 0 || !Number.isInteger(productId)) {
-            logger.error(`❌ Invalid product ID at index ${i}:`, favorites[i]);
-            return res
-                .status(400)
-                .json({ error: `Invalid product ID at index ${i}: must be a positive integer` });
+        if (isNaN(productId) || productId <= 0) {
+            return res.status(400).json({ 
+                error: `Invalid product ID at index ${i}: must be a positive integer` 
+            });
         }
         if (seen.has(productId)) {
-            logger.error(`❌ Duplicate product ID:`, productId);
             return res.status(400).json({ error: `Duplicate product ID: ${productId}` });
         }
         seen.add(productId);
     }
 
     try {
-        logger.info('💾 Updating favorites in database:', favorites);
-        // CRITICAL FIX: PostgreSQL expects array type, not JSONB
-        // Use array literal format for PostgreSQL
-        await pool.query('UPDATE users SET favorites = $1::integer[] WHERE id = $2', [favorites, req.userId]);
-        logger.info('✅ Favorites updated successfully');
-        res.status(200).json({ message: 'Favorites updated successfully' });
+        // Delete all current favorites
+        await pool.query('DELETE FROM user_favorites WHERE user_id = $1', [req.userId]);
+        
+        // Insert new favorites
+        if (favorites.length > 0) {
+            const values = favorites.map((productId, i) => 
+                `($1, $${i + 2})`
+            ).join(', ');
+            
+            await pool.query(
+                `INSERT INTO user_favorites (user_id, product_id) VALUES ${values}`,
+                [req.userId, ...favorites]
+            );
+        }
+        
+        logger.info('✅ Favorites synced:', { userId: req.userId, count: favorites.length });
+        res.json({ message: 'Favorites updated successfully', count: favorites.length });
     } catch (error) {
-        logger.error('❌ Error updating favorites:', error);
+        logger.error('Error updating favorites:', error);
+        next(error);
+    }
+});
+
+// REFACTORED: Add single favorite
+router.post('/favorites/:productId', authenticate, async (req, res, next) => {
+    if (!req.userId) {
+        return res.status(403).json({ error: 'User not registered' });
+    }
+    
+    const productId = parseInt(req.params.productId);
+    if (isNaN(productId) || productId <= 0) {
+        return res.status(400).json({ error: 'Invalid product ID' });
+    }
+
+    try {
+        await pool.query(
+            `INSERT INTO user_favorites (user_id, product_id) 
+             VALUES ($1, $2) 
+             ON CONFLICT (user_id, product_id) DO NOTHING`,
+            [req.userId, productId]
+        );
+        
+        logger.info('✅ Added to favorites:', { userId: req.userId, productId });
+        res.status(201).json({ message: 'Added to favorites' });
+    } catch (error) {
+        logger.error('Error adding favorite:', error);
+        next(error);
+    }
+});
+
+// REFACTORED: Remove single favorite
+router.delete('/favorites/:productId', authenticate, async (req, res, next) => {
+    if (!req.userId) {
+        return res.status(403).json({ error: 'User not registered' });
+    }
+    
+    const productId = parseInt(req.params.productId);
+    if (isNaN(productId) || productId <= 0) {
+        return res.status(400).json({ error: 'Invalid product ID' });
+    }
+
+    try {
+        await pool.query(
+            'DELETE FROM user_favorites WHERE user_id = $1 AND product_id = $2',
+            [req.userId, productId]
+        );
+        
+        logger.info('✅ Removed from favorites:', { userId: req.userId, productId });
+        res.json({ message: 'Removed from favorites' });
+    } catch (error) {
+        logger.error('Error removing favorite:', error);
         next(error);
     }
 });
