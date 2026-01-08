@@ -369,28 +369,13 @@ function updateTelegramBackButton(pageName) {
 }
 
 function attachPageEventListeners(pageName) {
+    console.log('🔗 Attaching event listeners for page:', pageName);
+    
     document.querySelectorAll('.navbar button').forEach(btn => {
         btn.addEventListener('click', () => navigateTo(btn.dataset.page));
     });
 
-    document.querySelectorAll('.product-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-            if (e.target.closest('.like-btn') || e.target.closest('.add-to-cart-btn')) {
-                return;
-            }
-            const productId = card.dataset.id;
-            WebApp.showAlert(ui.t('product_details_not_ready', { id: productId }));
-        });
-    });
-
-    document.querySelectorAll('.like-btn').forEach(btn => {
-        btn.addEventListener('click', handleToggleFavorite);
-    });
-
-    document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
-        btn.addEventListener('click', handleAddToCart);
-    });
-
+    // CRITICAL FIX: Render products FIRST, then attach event listeners
     switch (pageName) {
         case 'home':
             ui.initCarousel();
@@ -499,6 +484,38 @@ function attachPageEventListeners(pageName) {
             ui.renderProducts();
             break;
     }
+    
+    // CRITICAL FIX: Attach product-related event listeners AFTER rendering
+    // This ensures buttons exist in DOM before attaching listeners
+    const productCards = document.querySelectorAll('.product-card');
+    const likeButtons = document.querySelectorAll('.like-btn');
+    const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
+    
+    console.log('📦 Found elements:', {
+        productCards: productCards.length,
+        likeButtons: likeButtons.length,
+        addToCartButtons: addToCartButtons.length
+    });
+    
+    productCards.forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.like-btn') || e.target.closest('.add-to-cart-btn')) {
+                return;
+            }
+            const productId = card.dataset.id;
+            WebApp.showAlert(ui.t('product_details_not_ready', { id: productId }));
+        });
+    });
+
+    likeButtons.forEach(btn => {
+        console.log('❤️ Attaching like listener to button:', btn.dataset.id);
+        btn.addEventListener('click', handleToggleFavorite);
+    });
+
+    addToCartButtons.forEach(btn => {
+        console.log('🛒 Attaching cart listener to button:', btn.dataset.id);
+        btn.addEventListener('click', handleAddToCart);
+    });
 }
 
 function attachModalEventListeners() {
