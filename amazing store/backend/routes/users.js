@@ -283,11 +283,21 @@ router.put('/cart', authenticate, async (req, res, next) => {
 
 // New route to update favorites
 router.put('/favorites', authenticate, async (req, res, next) => {
+    logger.info('📥 Update favorites request:', {
+        userId: req.userId,
+        body: req.body,
+        favoritesType: typeof req.body.favorites,
+        isArray: Array.isArray(req.body.favorites)
+    });
+    
     if (!req.userId) {
+        logger.warn('⚠️ User not registered');
         return res.status(403).json({ error: 'User not registered' });
     }
+    
     const { favorites } = req.body;
     if (!Array.isArray(favorites)) {
+        logger.error('❌ Invalid favorites data - not an array:', typeof favorites);
         return res.status(400).json({ error: 'Invalid favorites data: must be an array' });
     }
 
@@ -296,21 +306,25 @@ router.put('/favorites', authenticate, async (req, res, next) => {
     for (let i = 0; i < favorites.length; i++) {
         const productId = parseInt(favorites[i]);
         if (isNaN(productId) || productId <= 0 || !Number.isInteger(productId)) {
+            logger.error(`❌ Invalid product ID at index ${i}:`, favorites[i]);
             return res
                 .status(400)
                 .json({ error: `Invalid product ID at index ${i}: must be a positive integer` });
         }
         if (seen.has(productId)) {
+            logger.error(`❌ Duplicate product ID:`, productId);
             return res.status(400).json({ error: `Duplicate product ID: ${productId}` });
         }
         seen.add(productId);
     }
 
     try {
+        logger.info('💾 Updating favorites in database:', favorites);
         await pool.query('UPDATE users SET favorites = $1 WHERE id = $2', [favorites, req.userId]);
+        logger.info('✅ Favorites updated successfully');
         res.status(200).json({ message: 'Favorites updated successfully' });
     } catch (error) {
-        logger.error('Error updating favorites:', error);
+        logger.error('❌ Error updating favorites:', error);
         next(error);
     }
 });
