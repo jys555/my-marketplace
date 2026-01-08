@@ -6,16 +6,16 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { authenticateTelegramUser } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
 /**
  * GET /api/cart
  * Foydalanuvchining savatidagi barcha mahsulotlarni olish
  */
-router.get('/', authenticateTelegramUser, async (req, res, next) => {
+router.get('/', authenticate, async (req, res, next) => {
     try {
-        const userId = req.user.id;
+        const userId = req.userId;
 
         const result = await db.query(
             `SELECT 
@@ -75,9 +75,9 @@ router.get('/', authenticateTelegramUser, async (req, res, next) => {
  * Savatga mahsulot qo'shish yoki miqdorni yangilash
  * Body: { product_id, quantity }
  */
-router.post('/', authenticateTelegramUser, async (req, res, next) => {
+router.post('/', authenticate, async (req, res, next) => {
     try {
-        const userId = req.user.id;
+        const userId = req.userId;
         const { product_id, quantity = 1 } = req.body;
 
         if (!product_id || quantity < 1) {
@@ -130,9 +130,9 @@ router.post('/', authenticateTelegramUser, async (req, res, next) => {
  * Savat elementini yangilash (quantity, is_selected, is_liked)
  * Body: { quantity?, is_selected?, is_liked? }
  */
-router.patch('/:id', authenticateTelegramUser, async (req, res, next) => {
+router.patch('/:id', authenticate, async (req, res, next) => {
     try {
-        const userId = req.user.id;
+        const userId = req.userId;
         const cartItemId = req.params.id;
         const { quantity, is_selected, is_liked } = req.body;
 
@@ -202,9 +202,9 @@ router.patch('/:id', authenticateTelegramUser, async (req, res, next) => {
  * DELETE /api/cart/:id
  * Savatdan mahsulotni o'chirish
  */
-router.delete('/:id', authenticateTelegramUser, async (req, res, next) => {
+router.delete('/:id', authenticate, async (req, res, next) => {
     try {
-        const userId = req.user.id;
+        const userId = req.userId;
         const cartItemId = req.params.id;
 
         const result = await db.query(
@@ -236,9 +236,9 @@ router.delete('/:id', authenticateTelegramUser, async (req, res, next) => {
  * DELETE /api/cart
  * Savatni butunlay tozalash
  */
-router.delete('/', authenticateTelegramUser, async (req, res, next) => {
+router.delete('/', authenticate, async (req, res, next) => {
     try {
-        const userId = req.user.id;
+        const userId = req.userId;
 
         const result = await db.query('DELETE FROM cart_items WHERE user_id = $1 RETURNING id', [
             userId,
@@ -268,9 +268,9 @@ router.delete('/', authenticateTelegramUser, async (req, res, next) => {
  * Barcha mahsulotlarni tanlash/bekor qilish
  * Body: { is_selected: boolean }
  */
-router.patch('/select-all', authenticateTelegramUser, async (req, res, next) => {
+router.patch('/select-all', authenticate, async (req, res, next) => {
     try {
-        const userId = req.user.id;
+        const userId = req.userId;
         const { is_selected } = req.body;
 
         if (is_selected === undefined) {
