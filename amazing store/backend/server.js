@@ -179,6 +179,52 @@ async function startServer() {
         await initializeDatabase();
         logger.info('✅ Database initialized successfully');
 
+        // CRITICAL FIX: Ensure cart_items table exists
+        // This is a workaround for migration tracking bug
+        logger.info('🔄 Verifying cart_items table...');
+        try {
+            await pool.query('SELECT 1 FROM cart_items LIMIT 1');
+            logger.info('✅ cart_items table exists');
+        } catch (error) {
+            if (error.code === '42P01') {
+                // relation does not exist
+                logger.warn('⚠️  cart_items table not found, creating now...');
+                await pool.query(`
+                    CREATE TABLE IF NOT EXISTS cart_items (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                        product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+                        quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+                        is_selected BOOLEAN DEFAULT TRUE,
+                        is_liked BOOLEAN DEFAULT FALSE,
+                        created_at TIMESTAMP DEFAULT NOW(),
+                        updated_at TIMESTAMP DEFAULT NOW(),
+                        UNIQUE(user_id, product_id)
+                    );
+
+                    CREATE INDEX IF NOT EXISTS idx_cart_items_user_id ON cart_items(user_id);
+                    CREATE INDEX IF NOT EXISTS idx_cart_items_product_id ON cart_items(product_id);
+                    CREATE INDEX IF NOT EXISTS idx_cart_items_is_selected ON cart_items(is_selected) WHERE is_selected = TRUE;
+
+                    CREATE OR REPLACE FUNCTION update_cart_items_updated_at()
+                    RETURNS TRIGGER AS $$
+                    BEGIN
+                        NEW.updated_at = NOW();
+                        RETURN NEW;
+                    END;
+                    $$ LANGUAGE plpgsql;
+
+                    CREATE TRIGGER cart_items_updated_at_trigger
+                        BEFORE UPDATE ON cart_items
+                        FOR EACH ROW
+                        EXECUTE FUNCTION update_cart_items_updated_at();
+                `);
+                logger.info('✅ cart_items table created successfully');
+            } else {
+                throw error;
+            }
+        }
+
         // Bot'ni ishga tushirish
         logger.info('🤖 Initializing Telegram bot...');
         await botService.initialize();
