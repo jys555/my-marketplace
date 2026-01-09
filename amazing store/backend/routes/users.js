@@ -19,9 +19,9 @@ router.post('/validate', authenticate, async (req, res, next) => {
             // User exists, send back their data
             const user = userResult.rows[0];
             
-            // REFACTORED: Get favorites from user_favorites table
+            // Get favorites from favorites table
             const favoritesResult = await pool.query(
-                'SELECT product_id FROM user_favorites WHERE user_id = $1 ORDER BY created_at DESC',
+                'SELECT product_id FROM favorites WHERE user_id = $1 ORDER BY created_at DESC',
                 [user.id]
             );
             user.favorites = favoritesResult.rows.map(row => row.product_id);
@@ -228,9 +228,9 @@ router.put('/profile', authenticate, async (req, res, next) => {
             );
             const user = updatedUser.rows[0];
             
-            // REFACTORED: Get favorites from user_favorites table
+            // Get favorites from favorites table
             const favoritesResult = await pool.query(
-                'SELECT product_id FROM user_favorites WHERE user_id = $1 ORDER BY created_at DESC',
+                'SELECT product_id FROM favorites WHERE user_id = $1 ORDER BY created_at DESC',
                 [user.id]
             );
             user.favorites = favoritesResult.rows.map(row => row.product_id);
@@ -307,7 +307,7 @@ router.put('/cart', authenticate, async (req, res, next) => {
     }
 });
 
-// REFACTORED: Get user favorites (from user_favorites table)
+// Get user favorites (from favorites table)
 router.get('/favorites', authenticate, async (req, res, next) => {
     if (!req.userId) {
         return res.status(403).json({ error: 'User not registered' });
@@ -315,7 +315,7 @@ router.get('/favorites', authenticate, async (req, res, next) => {
 
     try {
         const result = await pool.query(
-            `SELECT product_id FROM user_favorites 
+            `SELECT product_id FROM favorites 
              WHERE user_id = $1 
              ORDER BY created_at DESC`,
             [req.userId]
@@ -330,7 +330,7 @@ router.get('/favorites', authenticate, async (req, res, next) => {
     }
 });
 
-// REFACTORED: Update favorites (sync with user_favorites table)
+// Update favorites (sync with favorites table)
 router.put('/favorites', authenticate, async (req, res, next) => {
     if (!req.userId) {
         return res.status(403).json({ error: 'User not registered' });
@@ -358,7 +358,7 @@ router.put('/favorites', authenticate, async (req, res, next) => {
 
     try {
         // Delete all current favorites
-        await pool.query('DELETE FROM user_favorites WHERE user_id = $1', [req.userId]);
+        await pool.query('DELETE FROM favorites WHERE user_id = $1', [req.userId]);
         
         // Insert new favorites
         if (favorites.length > 0) {
@@ -367,7 +367,7 @@ router.put('/favorites', authenticate, async (req, res, next) => {
             ).join(', ');
             
             await pool.query(
-                `INSERT INTO user_favorites (user_id, product_id) VALUES ${values}`,
+                `INSERT INTO favorites (user_id, product_id) VALUES ${values}`,
                 [req.userId, ...favorites]
             );
         }
@@ -380,7 +380,7 @@ router.put('/favorites', authenticate, async (req, res, next) => {
     }
 });
 
-// REFACTORED: Add single favorite
+// Add single favorite
 router.post('/favorites/:productId', authenticate, async (req, res, next) => {
     if (!req.userId) {
         return res.status(403).json({ error: 'User not registered' });
@@ -393,7 +393,7 @@ router.post('/favorites/:productId', authenticate, async (req, res, next) => {
 
     try {
         await pool.query(
-            `INSERT INTO user_favorites (user_id, product_id) 
+            `INSERT INTO favorites (user_id, product_id) 
              VALUES ($1, $2) 
              ON CONFLICT (user_id, product_id) DO NOTHING`,
             [req.userId, productId]
@@ -407,7 +407,7 @@ router.post('/favorites/:productId', authenticate, async (req, res, next) => {
     }
 });
 
-// REFACTORED: Remove single favorite
+// Remove single favorite
 router.delete('/favorites/:productId', authenticate, async (req, res, next) => {
     if (!req.userId) {
         return res.status(403).json({ error: 'User not registered' });
@@ -420,7 +420,7 @@ router.delete('/favorites/:productId', authenticate, async (req, res, next) => {
 
     try {
         await pool.query(
-            'DELETE FROM user_favorites WHERE user_id = $1 AND product_id = $2',
+            'DELETE FROM favorites WHERE user_id = $1 AND product_id = $2',
             [req.userId, productId]
         );
         

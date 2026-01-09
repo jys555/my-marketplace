@@ -82,7 +82,8 @@ router.get('/', authenticate, async (req, res, next) => {
             `
             SELECT
                 o.id, o.order_number, o.status, o.created_at, o.updated_at,
-                o.total_amount, o.payment_method, o.delivery_method,
+                o.subtotal, o.delivery_fee, o.total,
+                o.payment_status,
                 json_agg(json_build_object('product_id', oi.product_id, 'quantity', oi.quantity, 'price', oi.price)) as items
             FROM orders o
             LEFT JOIN order_items oi ON o.id = oi.order_id

@@ -22,8 +22,7 @@ router.get('/', authenticate, async (req, res, next) => {
                 ci.id,
                 ci.product_id,
                 ci.quantity,
-                ci.is_selected,
-                ci.is_liked,
+                ci.price_snapshot,
                 ci.created_at,
                 p.name_uz,
                 p.name_ru,
@@ -40,10 +39,8 @@ router.get('/', authenticate, async (req, res, next) => {
 
         // Calculate totals
         const items = result.rows;
-        const selectedItems = items.filter(item => item.is_selected);
-        const totalSelectedCount = selectedItems.length;
-        const totalAmount = selectedItems.reduce((sum, item) => {
-            const price = item.sale_price || item.price;
+        const totalAmount = items.reduce((sum, item) => {
+            const price = item.price_snapshot || item.sale_price || item.price;
             return sum + (price * item.quantity);
         }, 0);
 
@@ -57,7 +54,6 @@ router.get('/', authenticate, async (req, res, next) => {
             items,
             summary: {
                 totalItems: items.length,
-                totalSelectedItems: totalSelectedCount,
                 totalAmount: Number(totalAmount).toFixed(2),
             },
         });
@@ -93,16 +89,24 @@ router.post('/', authenticate, async (req, res, next) => {
             return res.status(404).json({ error: 'Product not found' });
         }
 
+        // Get current price for price_snapshot
+        const priceResult = await db.query(
+            'SELECT COALESCE(sale_price, price) as current_price FROM products WHERE id = $1',
+            [product_id]
+        );
+        const priceSnapshot = priceResult.rows[0]?.current_price || 0;
+
         // Upsert (insert or update)
         const result = await db.query(
-            `INSERT INTO cart_items (user_id, product_id, quantity, is_selected)
-            VALUES ($1, $2, $3, TRUE)
+            `INSERT INTO cart_items (user_id, product_id, quantity, price_snapshot)
+            VALUES ($1, $2, $3, $4)
             ON CONFLICT (user_id, product_id)
             DO UPDATE SET 
                 quantity = EXCLUDED.quantity,
+                price_snapshot = EXCLUDED.price_snapshot,
                 updated_at = NOW()
             RETURNING *`,
-            [userId, product_id, quantity]
+            [userId, product_id, quantity, priceSnapshot]
         );
 
         logger.info('Product added to cart', {
@@ -127,52 +131,30 @@ router.post('/', authenticate, async (req, res, next) => {
 
 /**
  * PATCH /api/cart/:id
- * Savat elementini yangilash (quantity, is_selected, is_liked)
- * Body: { quantity?, is_selected?, is_liked? }
+ * Savat elementini yangilash (quantity only)
+ * Body: { quantity }
  */
 router.patch('/:id', authenticate, async (req, res, next) => {
     try {
         const userId = req.userId;
         const cartItemId = req.params.id;
-        const { quantity, is_selected, is_liked } = req.body;
+        const { quantity } = req.body;
 
-        // Build update query dynamically
-        const updates = [];
-        const values = [userId, cartItemId];
-        let paramIndex = 3;
-
-        if (quantity !== undefined) {
-            if (quantity < 1) {
-                return res.status(400).json({ error: 'Quantity must be at least 1' });
-            }
-            updates.push(`quantity = $${paramIndex++}`);
-            values.push(quantity);
+        if (quantity === undefined) {
+            return res.status(400).json({ error: 'Quantity is required' });
         }
 
-        if (is_selected !== undefined) {
-            updates.push(`is_selected = $${paramIndex++}`);
-            values.push(is_selected);
+        if (quantity < 1) {
+            return res.status(400).json({ error: 'Quantity must be at least 1' });
         }
 
-        if (is_liked !== undefined) {
-            updates.push(`is_liked = $${paramIndex++}`);
-            values.push(is_liked);
-        }
-
-        if (updates.length === 0) {
-            return res.status(400).json({ error: 'No fields to update' });
-        }
-
-        updates.push(`updated_at = NOW()`);
-
-        const query = `
-            UPDATE cart_items
-            SET ${updates.join(', ')}
+        const result = await db.query(
+            `UPDATE cart_items
+            SET quantity = $3, updated_at = NOW()
             WHERE id = $2 AND user_id = $1
-            RETURNING *
-        `;
-
-        const result = await db.query(query, values);
+            RETURNING *`,
+            [userId, cartItemId, quantity]
+        );
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Cart item not found' });
@@ -182,7 +164,7 @@ router.patch('/:id', authenticate, async (req, res, next) => {
             service: 'amazing-store-backend',
             userId,
             cartItemId,
-            updates: { quantity, is_selected, is_liked },
+            quantity,
         });
 
         res.json({
@@ -256,48 +238,6 @@ router.delete('/', authenticate, async (req, res, next) => {
         });
     } catch (error) {
         logger.error('Error clearing cart', {
-            service: 'amazing-store-backend',
-            error: error.message,
-        });
-        next(error);
-    }
-});
-
-/**
- * PATCH /api/cart/select-all
- * Barcha mahsulotlarni tanlash/bekor qilish
- * Body: { is_selected: boolean }
- */
-router.patch('/select-all', authenticate, async (req, res, next) => {
-    try {
-        const userId = req.userId;
-        const { is_selected } = req.body;
-
-        if (is_selected === undefined) {
-            return res.status(400).json({ error: 'is_selected field is required' });
-        }
-
-        const result = await db.query(
-            `UPDATE cart_items 
-            SET is_selected = $1, updated_at = NOW()
-            WHERE user_id = $2
-            RETURNING id`,
-            [is_selected, userId]
-        );
-
-        logger.info('Select all cart items', {
-            service: 'amazing-store-backend',
-            userId,
-            isSelected: is_selected,
-            updatedCount: result.rowCount,
-        });
-
-        res.json({
-            message: is_selected ? 'All items selected' : 'All items deselected',
-            updatedCount: result.rowCount,
-        });
-    } catch (error) {
-        logger.error('Error updating select all', {
             service: 'amazing-store-backend',
             error: error.message,
         });
