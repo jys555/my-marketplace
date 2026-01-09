@@ -5,6 +5,10 @@
 -- Bu migration products table'ga yangi columnlar qo'shadi
 -- Best practice: stock tracking, renamed price fields
 
+-- CRITICAL: Drop price tracking trigger before renaming columns
+DROP TRIGGER IF EXISTS track_product_price_changes ON products;
+DROP FUNCTION IF EXISTS track_price_change();
+
 -- Add stock_quantity column if not exists
 DO $$
 BEGIN
@@ -64,6 +68,33 @@ CREATE INDEX IF NOT EXISTS idx_products_active_stock ON products(is_active, stoc
 COMMENT ON COLUMN products.stock_quantity IS 'Current stock quantity (0 = out of stock)';
 COMMENT ON COLUMN products.current_price IS 'Current selling price (denormalized for performance)';
 COMMENT ON COLUMN products.current_sale_price IS 'Current sale/discount price (NULL if not on sale)';
+
+-- Recreate price tracking trigger with NEW column names
+CREATE OR REPLACE FUNCTION track_price_change()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Agar current_price yoki current_sale_price o'zgarsa
+    IF (OLD.current_price IS DISTINCT FROM NEW.current_price) OR 
+       (OLD.current_sale_price IS DISTINCT FROM NEW.current_sale_price) THEN
+        -- Eski price'ni close qilish
+        UPDATE price_history
+        SET effective_to = NOW()
+        WHERE product_id = NEW.id AND effective_to IS NULL;
+        
+        -- Yangi price'ni qo'shish
+        INSERT INTO price_history (product_id, price, sale_price, effective_from)
+        VALUES (NEW.id, NEW.current_price, NEW.current_sale_price, NOW());
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Recreate trigger
+CREATE TRIGGER track_product_price_changes
+    AFTER UPDATE ON products
+    FOR EACH ROW
+    EXECUTE FUNCTION track_price_change();
 
 -- Set default stock for existing products
 DO $$

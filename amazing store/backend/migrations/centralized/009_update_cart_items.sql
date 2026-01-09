@@ -35,7 +35,14 @@ RETURNS TRIGGER AS $$
 BEGIN
     -- Agar price_snapshot NULL bo'lsa, product'dan olish
     IF NEW.price_snapshot IS NULL THEN
-        SELECT COALESCE(sale_price, price)
+        -- UPDATED: Use new column names (current_price, current_sale_price)
+        -- Fallback to old names for backward compatibility during migration
+        SELECT COALESCE(
+            current_sale_price, 
+            current_price,
+            sale_price, 
+            price
+        )
         INTO NEW.price_snapshot
         FROM products
         WHERE id = NEW.product_id;
