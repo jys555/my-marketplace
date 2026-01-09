@@ -537,8 +537,11 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
     executed_at TIMESTAMP DEFAULT NOW()
 );
 
--- Mark this migration as executed
-INSERT INTO schema_migrations (version, name) VALUES (0, '000_RESET_DATABASE.sql');
+-- Mark this migration as executed (idempotent)
+INSERT INTO schema_migrations (version, name, executed_at) 
+VALUES (0, '000_RESET_DATABASE.sql', NOW())
+ON CONFLICT (version) DO UPDATE 
+SET executed_at = NOW(), name = EXCLUDED.name;
 
 -- ============================================
 -- MIGRATION COMPLETE
