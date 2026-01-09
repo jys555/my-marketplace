@@ -14,7 +14,10 @@
 -- STEP 1: DROP ALL EXISTING TABLES
 -- ============================================
 
--- Drop tables in correct order (respecting foreign keys)
+-- CRITICAL: Drop schema_migrations FIRST to reset migration tracking
+DROP TABLE IF EXISTS schema_migrations CASCADE;
+
+-- Drop all tables (CASCADE handles foreign keys automatically)
 DROP TABLE IF EXISTS marketplace_webhooks CASCADE;
 DROP TABLE IF EXISTS sync_logs CASCADE;
 DROP TABLE IF EXISTS inventory_movements CASCADE;
@@ -34,7 +37,6 @@ DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS marketplaces CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
-DROP TABLE IF EXISTS schema_migrations CASCADE;
 
 -- Drop functions and triggers
 DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
