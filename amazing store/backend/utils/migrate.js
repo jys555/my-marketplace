@@ -132,15 +132,22 @@ function createInlineRunner() {
 
                     const version = parseInt(versionMatch[1]);
 
-                    const { rows } = await pool.query(
-                        'SELECT version FROM schema_migrations WHERE version = $1',
-                        [version]
-                    );
+                    // Special handling for RESET migration (000_RESET_DATABASE.sql)
+                    const isResetMigration = file === '000_RESET_DATABASE.sql';
+                    
+                    if (!isResetMigration) {
+                        const { rows } = await pool.query(
+                            'SELECT version FROM schema_migrations WHERE version = $1',
+                            [version]
+                        );
 
-                    if (rows.length > 0) {
-                        logger.info(`⏭️  Migration ${file} already applied (version ${version})`);
-                        skipped++;
-                        continue;
+                        if (rows.length > 0) {
+                            logger.info(`⏭️  Migration ${file} already applied (version ${version})`);
+                            skipped++;
+                            continue;
+                        }
+                    } else {
+                        logger.warn(`🔄 RESET MIGRATION DETECTED - Will run regardless of tracking`);
                     }
 
                     logger.info(`🔄 Running migration: ${file} (version ${version})`);
@@ -150,8 +157,20 @@ function createInlineRunner() {
                     try {
                         await client.query('BEGIN');
                         await client.query(sql);
+                        
+                        // For reset migrations, recreate schema_migrations table
+                        if (isResetMigration) {
+                            await client.query(`
+                                CREATE TABLE IF NOT EXISTS schema_migrations (
+                                    version INTEGER PRIMARY KEY,
+                                    name VARCHAR(255) NOT NULL,
+                                    applied_at TIMESTAMP DEFAULT NOW()
+                                );
+                            `);
+                        }
+                        
                         await client.query(
-                            'INSERT INTO schema_migrations (version, name) VALUES ($1, $2)',
+                            'INSERT INTO schema_migrations (version, name) VALUES ($1, $2) ON CONFLICT (version) DO NOTHING',
                             [version, file]
                         );
                         await client.query('COMMIT');
