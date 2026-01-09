@@ -277,17 +277,67 @@ router.post(
                 totalAmount += price * item.quantity;
             }
 
-            const orderNumber = `${Date.now()}-${userId}`;
+            const orderNumber = `AS-${Date.now()}`;
+
+            // Get user info for customer details
+            const { rows: userRows } = await client.query(
+                'SELECT first_name, last_name, phone FROM users WHERE id = $1',
+                [userId]
+            );
+            
+            if (userRows.length === 0) {
+                throw new Error('User not found');
+            }
+            
+            const user = userRows[0];
+            const customerName = `${user.first_name} ${user.last_name || ''}`.trim();
+            const customerPhone = user.phone || '';
+            
+            // Get or create Amazing Store marketplace
+            let { rows: marketplaceRows } = await client.query(
+                'SELECT id FROM marketplaces WHERE name_en = $1',
+                ['Amazing Store']
+            );
+            
+            let marketplaceId;
+            if (marketplaceRows.length === 0) {
+                // Create Amazing Store marketplace
+                const { rows: newMarketplace } = await client.query(
+                    `INSERT INTO marketplaces (name_uz, name_ru, name_en, type, is_active) 
+                     VALUES ($1, $2, $3, $4, $5) 
+                     RETURNING id`,
+                    ['Amazing Store', 'Amazing Store', 'Amazing Store', 'own', true]
+                );
+                marketplaceId = newMarketplace[0].id;
+            } else {
+                marketplaceId = marketplaceRows[0].id;
+            }
+            
+            // Calculate delivery fee (you can make this dynamic later)
+            const deliveryFee = 0; // Free delivery for now
+            const subtotal = totalAmount;
+            const total = subtotal + deliveryFee;
 
             const { rows: orderRows } = await client.query(
-                'INSERT INTO orders (user_id, total_amount, status, payment_method, delivery_method, order_number, updated_at) VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING id',
+                `INSERT INTO orders (
+                    order_number, marketplace_id, user_id, 
+                    customer_name, customer_phone, 
+                    subtotal, delivery_fee, total, 
+                    status, payment_status, payment_method
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+                RETURNING id`,
                 [
-                    userId,
-                    totalAmount.toFixed(2),
-                    'new',
-                    payment_method,
-                    delivery_method,
                     orderNumber,
+                    marketplaceId,
+                    userId,
+                    customerName,
+                    customerPhone,
+                    subtotal.toFixed(2),
+                    deliveryFee.toFixed(2),
+                    total.toFixed(2),
+                    'pending',
+                    'unpaid',
+                    payment_method || 'cash'
                 ]
             );
             const orderId = orderRows[0].id;
@@ -303,48 +353,43 @@ router.post(
 
             await client.query('COMMIT');
 
-            // Database'dan saqlangan total_amount'ni olish (string formatda)
-            const savedTotalAmount = totalAmount.toFixed(2);
-
             // Response'ni darhol qaytarish (transaction muvaffaqiyatli yakunlandi)
             res.status(201).json({
                 id: orderId,
-                status: 'new',
-                total_amount: parseFloat(savedTotalAmount), // Number formatda, lekin database'dagi qiymat bilan mos
+                order_number: orderNumber,
+                status: 'pending',
+                subtotal: parseFloat(subtotal.toFixed(2)),
+                delivery_fee: parseFloat(deliveryFee.toFixed(2)),
+                total: parseFloat(total.toFixed(2)),
             });
 
             // Bot xabarlarini transaction'dan KEYIN yuborish (non-blocking, async)
             // Bu xatolik bo'lsa ham buyurtma allaqachon yaratilgan bo'ladi
             setImmediate(async () => {
                 try {
-                    // Mijoz ma'lumotlarini olish (transaction'dan keyin, alohida query)
-                    const { rows: userRows } = await pool.query(
-                        'SELECT first_name, last_name, phone, telegram_id FROM users WHERE id = $1',
+                    // Admin'ga yangi buyurtma xabari
+                    await botService.notifyAdminNewOrder({
+                        order_number: orderNumber,
+                        total_amount: total.toFixed(2),
+                        user_name: customerName,
+                        user_phone: customerPhone,
+                    });
+
+                    // Mijozga tasdiqlash xabari
+                    const { rows: userTgRows } = await pool.query(
+                        'SELECT telegram_id FROM users WHERE id = $1',
                         [userId]
                     );
-
-                    if (userRows.length > 0) {
-                        const user = userRows[0];
-
-                        // Admin'ga yangi buyurtma xabari
-                        await botService.notifyAdminNewOrder({
-                            order_number: orderNumber,
-                            total_amount: savedTotalAmount,
-                            user_name: `${user.first_name} ${user.last_name || ''}`.trim(),
-                            user_phone: user.phone || 'N/A',
-                        });
-
-                        // Mijozga tasdiqlash xabari
-                        if (user.telegram_id) {
-                            await botService.notifyCustomerOrderStatus(
-                                {
-                                    order_number: orderNumber,
-                                    status: 'new',
-                                    total_amount: savedTotalAmount,
-                                },
-                                user.telegram_id
-                            );
-                        }
+                    
+                    if (userTgRows.length > 0 && userTgRows[0].telegram_id) {
+                        await botService.notifyCustomerOrderStatus(
+                            {
+                                order_number: orderNumber,
+                                status: 'pending',
+                                total_amount: total.toFixed(2),
+                            },
+                            userTgRows[0].telegram_id
+                        );
                     }
                 } catch (botError) {
                     logger.error('Bot notification error (non-critical):', botError);
