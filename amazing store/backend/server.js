@@ -83,7 +83,7 @@ app.use(
             // Telegram Mini Apps often don't send Origin header, so we allow it
             if (!origin) {
                 logger.debug('CORS: Allowing request without origin (Telegram Mini App or same-origin)');
-                return callback(null, true);
+                    return callback(null, true);
             }
 
             // Allowed origins ro'yxatida bo'lsa, ruxsat berish
