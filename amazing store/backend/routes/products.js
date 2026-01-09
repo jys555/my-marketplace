@@ -136,7 +136,7 @@ router.get('/', async (req, res, next) => {
         const total = parseInt(countRows[0].total);
 
         // PERFORMANCE: Faqat kerakli qismni olish (LIMIT/OFFSET)
-        // REFACTORED: Using current_price/current_sale_price with alias for backward compatibility
+        // JOIN with inventory for stock info
         const query = `
             SELECT 
                 p.id,
@@ -148,14 +148,15 @@ router.get('/', async (req, res, next) => {
                     WHEN $1 = 'ru' THEN COALESCE(NULLIF(p.description_ru, ''), p.description_uz)
                     ELSE p.description_uz 
                 END as description,
-                COALESCE(p.current_price, p.price, 0) AS price, 
-                COALESCE(p.current_sale_price, p.sale_price) AS sale_price, 
+                p.price, 
+                p.sale_price, 
                 p.image_url AS image,
                 p.category_id,
                 p.sku,
-                p.stock_quantity,
-                COALESCE(p.current_sale_price, p.sale_price, p.current_price, p.price, 0) AS display_price
+                COALESCE(i.quantity, 0) AS stock_quantity,
+                COALESCE(p.sale_price, p.price, 0) AS display_price
             FROM products p
+            LEFT JOIN inventory i ON i.product_id = p.id
             ${whereClause}
             ORDER BY p.created_at DESC
             LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
