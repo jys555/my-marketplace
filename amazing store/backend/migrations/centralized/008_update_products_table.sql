@@ -66,9 +66,12 @@ COMMENT ON COLUMN products.current_price IS 'Current selling price (denormalized
 COMMENT ON COLUMN products.current_sale_price IS 'Current sale/discount price (NULL if not on sale)';
 
 -- Set default stock for existing products
-UPDATE products 
-SET stock_quantity = 100 
-WHERE stock_quantity IS NULL OR stock_quantity = 0;
-
-RAISE NOTICE '🎉 Products table updated successfully!';
+DO $$
+BEGIN
+    UPDATE products 
+    SET stock_quantity = 100 
+    WHERE stock_quantity IS NULL OR stock_quantity = 0;
+    
+    RAISE NOTICE '🎉 Products table updated successfully!';
+END $$;
 

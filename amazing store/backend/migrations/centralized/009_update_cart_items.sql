@@ -52,5 +52,8 @@ CREATE TRIGGER set_cart_item_price
     FOR EACH ROW
     EXECUTE FUNCTION set_cart_price_snapshot();
 
-RAISE NOTICE '🎉 Cart items table updated successfully!';
+DO $$
+BEGIN
+    RAISE NOTICE '🎉 Cart items table updated successfully!';
+END $$;
 

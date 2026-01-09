@@ -35,12 +35,16 @@ END $$;
 
 -- Drop product_prices table if exists (no longer needed)
 DROP TABLE IF EXISTS product_prices CASCADE;
-RAISE NOTICE '✅ Dropped product_prices table if existed';
 
 -- Drop product_analytics table if exists (can be recreated with better structure later)
 DROP TABLE IF EXISTS product_analytics CASCADE;
-RAISE NOTICE '✅ Dropped product_analytics table if existed';
 
-RAISE NOTICE '🎉 Database cleanup completed successfully!';
-RAISE NOTICE '📊 New structure: user_favorites, price_history, cart_items with price_snapshot';
+-- Final success message
+DO $$
+BEGIN
+    RAISE NOTICE '✅ Dropped product_prices table if existed';
+    RAISE NOTICE '✅ Dropped product_analytics table if existed';
+    RAISE NOTICE '🎉 Database cleanup completed successfully!';
+    RAISE NOTICE '📊 New structure: user_favorites, price_history, cart_items with price_snapshot';
+END $$;
 
