@@ -19,6 +19,7 @@ const metricsMiddleware = require('./middleware/metrics');
 // Routes
 const marketplaceRoutes = require('./routes/marketplaces');
 const productRoutes = require('./routes/products');
+const bannersRoutes = require('./routes/banners');
 const priceRoutes = require('./routes/prices');
 const purchaseRoutes = require('./routes/purchases');
 const inventoryRoutes = require('./routes/inventory');
@@ -104,6 +105,7 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 // API routes
 app.use('/api/seller/marketplaces', authenticate, isAdmin, marketplaceRoutes);
 app.use('/api/seller/products', authenticate, isAdmin, productRoutes);
+app.use('/api/seller/banners', authenticate, isAdmin, bannersRoutes);
 app.use('/api/seller/prices', authenticate, isAdmin, priceRoutes);
 app.use('/api/seller/purchases', authenticate, isAdmin, purchaseRoutes);
 app.use('/api/seller/inventory', authenticate, isAdmin, inventoryRoutes);

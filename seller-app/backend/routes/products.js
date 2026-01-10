@@ -332,80 +332,71 @@ router.get('/:id', async (req, res) => {
 router.post(
     '/',
     validateBody({
+        sku: required(string),
+        barcode: optional(string),
         name_uz: required(string),
         name_ru: optional(string),
         description_uz: optional(string),
         description_ru: optional(string),
+        category_id: optional(integer),
         price: required(positive),
         sale_price: optional(positive),
+        cost_price: optional(positive),
         image_url: optional(url),
-        category_id: optional(integer),
-        sku: optional(string),
         is_active: optional(boolean),
     }),
     async (req, res, next) => {
         try {
             const {
+                sku,
+                barcode,
                 name_uz,
                 name_ru,
                 description_uz,
                 description_ru,
+                category_id,
                 price,
                 sale_price,
+                cost_price,
                 image_url,
-                category_id,
-                sku,
-                is_active,
+                is_active = true,
             } = req.body;
 
-            // SKU majburiy, agar berilmagan bo'lsa avtomatik generatsiya qilish
-            let finalSku = sku;
-            if (!finalSku || finalSku.trim() === '') {
-                // Avtomatik SKU generatsiya qilish
-                const timestamp = Date.now();
-                finalSku = `PROD-${timestamp}`;
-
-                // SKU unique bo'lishini tekshirish
-                let counter = 1;
-                while (true) {
-                    const { rows: existing } = await pool.query(
-                        'SELECT id FROM products WHERE sku = $1',
-                        [finalSku]
-                    );
-                    if (existing.length === 0) {
-                        break;
-                    }
-                    finalSku = `PROD-${timestamp}-${counter}`;
-                    counter++;
-                }
+            // Check if SKU already exists
+            const { rows: existing } = await pool.query(
+                'SELECT id FROM products WHERE sku = $1',
+                [sku]
+            );
+            
+            if (existing.length > 0) {
+                return res.status(409).json({ error: 'SKU allaqachon mavjud' });
             }
 
             const { rows } = await pool.query(
-                `
-            INSERT INTO products (name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, is_active, sku)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING id, name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, is_active, sku, created_at
-        `,
+                `INSERT INTO products (
+                    sku, barcode, name_uz, name_ru, description_uz, description_ru,
+                    category_id, price, sale_price, cost_price, image_url, is_active
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                RETURNING *`,
                 [
+                    sku,
+                    barcode || null,
                     name_uz,
                     name_ru || null,
                     description_uz || null,
                     description_ru || null,
+                    category_id || null,
                     price,
                     sale_price || null,
+                    cost_price || null,
                     image_url || null,
-                    category_id || null,
-                    true,
-                    finalSku,
+                    is_active,
                 ]
             );
 
-            // ID'ni yashirish (frontend uchun SKU asosiy identifier)
-            const { id, ...rest } = rows[0];
-            res.status(201).json({
-                ...rest,
-                _id: id, // Yashirilgan ID (ichki ishlatish uchun)
-            });
+            logger.info('✅ Product created:', { sku, name_uz });
+            res.status(201).json(rows[0]);
         } catch (error) {
             if (error.code === '23505') {
                 // Unique violation
