@@ -105,9 +105,9 @@ router.get('/profile', authenticate, async (req, res, next) => {
         if (user.rows.length > 0) {
             const userProfile = user.rows[0];
             
-            // REFACTORED: Get favorites from user_favorites table
+            // REFACTORED: Get favorites from favorites table
             const favoritesResult = await pool.query(
-                'SELECT product_id FROM user_favorites WHERE user_id = $1 ORDER BY created_at DESC',
+                'SELECT product_id FROM favorites WHERE user_id = $1 ORDER BY created_at DESC',
                 [req.userId]
             );
             userProfile.favorites = favoritesResult.rows.map(row => row.product_id);
