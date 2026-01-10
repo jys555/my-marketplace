@@ -29,6 +29,8 @@ SELECT setval('categories_id_seq', (SELECT MAX(id) FROM categories));
 -- 2. Insert Amazing Store marketplace (if not exists)
 INSERT INTO marketplaces (
     name,
+    slug,
+    integration_type,
     api_type,
     marketplace_code,
     webhook_url,
@@ -41,6 +43,8 @@ INSERT INTO marketplaces (
 )
 VALUES (
     'AMAZING_STORE',
+    'amazing-store',
+    'own_platform',
     'amazing_store',
     '202049831',
     NULL,
@@ -52,6 +56,8 @@ VALUES (
     0.0
 )
 ON CONFLICT (name) DO UPDATE SET
+    slug = EXCLUDED.slug,
+    integration_type = EXCLUDED.integration_type,
     api_type = EXCLUDED.api_type,
     marketplace_code = EXCLUDED.marketplace_code,
     supports_stock_sync = EXCLUDED.supports_stock_sync,
