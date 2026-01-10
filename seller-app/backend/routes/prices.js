@@ -116,12 +116,12 @@ router.get('/', async (req, res) => {
         if (columnExists) {
             selectFields += ', pp.profitability_percentage';
         } else {
-            selectFields += ', 
+            selectFields += `, 
                 CASE 
                     WHEN pp.selling_price > 0 
                     THEN ((pp.selling_price - pp.cost_price - (pp.selling_price * COALESCE(pp.commission_rate, 0) / 100)) / pp.selling_price * 100)
                     ELSE NULL 
-                END as profitability_percentage';
+                END as profitability_percentage`;
         }
 
         selectFields += ', pp.updated_at';
@@ -186,12 +186,12 @@ router.get('/:id', async (req, res) => {
         if (columnExists) {
             selectFields += ', pp.profitability_percentage';
         } else {
-            selectFields += ', 
+            selectFields += `, 
                 CASE 
                     WHEN pp.selling_price > 0 
                     THEN ((pp.selling_price - pp.cost_price - (pp.selling_price * COALESCE(pp.commission_rate, 0) / 100)) / pp.selling_price * 100)
                     ELSE NULL 
-                END as profitability_percentage';
+                END as profitability_percentage`;
         }
 
         selectFields += ', pp.updated_at';
