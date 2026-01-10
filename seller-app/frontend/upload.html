@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tovar va Banner yuklash - Seller App</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Upload page specific styles */
+        .upload-page {
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .upload-page-header {
+            margin-bottom: 30px;
+        }
+
+        .upload-page-header h1 {
+            font-size: 32px;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+
+        .upload-page-header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .upload-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .upload-tab {
+            padding: 15px 30px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-tab:hover {
+            color: #4A90E2;
+        }
+
+        .upload-tab.active {
+            color: #4A90E2;
+            border-bottom-color: #4A90E2;
+        }
+
+        .upload-content {
+            display: none;
+        }
+
+        .upload-content.active {
+            display: block;
+        }
+
+        .upload-form {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .form-section {
+            margin-bottom: 40px;
+        }
+
+        .form-section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-group label.required::after {
+            content: ' *';
+            color: #ff4444;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4A90E2;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #4A90E2;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #357ABD;
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Conditional fields */
+        .conditional-field {
+            display: none;
+        }
+
+        .conditional-field.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="upload-page">
+        <!-- Header -->
+        <div class="upload-page-header">
+            <h1>📦 Tovar va Banner yuklash</h1>
+            <p>Amazing Store uchun yangi tovar yoki banner qo'shing</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="upload-tabs">
+            <button class="upload-tab active" data-tab="product">
+                📦 Tovar yuklash
+            </button>
+            <button class="upload-tab" data-tab="banner">
+                🎨 Banner yuklash
+            </button>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <div id="success-message" class="success-message"></div>
+        <div id="error-message" class="error-message"></div>
+
+        <!-- Product Upload Content -->
+        <div id="product-upload" class="upload-content active">
+            <form id="product-form" class="upload-form">
+                <!-- Basic Information -->
+                <div class="form-section">
+                    <h2 class="form-section-title">Asosiy ma'lumotlar</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="product-sku" class="required">SKU</label>
+                            <input type="text" id="product-sku" name="sku" required placeholder="PROD-001">
+                            <small>Tovarning noyob identifikatori</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="product-barcode">Barcode</label>
+                            <input type="text" id="product-barcode" name="barcode" placeholder="4607097753947">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Names & Descriptions -->
+                <div class="form-section">
+                    <h2 class="form-section-title">Nomlar va tavsiflar</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="product-name-uz" class="required">Nomi (O'zbekcha)</label>
+                            <input type="text" id="product-name-uz" name="name_uz" required placeholder="Samsung Galaxy S24">
+                        </div>
+                        <div class="form-group">
+                            <label for="product-name-ru">Nomi (Ruscha)</label>
+                            <input type="text" id="product-name-ru" name="name_ru" placeholder="Samsung Galaxy S24">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="product-description-uz">Tavsif (O'zbekcha)</label>
+                            <textarea id="product-description-uz" name="description_uz" placeholder="Tovar haqida batafsil ma'lumot..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="product-description-ru">Tavsif (Ruscha)</label>
+                            <textarea id="product-description-ru" name="description_ru" placeholder="Подробное описание товара..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category & Image -->
+                <div class="form-section">
+                    <h2 class="form-section-title">Kategoriya va rasm</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="product-category">Kategoriya</label>
+                            <select id="product-category" name="category_id">
+                                <option value="">Kategoriyani tanlang...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="product-image-url" class="required">Rasm URL</label>
+                            <input type="url" id="product-image-url" name="image_url" required placeholder="https://example.com/image.jpg">
+                            <small>To'g'ridan-to'g'ri URL (HTTPS)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prices -->
+                <div class="form-section">
+                    <h2 class="form-section-title">Narxlar</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="product-price" class="required">Sotish narxi (so'm)</label>
+                            <input type="number" id="product-price" name="price" required min="0" step="1" placeholder="100000">
+                        </div>
+                        <div class="form-group">
+                            <label for="product-sale-price">Chegirma narxi (so'm)</label>
+                            <input type="number" id="product-sale-price" name="sale_price" min="0" step="1" placeholder="85000">
+                        </div>
+                        <div class="form-group">
+                            <label for="product-cost-price">Tannarx (so'm)</label>
+                            <input type="number" id="product-cost-price" name="cost_price" min="0" step="1" placeholder="50000">
+                        </div>
+                        <div class="form-group">
+                            <label for="product-stock">Boshlang'ich qoldiq</label>
+                            <input type="number" id="product-stock" name="initial_stock" min="0" step="1" value="0" placeholder="10">
+                            <small>Ombordagi miqdor</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div class="form-section">
+                    <h2 class="form-section-title">Holat</h2>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="product-is-active" name="is_active" checked>
+                        <label for="product-is-active">Aktiv (sotuvda)</label>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='/catalog.html'">
+                        ❌ Bekor qilish
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        ✅ Tovarni qo'shish
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Banner Upload Content -->
+        <div id="banner-upload" class="upload-content">
+            <form id="banner-form" class="upload-form">
+                <!-- Basic Information -->
+                <div class="form-section">
+                    <h2 class="form-section-title">Asosiy ma'lumotlar</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="banner-title-uz">Sarlavha (O'zbekcha)</label>
+                            <input type="text" id="banner-title-uz" name="title_uz" placeholder="Yangi aksiya!">
+                        </div>
+                        <div class="form-group">
+                            <label for="banner-title-ru">Sarlavha (Ruscha)</label>
+                            <input type="text" id="banner-title-ru" name="title_ru" placeholder="Новая акция!">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="banner-image-url" class="required">Rasm URL</label>
+                        <input type="url" id="banner-image-url" name="image_url" required placeholder="https://example.com/banner.jpg">
+                        <small>Tavsiya etilgan o'lcham: 1200x400px</small>
+                    </div>
+                </div>
+
+                <!-- Link Settings -->
+                <div class="form-section">
+                    <h2 class="form-section-title">Havola sozlamalari</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="banner-link-type">Havola turi</label>
+                            <select id="banner-link-type" name="link_type">
+                                <option value="">Havolasiz</option>
+                                <option value="product">Tovar sahifasi</option>
+                                <option value="category">Kategoriya sahifasi</option>
+                                <option value="url">Tashqi URL</option>
+                            </select>
+                        </div>
+                        <div class="form-group conditional-field" id="banner-link-id-field">
+                            <label for="banner-link-id">Tovar/Kategoriya ID</label>
+                            <input type="number" id="banner-link-id" name="link_id" placeholder="123">
+                        </div>
+                        <div class="form-group conditional-field" id="banner-link-url-field">
+                            <label for="banner-link-url">Tashqi URL</label>
+                            <input type="url" id="banner-link-url" name="link_url" placeholder="https://example.com">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Display Settings -->
+                <div class="form-section">
+                    <h2 class="form-section-title">Ko'rinish sozlamalari</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="banner-sort-order">Tartib raqami</label>
+                            <input type="number" id="banner-sort-order" name="sort_order" value="0" placeholder="0">
+                            <small>Kichik raqam birinchi ko'rinadi</small>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="banner-is-active" name="is_active" checked>
+                            <label for="banner-is-active">Aktiv (ko'rinadi)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='/catalog.html'">
+                        ❌ Bekor qilish
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        ✅ Bannerni qo'shish
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="api.js"></script>
+    <script src="upload-page.js"></script>
+</body>
+</html>
