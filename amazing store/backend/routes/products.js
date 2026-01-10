@@ -112,38 +112,41 @@ router.get('/', async (req, res, next) => {
 
         // PERFORMANCE: WHERE shartlari (category va active uchun)
         const whereConditions = ['p.is_active = true'];
-        const countParams = [];
-        let countParamIndex = 1;
+        const params = [lang];
+        let paramIndex = 2; // $1 = lang, keyingilari $2 dan boshlanadi
 
         // Kategoriya bo'yicha filtrlash
         if (categoryId && !isNaN(categoryId)) {
-            whereConditions.push(`p.category_id = $${countParamIndex}`);
-            countParams.push(categoryId);
-            countParamIndex++;
+            whereConditions.push(`p.category_id = $${paramIndex}`);
+            params.push(categoryId);
+            paramIndex++;
         }
 
         const whereClause =
             whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
         // PERFORMANCE: Total count olish (pagination uchun)
+        // Count query uchun lang kerak emas, faqat category va active
+        const countWhereConditions = ['p.is_active = true'];
+        const countParams = [];
+        let countParamIndex = 1;
+
+        if (categoryId && !isNaN(categoryId)) {
+            countWhereConditions.push(`p.category_id = $${countParamIndex}`);
+            countParams.push(categoryId);
+            countParamIndex++;
+        }
+
+        const countWhereClause =
+            countWhereConditions.length > 0 ? `WHERE ${countWhereConditions.join(' AND ')}` : '';
+
         const countQuery = `
             SELECT COUNT(*) as total
             FROM products p
-            ${whereClause}
+            ${countWhereClause}
         `;
         const { rows: countRows } = await pool.query(countQuery, countParams);
         const total = parseInt(countRows[0].total);
-
-        // Main query params (lang + category + limit + offset)
-        const params = [lang];
-        let paramIndex = 2; // $1 = lang, keyingilari $2 dan boshlanadi
-
-        // Kategoriya bo'yicha filtrlash (main query uchun)
-        if (categoryId && !isNaN(categoryId)) {
-            whereConditions.push(`p.category_id = $${paramIndex}`);
-            params.push(categoryId);
-            paramIndex++;
-        }
 
         // PERFORMANCE: Faqat kerakli qismni olish (LIMIT/OFFSET)
         // JOIN with inventory for stock info
