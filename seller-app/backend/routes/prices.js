@@ -105,16 +105,23 @@ router.get('/', async (req, res) => {
             // Continue anyway, but don't select the column
         }
 
+        // Calculate profitability instead of selecting non-existent column
         let selectFields = `
                 pp.id, pp.product_id, pp.marketplace_id,
                 pp.cost_price, pp.selling_price, pp.commission_rate,
-                pp.strikethrough_price, pp.profitability`;
+                pp.strikethrough_price,
+                (pp.selling_price - pp.cost_price - (pp.selling_price * COALESCE(pp.commission_rate, 0) / 100)) as profitability`;
 
         // Only add profitability_percentage if column exists
         if (columnExists) {
             selectFields += ', pp.profitability_percentage';
         } else {
-            selectFields += ', NULL as profitability_percentage';
+            selectFields += ', 
+                CASE 
+                    WHEN pp.selling_price > 0 
+                    THEN ((pp.selling_price - pp.cost_price - (pp.selling_price * COALESCE(pp.commission_rate, 0) / 100)) / pp.selling_price * 100)
+                    ELSE NULL 
+                END as profitability_percentage';
         }
 
         selectFields += ', pp.updated_at';
@@ -168,16 +175,23 @@ router.get('/:id', async (req, res) => {
             );
         }
 
+        // Calculate profitability instead of selecting non-existent column
         let selectFields = `
                 pp.id, pp.product_id, pp.marketplace_id,
                 pp.cost_price, pp.selling_price, pp.commission_rate,
-                pp.strikethrough_price, pp.profitability`;
+                pp.strikethrough_price,
+                (pp.selling_price - pp.cost_price - (pp.selling_price * COALESCE(pp.commission_rate, 0) / 100)) as profitability`;
 
         // Only add profitability_percentage if column exists
         if (columnExists) {
             selectFields += ', pp.profitability_percentage';
         } else {
-            selectFields += ', NULL as profitability_percentage';
+            selectFields += ', 
+                CASE 
+                    WHEN pp.selling_price > 0 
+                    THEN ((pp.selling_price - pp.cost_price - (pp.selling_price * COALESCE(pp.commission_rate, 0) / 100)) / pp.selling_price * 100)
+                    ELSE NULL 
+                END as profitability_percentage';
         }
 
         selectFields += ', pp.updated_at';
@@ -247,16 +261,15 @@ router.post(
 
             // Build query based on whether column exists
             let insertColumns =
-                'product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability';
-            let insertValues = '$1, $2, $3, $4, $5, $6, $7';
+                'product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price';
+            let insertValues = '$1, $2, $3, $4, $5, $6';
             let updateClause = `
                 cost_price = EXCLUDED.cost_price,
                 selling_price = EXCLUDED.selling_price,
                 commission_rate = EXCLUDED.commission_rate,
-                strikethrough_price = EXCLUDED.strikethrough_price,
-                profitability = EXCLUDED.profitability`;
+                strikethrough_price = EXCLUDED.strikethrough_price`;
             let returningClause =
-                'id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, updated_at';
+                'id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, updated_at';
             const params = [
                 product_id,
                 marketplace_id || null,
@@ -264,16 +277,24 @@ router.post(
                 selling_price || null,
                 commission_rate || null,
                 strikethrough_price || null,
-                profitability,
             ];
 
+            // Add profitability if calculated
+            if (profitability !== null) {
+                insertColumns += ', profitability';
+                insertValues += ', $7';
+                updateClause += ', profitability = EXCLUDED.profitability';
+                returningClause = returningClause.replace('updated_at', 'profitability, updated_at');
+                params.push(profitability);
+            }
+
             if (columnExists) {
+                const paramIndex = profitability !== null ? 8 : 7;
                 insertColumns += ', profitability_percentage';
-                insertValues += ', $8';
+                insertValues += `, $${paramIndex}`;
                 updateClause += ', profitability_percentage = EXCLUDED.profitability_percentage';
-                returningClause =
-                    'id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, profitability_percentage, updated_at';
-                params.push(profitabilityPercentage);
+                returningClause = returningClause.replace('updated_at', 'profitability_percentage, updated_at');
+                params.push(profitabilityPercentage || null);
             }
 
             const { rows } = await pool.query(
@@ -362,33 +383,38 @@ router.put(
                 cost_price = COALESCE($1, cost_price),
                 selling_price = COALESCE($2, selling_price),
                 commission_rate = COALESCE($3, commission_rate),
-                strikethrough_price = COALESCE($4, strikethrough_price),
-                profitability = COALESCE($5, profitability)`;
+                strikethrough_price = COALESCE($4, strikethrough_price)`;
             let returningClause =
-                'id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, updated_at';
+                'id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, updated_at';
             let params = [
                 cost_price,
                 selling_price,
                 commission_rate,
                 strikethrough_price,
-                profitability,
                 id,
             ];
 
+            // Add profitability if calculated
+            if (profitability !== null) {
+                updateClause += ', profitability = $5';
+                returningClause = returningClause.replace('updated_at', 'profitability, updated_at');
+                params[params.length - 1] = profitability; // Replace id
+                params.push(id); // Add id back
+            }
+
             if (columnExists) {
-                updateClause +=
-                    ', profitability_percentage = COALESCE($6, profitability_percentage)';
-                returningClause =
-                    'id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, profitability_percentage, updated_at';
-                params = [
-                    cost_price,
-                    selling_price,
-                    commission_rate,
-                    strikethrough_price,
-                    profitability,
-                    profitabilityPercentage,
-                    id,
-                ];
+                const profitabilityParamIndex = profitability !== null ? 6 : 5;
+                updateClause += `, profitability_percentage = COALESCE($${profitabilityParamIndex}, profitability_percentage)`;
+                returningClause = returningClause.replace('updated_at', 'profitability_percentage, updated_at');
+                params[params.length - 1] = profitabilityPercentage || null; // Replace last param
+                if (profitability === null) {
+                    params[params.length - 1] = id; // Keep id
+                    params.push(profitabilityPercentage || null); // Add profitability_percentage
+                    params.push(id); // Add id back
+                } else {
+                    params.push(profitabilityPercentage || null); // Add profitability_percentage
+                    params.push(id); // Add id back
+                }
             }
 
             const { rows } = await pool.query(
