@@ -32,6 +32,13 @@ document.querySelectorAll('.upload-tab').forEach(tab => {
 
 // Load categories on page load
 document.addEventListener('DOMContentLoaded', async () => {
+    // Check authentication first
+    const isAdmin = await checkAdminStatus();
+    if (!isAdmin) {
+        return;
+    }
+    hideAuthError();
+    
     await loadCategories();
     setupConditionalFields();
 });

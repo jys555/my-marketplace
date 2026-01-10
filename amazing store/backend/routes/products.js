@@ -112,14 +112,14 @@ router.get('/', async (req, res, next) => {
 
         // PERFORMANCE: WHERE shartlari (category va active uchun)
         const whereConditions = ['p.is_active = true'];
-        const params = [lang];
-        let paramIndex = 2; // $1 = lang, keyingilari $2 dan boshlanadi
+        const countParams = [];
+        let countParamIndex = 1;
 
         // Kategoriya bo'yicha filtrlash
         if (categoryId && !isNaN(categoryId)) {
-            whereConditions.push(`p.category_id = $${paramIndex}`);
-            params.push(categoryId);
-            paramIndex++;
+            whereConditions.push(`p.category_id = $${countParamIndex}`);
+            countParams.push(categoryId);
+            countParamIndex++;
         }
 
         const whereClause =
@@ -131,9 +131,19 @@ router.get('/', async (req, res, next) => {
             FROM products p
             ${whereClause}
         `;
-        const countParams = params.slice(1); // lang ni olib tashlaymiz count uchun
         const { rows: countRows } = await pool.query(countQuery, countParams);
         const total = parseInt(countRows[0].total);
+
+        // Main query params (lang + category + limit + offset)
+        const params = [lang];
+        let paramIndex = 2; // $1 = lang, keyingilari $2 dan boshlanadi
+
+        // Kategoriya bo'yicha filtrlash (main query uchun)
+        if (categoryId && !isNaN(categoryId)) {
+            whereConditions.push(`p.category_id = $${paramIndex}`);
+            params.push(categoryId);
+            paramIndex++;
+        }
 
         // PERFORMANCE: Faqat kerakli qismni olish (LIMIT/OFFSET)
         // JOIN with inventory for stock info

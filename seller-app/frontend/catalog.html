@@ -155,13 +155,47 @@
     </div>
 
     <script src="api.js"></script>
-        <div class="modal-content modal-content-large">
-            <div class="modal-header">
-                <h2 class="modal-title">✨ Yangi tovar qo'shish</h2>
-                <button class="modal-close" id="close-product-upload-modal">×</button>
-            </div>
-            <div class="modal-body">
-                <form id="product-upload-form">
+    <script src="validation.js"></script>
+    <script src="catalog.js"></script>
+    <script>
+        // Mobile menu toggle
+        (function() {
+            const hamburger = document.getElementById('hamburger-menu');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const overlay = document.getElementById('mobile-menu-overlay');
+            
+            function toggleMenu() {
+                mobileMenu.classList.toggle('open');
+                hamburger.classList.toggle('active');
+                overlay.classList.toggle('show');
+                document.body.style.overflow = mobileMenu.classList.contains('open') ? 'hidden' : '';
+            }
+            
+            if (hamburger) hamburger.addEventListener('click', toggleMenu);
+            if (overlay) overlay.addEventListener('click', toggleMenu);
+            
+            const mobileLinks = mobileMenu.querySelectorAll('.nav-link');
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.remove('open');
+                    hamburger.classList.remove('active');
+                    overlay.classList.remove('show');
+                    document.body.style.overflow = '';
+                });
+            });
+        })();
+
+        // Check authentication
+        document.addEventListener('DOMContentLoaded', async () => {
+            const isAdmin = await checkAdminStatus();
+            if (!isAdmin) {
+                return;
+            }
+            hideAuthError();
+        });
+    </script>
+</body>
+</html>
                     <!-- SKU & Barcode -->
                     <div class="form-row">
                         <div class="form-group">

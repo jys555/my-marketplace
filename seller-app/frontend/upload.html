@@ -5,8 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tovar va Banner yuklash - Seller App</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         /* Upload page specific styles */
+        .upload-page-header-bar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px 0;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: #f5f5f5;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: #e0e0e0;
+        }
+
+        .back-button svg {
+            width: 20px;
+            height: 20px;
+            stroke: #333;
+        }
+
         .upload-page {
             padding: 30px;
             max-width: 1400px;
@@ -241,11 +274,25 @@
     </style>
 </head>
 <body>
+    <!-- Authentication Error -->
+    <div id="auth-error" class="auth-error" style="display: none;">
+        <h2>❌ Kirish rad etildi</h2>
+        <p>Seller App faqat admin'lar uchun.</p>
+        <p>Iltimos, Telegram bot orqali kirishga urinib ko'ring.</p>
+    </div>
+
     <div class="upload-page">
-        <!-- Header -->
-        <div class="upload-page-header">
-            <h1>📦 Tovar va Banner yuklash</h1>
-            <p>Amazing Store uchun yangi tovar yoki banner qo'shing</p>
+        <!-- Header Bar with Back Button -->
+        <div class="upload-page-header-bar">
+            <button class="back-button" onclick="window.location.href='/catalog.html'" aria-label="Orqaga">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            <div class="upload-page-header">
+                <h1>📦 Tovar va Banner yuklash</h1>
+                <p>Amazing Store uchun yangi tovar yoki banner qo'shing</p>
+            </div>
         </div>
 
         <!-- Tabs -->
