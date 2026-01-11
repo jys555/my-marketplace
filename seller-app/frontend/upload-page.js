@@ -160,30 +160,8 @@ async function handleProductUpload() {
         
         console.log('Product created:', response);
         
-        // Create price entry with service_fee and profitability
-        if (response.id) {
-            try {
-                const profitability = productData.sale_price - productData.cost_price - productData.service_fee;
-                const profitabilityPercentage = (profitability / productData.sale_price) * 100;
-                
-                await apiRequest('/prices', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        product_id: response.id,
-                        marketplace_id: 1, // AMAZING_STORE default
-                        cost_price: productData.cost_price,
-                        selling_price: productData.sale_price,
-                        strikethrough_price: productData.price,
-                        service_fee: productData.service_fee,
-                        profitability_percentage: profitabilityPercentage
-                    })
-                });
-                console.log('✅ Price created with service_fee and profitability');
-            } catch (priceError) {
-                console.error('❌ Error creating price:', priceError);
-                throw new Error('Narxni yaratishda xatolik: ' + priceError.message);
-            }
-        }
+        // NO NEED to create separate price entry - all prices in products table now!
+        console.log('✅ Product created with all prices in products table');
         
         // Success!
         showSuccess('✅ Tovar muvaffaqiyatli qo\'shildi!');

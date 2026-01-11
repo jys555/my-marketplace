@@ -2,7 +2,6 @@
 let currentMarketplaceId = null;
 let currentMarketplaceName = 'AMAZING_STORE';
 let products = [];
-let prices = [];
 let inventory = [];
 let selectedProducts = new Set();
 // PERFORMANCE: Pagination state
@@ -146,16 +145,7 @@ async function loadProducts() {
             return p;
         });
 
-        // Load prices
-        try {
-            const pricesParams = currentMarketplaceId ? `?marketplace_id=${currentMarketplaceId}` : '';
-            prices = await apiRequest(`/prices${pricesParams}`);
-            console.log('Prices loaded:', prices.length, 'prices found');
-        } catch (error) {
-            console.error('Error loading prices:', error);
-            prices = []; // Fallback to empty array
-        }
-
+        // NO NEED to load prices - all prices in products now!
         // Load inventory
         inventory = await apiRequest('/inventory');
 
@@ -198,19 +188,19 @@ function createProductRow(product) {
     row.dataset.productSku = product.sku;
     row.dataset.productId = product._id || product.id; // _id asosiy, id fallback
     
-    // Find price data - use _id (API returns _id)
+    // All price data is IN product object now!
     const productId = product._id || product.id;
-    const priceData = prices.find(p => p.product_id === productId);
     const invData = inventory.find(i => i.product_id === productId);
     
-    console.log('🔍 Product row:', { sku: product.sku, productId, priceData, invData });
+    console.log('🔍 Product row:', { sku: product.sku, productId, product, invData });
     
     const quantity = invData?.quantity || 0;
-    const costPrice = priceData?.cost_price || null;
-    const sellingPrice = priceData?.selling_price || null;
-    const strikethroughPrice = priceData?.strikethrough_price || null;
-    const commissionRate = priceData?.commission_rate || null;
-    const commissionAmount = commissionRate && sellingPrice ? (sellingPrice * commissionRate) / 100 : null;
+    const costPrice = product.cost_price || null;
+    const sellingPrice = product.sale_price || null;
+    const strikethroughPrice = product.price || null; // price is "marketing price"
+    const serviceFee = product.service_fee || 0;
+    const commissionRate = 0; // No commission in products table
+    const commissionAmount = 0;
     
     // Calculate discount percentage
     let discountPercent = null;
@@ -226,9 +216,13 @@ function createProductRow(product) {
     // Product SKU (majburiy, har doim mavjud)
     const sku = product.sku;
     
-    // Calculate profitability (miqdor va foiz)
-    const profitability = priceData?.profitability || null;
-    const profitabilityPercentage = priceData?.profitability_percentage || null;
+    // Calculate profitability (miqdor va foiz) from product data
+    let profitability = null;
+    let profitabilityPercentage = null;
+    if (sellingPrice && costPrice) {
+        profitability = sellingPrice - costPrice - serviceFee;
+        profitabilityPercentage = (profitability / sellingPrice) * 100;
+    }
     
     // Rentabillik rangini aniqlash
     let profitabilityClass = '';

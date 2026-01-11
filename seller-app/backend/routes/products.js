@@ -122,10 +122,12 @@ router.get('/', async (req, res) => {
         const total = parseInt(countRows[0].total);
 
         // PERFORMANCE: Faqat kerakli qismni olish (LIMIT/OFFSET)
+        // Include ALL price fields from products (no separate product_prices table)
         const query = `
             SELECT 
                 p.id, p.name_uz, p.name_ru, p.description_uz, p.description_ru,
-                p.price, p.sale_price, p.image_url, p.category_id, p.is_active,
+                p.price, p.sale_price, p.cost_price, p.service_fee, 
+                p.image_url, p.category_id, p.is_active,
                 p.sku,
                 c.name_uz as category_name_uz, c.name_ru as category_name_ru,
                 p.created_at
@@ -351,6 +353,7 @@ router.post(
         price: required(positive),
         sale_price: optional(positive),
         cost_price: optional(positive),
+        service_fee: optional(positive),
         image_url: optional(url),
         is_active: optional(boolean),
     }),
@@ -367,6 +370,7 @@ router.post(
                 price,
                 sale_price,
                 cost_price,
+                service_fee,
                 image_url,
                 is_active = true,
             } = req.body;
@@ -384,9 +388,9 @@ router.post(
             const { rows } = await pool.query(
                 `INSERT INTO products (
                     sku, barcode, name_uz, name_ru, description_uz, description_ru,
-                    category_id, price, sale_price, cost_price, image_url, is_active
+                    category_id, price, sale_price, cost_price, service_fee, image_url, is_active
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                 RETURNING *`,
                 [
                     sku,
@@ -399,6 +403,7 @@ router.post(
                     price,
                     sale_price || null,
                     cost_price || null,
+                    service_fee || 0,
                     image_url || null,
                     is_active,
                 ]
