@@ -192,15 +192,30 @@ function createProductRow(product) {
     const productId = product._id || product.id;
     const invData = inventory.find(i => i.product_id === productId);
     
-    console.log('🔍 Product row:', { sku: product.sku, productId, product, invData });
-    
     const quantity = invData?.quantity || 0;
-    const costPrice = product.cost_price || null;
-    const sellingPrice = product.sale_price || null;
-    const strikethroughPrice = product.price || null; // price is "marketing price"
-    const serviceFee = product.service_fee || 0;
-    const commissionRate = 0; // No commission in products table
-    const commissionAmount = 0;
+    const costPrice = product.cost_price;
+    const sellingPrice = product.sale_price;
+    const strikethroughPrice = product.price;
+    const serviceFee = product.service_fee;
+    
+    // VALIDATION: Log if price data is missing
+    if (!costPrice || !sellingPrice || serviceFee === undefined || serviceFee === null) {
+        console.error('❌ INCOMPLETE PRICE DATA:', { 
+            sku: product.sku, 
+            costPrice, 
+            sellingPrice, 
+            serviceFee,
+            fullProduct: product 
+        });
+    }
+    
+    console.log('✅ Product row:', { 
+        sku: product.sku, 
+        costPrice, 
+        sellingPrice, 
+        serviceFee,
+        quantity 
+    });
     
     // Calculate discount percentage
     let discountPercent = null;
@@ -217,16 +232,37 @@ function createProductRow(product) {
     const sku = product.sku;
     
     // Calculate profitability (miqdor va foiz) from product data
+    // ONLY if ALL required data is present!
     let profitability = null;
     let profitabilityPercentage = null;
-    if (sellingPrice && costPrice) {
+    
+    if (sellingPrice && costPrice && serviceFee !== null && serviceFee !== undefined) {
         profitability = sellingPrice - costPrice - serviceFee;
         profitabilityPercentage = (profitability / sellingPrice) * 100;
+        console.log('💰 Profitability calculated:', { 
+            sku: product.sku,
+            sellingPrice, 
+            costPrice, 
+            serviceFee, 
+            profitability, 
+            profitabilityPercentage: profitabilityPercentage.toFixed(1) + '%'
+        });
+    } else {
+        console.warn('⚠️ Cannot calculate profitability - missing data:', {
+            sku: product.sku,
+            sellingPrice,
+            costPrice,
+            serviceFee
+        });
     }
     
-    // Rentabillik rangini aniqlash
+    // Rentabillik rangini aniqlash - FAQAT agar hisoblangan bo'lsa!
     let profitabilityClass = '';
-    if (profitabilityPercentage !== null && profitabilityPercentage !== undefined) {
+    let profitabilityDisplay = '-';
+    
+    if (profitabilityPercentage !== null && profitabilityPercentage !== undefined && !isNaN(profitabilityPercentage)) {
+        profitabilityDisplay = profitabilityPercentage.toFixed(1) + '%';
+        
         if (profitabilityPercentage < 30) {
             profitabilityClass = 'profit-low'; // Qizil
         } else if (profitabilityPercentage >= 30 && profitabilityPercentage <= 40) {
@@ -234,6 +270,8 @@ function createProductRow(product) {
         } else if (profitabilityPercentage > 40) {
             profitabilityClass = 'profit-high'; // Yashil
         }
+    } else {
+        profitabilityClass = 'profit-missing'; // Bo'sh
     }
     
     row.innerHTML = `
@@ -288,10 +326,7 @@ function createProductRow(product) {
         </td>
         <td class="profitability-col">
             <div class="profitability-info ${profitabilityClass}">
-                ${profitabilityPercentage !== null && profitabilityPercentage !== undefined ? 
-                    `${profitabilityPercentage.toFixed(1)}%` : 
-                    (profitability !== null && profitability !== undefined ? formatPrice(profitability) : '-')
-                }
+                ${profitabilityDisplay}
             </div>
         </td>
         <td class="actions-col">

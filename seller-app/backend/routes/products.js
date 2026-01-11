@@ -385,6 +385,32 @@ router.post(
                 return res.status(409).json({ error: 'SKU allaqachon mavjud' });
             }
 
+            // VALIDATION: Log all incoming data
+            logger.info('📦 Creating product with data:', {
+                sku,
+                price,
+                sale_price,
+                cost_price,
+                service_fee,
+                category_id
+            });
+
+            // VALIDATION: Check required price fields
+            if (!price || price <= 0) {
+                logger.error('❌ Invalid price:', price);
+                return res.status(400).json({ error: 'Price majburiy va 0 dan katta bo\'lishi kerak' });
+            }
+            
+            if (!cost_price || cost_price <= 0) {
+                logger.error('❌ Invalid cost_price:', cost_price);
+                return res.status(400).json({ error: 'Cost price majburiy va 0 dan katta bo\'lishi kerak' });
+            }
+            
+            if (service_fee === null || service_fee === undefined || service_fee < 0) {
+                logger.error('❌ Invalid service_fee:', service_fee);
+                return res.status(400).json({ error: 'Service fee majburiy (0 yoki undan yuqori)' });
+            }
+
             const { rows } = await pool.query(
                 `INSERT INTO products (
                     sku, barcode, name_uz, name_ru, description_uz, description_ru,
@@ -402,14 +428,22 @@ router.post(
                     category_id || null,
                     price,
                     sale_price || null,
-                    cost_price || null,
-                    service_fee || 0,
+                    cost_price,
+                    service_fee,
                     image_url || null,
                     is_active,
                 ]
             );
 
-            logger.info('✅ Product created:', { sku, name_uz });
+            logger.info('✅ Product created successfully:', { 
+                sku, 
+                name_uz,
+                id: rows[0].id,
+                price: rows[0].price,
+                cost_price: rows[0].cost_price,
+                service_fee: rows[0].service_fee
+            });
+            
             res.status(201).json(rows[0]);
         } catch (error) {
             if (error.code === '23505') {
