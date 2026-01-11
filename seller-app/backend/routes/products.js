@@ -81,6 +81,7 @@ const logger = require('../utils/logger');
 // GET /api/seller/products - Barcha tovarlar (Amazing Store) - PERFORMANCE: Pagination bilan
 router.get('/', async (req, res) => {
     try {
+        logger.info('📦 GET /api/seller/products - Request received', { query: req.query });
         const { marketplace_id, search, category_id } = req.query;
 
         // PERFORMANCE: Pagination parametrlari
@@ -150,6 +151,14 @@ router.get('/', async (req, res) => {
 
         // PERFORMANCE: Pagination ma'lumotlari bilan javob qaytarish
         const hasMore = validOffset + rows.length < total;
+
+        logger.info('📦 GET /api/seller/products - Response', { 
+            productsCount: products.length, 
+            total, 
+            limit: validLimit, 
+            offset: validOffset, 
+            hasMore 
+        });
 
         res.json({
             products,

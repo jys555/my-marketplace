@@ -99,7 +99,9 @@ async function loadProducts() {
         // PERFORMANCE: Load products with pagination
         // API response'da ID yashirilgan (_id), SKU asosiy identifier
         const searchParam = document.getElementById('search-input')?.value ? `&search=${encodeURIComponent(document.getElementById('search-input').value)}` : '';
+        console.log('📦 Loading products from API:', `/products?limit=${productsPagination.limit}&offset=${productsPagination.currentOffset}${searchParam}`);
         const productsResponse = await apiRequest(`/products?limit=${productsPagination.limit}&offset=${productsPagination.currentOffset}${searchParam}`);
+        console.log('📦 Products API response:', productsResponse);
         
         // PERFORMANCE: Pagination response format: { products: [...], pagination: {...} }
         let newProducts;
