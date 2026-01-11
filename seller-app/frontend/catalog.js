@@ -196,11 +196,14 @@ function createProductRow(product) {
     row.className = 'product-row';
     // SKU'ni asosiy identifier sifatida ishlatish (ID yashiriladi)
     row.dataset.productSku = product.sku;
-    row.dataset.productId = product.id; // Ichki ishlatish uchun (yashirilgan)
+    row.dataset.productId = product._id || product.id; // _id asosiy, id fallback
     
-    // Find price data - try both product.id and product._id
-    const priceData = prices.find(p => p.product_id === product.id || p.product_id === product._id);
-    const invData = inventory.find(i => i.product_id === product.id || i.product_id === product._id);
+    // Find price data - use _id (API returns _id)
+    const productId = product._id || product.id;
+    const priceData = prices.find(p => p.product_id === productId);
+    const invData = inventory.find(i => i.product_id === productId);
+    
+    console.log('🔍 Product row:', { sku: product.sku, productId, priceData, invData });
     
     const quantity = invData?.quantity || 0;
     const costPrice = priceData?.cost_price || null;

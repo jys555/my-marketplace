@@ -85,14 +85,15 @@ async function handleProductUpload() {
             sku: document.getElementById('product-sku').value.trim(),
             barcode: document.getElementById('product-barcode').value.trim() || null,
             name_uz: document.getElementById('product-name-uz').value.trim(),
-            name_ru: document.getElementById('product-name-ru').value.trim() || null,
-            description_uz: document.getElementById('product-description-uz').value.trim() || null,
-            description_ru: document.getElementById('product-description-ru').value.trim() || null,
-            category_id: document.getElementById('product-category').value ? parseInt(document.getElementById('product-category').value) : null,
+            name_ru: document.getElementById('product-name-ru').value.trim(),
+            description_uz: document.getElementById('product-description-uz').value.trim(),
+            description_ru: document.getElementById('product-description-ru').value.trim(),
+            category_id: parseInt(document.getElementById('product-category').value),
             image_url: document.getElementById('product-image-url').value.trim(),
             price: parseFloat(document.getElementById('product-price').value),
-            sale_price: document.getElementById('product-sale-price').value ? parseFloat(document.getElementById('product-sale-price').value) : null,
-            cost_price: document.getElementById('product-cost-price').value ? parseFloat(document.getElementById('product-cost-price').value) : null,
+            sale_price: parseFloat(document.getElementById('product-sale-price').value),
+            cost_price: parseFloat(document.getElementById('product-cost-price').value),
+            service_fee: parseFloat(document.getElementById('product-service-fee').value),
             is_active: document.getElementById('product-is-active').checked
         };
         
@@ -133,8 +134,22 @@ async function handleProductUpload() {
             throw new Error('Tan narxi majburiy va 0 dan katta bo\'lishi kerak!');
         }
         
-        if (productData.sale_price && productData.sale_price >= productData.price) {
-            throw new Error('Chegirma narxi asosiy narxdan kichik bo\'lishi kerak!');
+        if (!productData.sale_price || productData.sale_price <= 0) {
+            throw new Error('Haqiqiy sotish narxi majburiy va 0 dan katta bo\'lishi kerak!');
+        }
+        
+        if (!productData.service_fee || productData.service_fee < 0) {
+            throw new Error('Xizmatlar narxi majburiy (0 yoki undan yuqori)!');
+        }
+        
+        if (productData.sale_price >= productData.price) {
+            throw new Error('Haqiqiy sotish narxi marketing narxidan kichik bo\'lishi kerak!');
+        }
+        
+        // Rentabillik hisoblash (sale_price - cost_price - service_fee)
+        const profitability = productData.sale_price - productData.cost_price - productData.service_fee;
+        if (profitability <= 0) {
+            throw new Error(`Foyda manfiy! Hisob: ${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability}`);
         }
         
         // Create product
@@ -145,9 +160,13 @@ async function handleProductUpload() {
         
         console.log('Product created:', response);
         
-        // If stock is provided, create inventory entry
-        const initialStock = parseInt(document.getElementById('product-stock').value) || 0;
-        if (initialStock > 0 && response.id) {
+        // Create inventory entry (ALWAYS - even if 0)
+        const initialStock = parseInt(document.getElementById('product-stock').value);
+        if (isNaN(initialStock)) {
+            throw new Error('Boshlang\'ich qoldiq majburiy!');
+        }
+        
+        if (response.id) {
             try {
                 await apiRequest('/inventory', {
                     method: 'POST',
@@ -159,7 +178,30 @@ async function handleProductUpload() {
                 console.log('Inventory created:', initialStock);
             } catch (invError) {
                 console.error('Error creating inventory:', invError);
-                // Continue anyway
+                throw new Error('Inventoryni yaratishda xatolik: ' + invError.message);
+            }
+            
+            // Create price entry with service_fee and profitability
+            try {
+                const profitability = productData.sale_price - productData.cost_price - productData.service_fee;
+                const profitabilityPercentage = (profitability / productData.sale_price) * 100;
+                
+                await apiRequest('/prices', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        product_id: response.id,
+                        marketplace_id: 1, // AMAZING_STORE default
+                        cost_price: productData.cost_price,
+                        selling_price: productData.sale_price,
+                        strikethrough_price: productData.price,
+                        service_fee: productData.service_fee,
+                        profitability_percentage: profitabilityPercentage
+                    })
+                });
+                console.log('Price created with service_fee');
+            } catch (priceError) {
+                console.error('Error creating price:', priceError);
+                throw new Error('Narxni yaratishda xatolik: ' + priceError.message);
             }
         }
         

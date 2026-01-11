@@ -110,7 +110,8 @@ router.get('/', async (req, res) => {
                 pp.id, pp.product_id, pp.marketplace_id,
                 pp.cost_price, pp.selling_price, pp.commission_rate,
                 pp.strikethrough_price,
-                (pp.selling_price - pp.cost_price - (pp.selling_price * COALESCE(pp.commission_rate, 0) / 100)) as profitability`;
+                COALESCE(pp.service_fee, 0) as service_fee,
+                (pp.selling_price - pp.cost_price - COALESCE(pp.service_fee, 0) - (pp.selling_price * COALESCE(pp.commission_rate, 0) / 100)) as profitability`;
 
         // Only add profitability_percentage if column exists
         if (columnExists) {
@@ -119,7 +120,7 @@ router.get('/', async (req, res) => {
             selectFields += `, 
                 CASE 
                     WHEN pp.selling_price > 0 
-                    THEN ((pp.selling_price - pp.cost_price - (pp.selling_price * COALESCE(pp.commission_rate, 0) / 100)) / pp.selling_price * 100)
+                    THEN ((pp.selling_price - pp.cost_price - COALESCE(pp.service_fee, 0) - (pp.selling_price * COALESCE(pp.commission_rate, 0) / 100)) / pp.selling_price * 100)
                     ELSE NULL 
                 END as profitability_percentage`;
         }
@@ -180,7 +181,8 @@ router.get('/:id', async (req, res) => {
                 pp.id, pp.product_id, pp.marketplace_id,
                 pp.cost_price, pp.selling_price, pp.commission_rate,
                 pp.strikethrough_price,
-                (pp.selling_price - pp.cost_price - (pp.selling_price * COALESCE(pp.commission_rate, 0) / 100)) as profitability`;
+                COALESCE(pp.service_fee, 0) as service_fee,
+                (pp.selling_price - pp.cost_price - COALESCE(pp.service_fee, 0) - (pp.selling_price * COALESCE(pp.commission_rate, 0) / 100)) as profitability`;
 
         // Only add profitability_percentage if column exists
         if (columnExists) {
@@ -189,7 +191,7 @@ router.get('/:id', async (req, res) => {
             selectFields += `, 
                 CASE 
                     WHEN pp.selling_price > 0 
-                    THEN ((pp.selling_price - pp.cost_price - (pp.selling_price * COALESCE(pp.commission_rate, 0) / 100)) / pp.selling_price * 100)
+                    THEN ((pp.selling_price - pp.cost_price - COALESCE(pp.service_fee, 0) - (pp.selling_price * COALESCE(pp.commission_rate, 0) / 100)) / pp.selling_price * 100)
                     ELSE NULL 
                 END as profitability_percentage`;
         }
@@ -231,6 +233,8 @@ router.post(
         selling_price: optional(positive),
         commission_rate: optional(number),
         strikethrough_price: optional(positive),
+        service_fee: optional(positive),
+        profitability_percentage: optional(number),
     }),
     async (req, res, next) => {
         try {
@@ -241,19 +245,24 @@ router.post(
                 selling_price,
                 commission_rate,
                 strikethrough_price,
+                service_fee,
+                profitability_percentage: inputProfitabilityPercentage,
             } = req.body;
 
-            // Rentabillikni hisoblash (miqdor va foiz)
+            // Rentabillikni hisoblash (miqdor va foiz) - service_fee bilan
             let profitability = null;
-            let profitabilityPercentage = null;
+            let profitabilityPercentage = inputProfitabilityPercentage || null;
             if (cost_price && selling_price && parseFloat(selling_price) > 0) {
                 const profit = parseFloat(selling_price) - parseFloat(cost_price);
+                const serviceFeeAmount = service_fee ? parseFloat(service_fee) : 0;
                 const commission = commission_rate
                     ? (parseFloat(selling_price) * parseFloat(commission_rate)) / 100
                     : 0;
-                profitability = profit - commission;
+                profitability = profit - serviceFeeAmount - commission;
                 // Rentabillik foizini hisoblash (selling_price ga nisbatan)
-                profitabilityPercentage = (profitability / parseFloat(selling_price)) * 100;
+                if (!profitabilityPercentage) {
+                    profitabilityPercentage = (profitability / parseFloat(selling_price)) * 100;
+                }
             }
 
             // Ensure profitability_percentage column exists
@@ -261,15 +270,16 @@ router.post(
 
             // Build query based on whether column exists
             let insertColumns =
-                'product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price';
-            let insertValues = '$1, $2, $3, $4, $5, $6';
+                'product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, service_fee';
+            let insertValues = '$1, $2, $3, $4, $5, $6, $7';
             let updateClause = `
                 cost_price = EXCLUDED.cost_price,
                 selling_price = EXCLUDED.selling_price,
                 commission_rate = EXCLUDED.commission_rate,
-                strikethrough_price = EXCLUDED.strikethrough_price`;
+                strikethrough_price = EXCLUDED.strikethrough_price,
+                service_fee = EXCLUDED.service_fee`;
             let returningClause =
-                'id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, updated_at';
+                'id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, service_fee, updated_at';
             const params = [
                 product_id,
                 marketplace_id || null,
@@ -277,19 +287,20 @@ router.post(
                 selling_price || null,
                 commission_rate || null,
                 strikethrough_price || null,
+                service_fee || 0,
             ];
 
             // Add profitability if calculated
             if (profitability !== null) {
                 insertColumns += ', profitability';
-                insertValues += ', $7';
+                insertValues += ', $8';
                 updateClause += ', profitability = EXCLUDED.profitability';
                 returningClause = returningClause.replace('updated_at', 'profitability, updated_at');
                 params.push(profitability);
             }
 
             if (columnExists) {
-                const paramIndex = profitability !== null ? 8 : 7;
+                const paramIndex = profitability !== null ? 9 : 8;
                 insertColumns += ', profitability_percentage';
                 insertValues += `, $${paramIndex}`;
                 updateClause += ', profitability_percentage = EXCLUDED.profitability_percentage';
