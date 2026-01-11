@@ -147,10 +147,19 @@ async function loadProducts() {
 
         // NO NEED to load prices - all prices in products now!
         // Load inventory
-        inventory = await apiRequest('/inventory');
+        try {
+            inventory = await apiRequest('/inventory');
+            if (!Array.isArray(inventory)) {
+                console.warn('⚠️ Inventory is not an array, using empty array:', inventory);
+                inventory = [];
+            }
+        } catch (error) {
+            console.error('❌ Error loading inventory:', error);
+            inventory = [];
+        }
 
         // PERFORMANCE: Backend'da allaqachon search qilingan, shuning uchun filter kerak emas
-        const filteredProducts = products;
+        const filteredProducts = Array.isArray(products) ? products : [];
 
         if (filteredProducts.length === 0) {
             loadingState.style.display = 'none';
@@ -255,6 +264,11 @@ function createProductRow(product) {
             serviceFee
         });
     }
+    
+    // Calculate commission (service fee is already a fixed amount, not a percentage)
+    // For display purposes, we'll show the service fee details
+    const commissionAmount = serviceFee;
+    const commissionRate = sellingPrice > 0 ? ((serviceFee / sellingPrice) * 100).toFixed(1) : null;
     
     // Rentabillik rangini aniqlash - FAQAT agar hisoblangan bo'lsa!
     let profitabilityClass = '';

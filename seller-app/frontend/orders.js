@@ -52,7 +52,10 @@ async function loadOrders() {
         if (dateTo) params.append('end_date', dateTo);
 
         const queryString = params.toString();
-        orders = await apiRequest(`/orders${queryString ? '?' + queryString : ''}`);
+        const ordersResponse = await apiRequest(`/orders${queryString ? '?' + queryString : ''}`);
+        
+        // Ensure orders is always an array
+        orders = Array.isArray(ordersResponse) ? ordersResponse : [];
 
         if (orders.length === 0) {
             loadingState.style.display = 'none';

@@ -20,7 +20,10 @@ async function loadProducts() {
         loadingState.style.display = 'flex';
         form.style.display = 'none';
 
-        products = await apiRequest('/products');
+        const productsResponse = await apiRequest('/products');
+        
+        // Ensure products is always an array
+        products = Array.isArray(productsResponse) ? productsResponse : [];
 
         productsList.innerHTML = '';
         products.forEach(product => {
