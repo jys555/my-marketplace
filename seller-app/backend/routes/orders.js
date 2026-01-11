@@ -74,6 +74,24 @@ router.get('/', async (req, res) => {
     try {
         const { marketplace_id, status, start_date, end_date } = req.query;
 
+        // Handle marketplace_id - convert string to integer ID if needed
+        let finalMarketplaceId = null;
+        if (marketplace_id) {
+            const marketplaceIdInt = parseInt(marketplace_id);
+            if (!isNaN(marketplaceIdInt)) {
+                finalMarketplaceId = marketplaceIdInt;
+            } else {
+                // String slug/name - look up marketplace ID first
+                const { rows: marketplaceRows } = await pool.query(
+                    `SELECT id FROM marketplaces WHERE name = $1 OR slug = $1 LIMIT 1`,
+                    [marketplace_id]
+                );
+                if (marketplaceRows.length > 0) {
+                    finalMarketplaceId = marketplaceRows[0].id;
+                }
+            }
+        }
+
         let query = `
             SELECT 
                 o.id, o.order_number, o.status, o.total_amount,
@@ -83,27 +101,17 @@ router.get('/', async (req, res) => {
                 o.order_date, o.delivery_date,
                 o.created_at, o.updated_at,
                 m.name as marketplace_name, m.api_type as marketplace_type,
-                COUNT(oi.id) as items_count
+                (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as items_count
             FROM orders o
             LEFT JOIN marketplaces m ON o.marketplace_id = m.id
-            LEFT JOIN order_items oi ON o.id = oi.order_id
             WHERE 1=1
         `;
         const params = [];
         let paramIndex = 1;
 
-        if (marketplace_id) {
-            // Handle both integer ID and string slug/name
-            const marketplaceIdInt = parseInt(marketplace_id);
-            if (!isNaN(marketplaceIdInt)) {
-                // Integer ID
-                query += ` AND o.marketplace_id = $${paramIndex}`;
-                params.push(marketplaceIdInt);
-            } else {
-                // String slug/name - look up by name or slug
-                query += ` AND (m.name = $${paramIndex} OR m.slug = $${paramIndex})`;
-                params.push(marketplace_id);
-            }
+        if (finalMarketplaceId) {
+            query += ` AND o.marketplace_id = $${paramIndex}`;
+            params.push(finalMarketplaceId);
             paramIndex++;
         }
 
@@ -125,7 +133,7 @@ router.get('/', async (req, res) => {
             paramIndex++;
         }
 
-        query += ` GROUP BY o.id, m.name, m.api_type ORDER BY o.created_at DESC`;
+        query += ` ORDER BY o.created_at DESC`;
 
         logger.info('📋 GET /api/seller/orders - Query', { query, params });
         const { rows } = await pool.query(query, params);
