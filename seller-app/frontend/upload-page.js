@@ -160,28 +160,8 @@ async function handleProductUpload() {
         
         console.log('Product created:', response);
         
-        // Create inventory entry (ALWAYS - even if 0)
-        const initialStock = parseInt(document.getElementById('product-stock').value);
-        if (isNaN(initialStock)) {
-            throw new Error('Boshlang\'ich qoldiq majburiy!');
-        }
-        
+        // Create price entry with service_fee and profitability
         if (response.id) {
-            try {
-                await apiRequest('/inventory', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        product_id: response.id,
-                        quantity: initialStock
-                    })
-                });
-                console.log('Inventory created:', initialStock);
-            } catch (invError) {
-                console.error('Error creating inventory:', invError);
-                throw new Error('Inventoryni yaratishda xatolik: ' + invError.message);
-            }
-            
-            // Create price entry with service_fee and profitability
             try {
                 const profitability = productData.sale_price - productData.cost_price - productData.service_fee;
                 const profitabilityPercentage = (profitability / productData.sale_price) * 100;
@@ -198,9 +178,9 @@ async function handleProductUpload() {
                         profitability_percentage: profitabilityPercentage
                     })
                 });
-                console.log('Price created with service_fee');
+                console.log('✅ Price created with service_fee and profitability');
             } catch (priceError) {
-                console.error('Error creating price:', priceError);
+                console.error('❌ Error creating price:', priceError);
                 throw new Error('Narxni yaratishda xatolik: ' + priceError.message);
             }
         }
