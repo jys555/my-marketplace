@@ -96,7 +96,7 @@ async function handleProductUpload() {
             is_active: document.getElementById('product-is-active').checked
         };
         
-        // Validation
+        // Validation - BARCHA MAJBURIY MAYDONLAR
         if (!productData.sku) {
             throw new Error('SKU majburiy!');
         }
@@ -105,12 +105,36 @@ async function handleProductUpload() {
             throw new Error('O\'zbekcha nom majburiy!');
         }
         
+        if (!productData.name_ru) {
+            throw new Error('Ruscha nom majburiy!');
+        }
+        
+        if (!productData.description_uz) {
+            throw new Error('O\'zbekcha tavsif majburiy!');
+        }
+        
+        if (!productData.description_ru) {
+            throw new Error('Ruscha tavsif majburiy!');
+        }
+        
+        if (!productData.category_id) {
+            throw new Error('Kategoriya tanlash majburiy!');
+        }
+        
         if (!productData.image_url) {
             throw new Error('Rasm URL majburiy!');
         }
         
         if (!productData.price || productData.price <= 0) {
-            throw new Error('Narx 0 dan katta bo\'lishi kerak!');
+            throw new Error('Narx majburiy va 0 dan katta bo\'lishi kerak!');
+        }
+        
+        if (!productData.cost_price || productData.cost_price <= 0) {
+            throw new Error('Tan narxi majburiy va 0 dan katta bo\'lishi kerak!');
+        }
+        
+        if (productData.sale_price && productData.sale_price >= productData.price) {
+            throw new Error('Chegirma narxi asosiy narxdan kichik bo\'lishi kerak!');
         }
         
         // Create product
@@ -144,10 +168,7 @@ async function handleProductUpload() {
         document.getElementById('product-form').reset();
         document.getElementById('product-is-active').checked = true;
         
-        // Redirect after 2 seconds
-        setTimeout(() => {
-            window.location.href = '/catalog.html';
-        }, 2000);
+        // AUTO-REDIRECT O'CHIRILDI - Faqat back button orqali chiqish mumkin
         
     } catch (error) {
         console.error('Error uploading product:', error);
