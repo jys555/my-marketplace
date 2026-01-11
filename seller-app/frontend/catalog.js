@@ -447,19 +447,22 @@ function openEditPriceModal(productSku) {
     const product = products.find(p => p.sku === productSku);
     if (!product) return;
     
-    // Find price data - try both product.id and product._id
-    const priceData = prices.find(p => p.product_id === product.id || p.product_id === product._id);
+    // All price data is now in product object directly!
     const modal = document.getElementById('edit-price-modal');
     
     if (!modal) return;
     
     // ID'ni yashirilgan holda saqlash (backend uchun)
-    document.getElementById('edit-product-id').value = product.id;
+    document.getElementById('edit-product-id').value = product._id || product.id;
     document.getElementById('edit-marketplace-id').value = currentMarketplaceId || '';
-    document.getElementById('edit-cost-price').value = priceData?.cost_price || '';
-    document.getElementById('edit-selling-price').value = priceData?.selling_price || '';
-    document.getElementById('edit-strikethrough-price').value = priceData?.strikethrough_price || '';
-    document.getElementById('edit-commission-rate').value = priceData?.commission_rate || '';
+    document.getElementById('edit-cost-price').value = product.cost_price || '';
+    document.getElementById('edit-selling-price').value = product.sale_price || '';
+    document.getElementById('edit-strikethrough-price').value = product.price || '';
+    // Calculate commission rate from service_fee
+    const commissionRate = product.sale_price > 0 && product.service_fee > 0 
+        ? ((product.service_fee / product.sale_price) * 100).toFixed(2) 
+        : '';
+    document.getElementById('edit-commission-rate').value = commissionRate;
     
     modal.classList.add('active');
 }

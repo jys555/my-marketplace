@@ -93,8 +93,17 @@ router.get('/', async (req, res) => {
         let paramIndex = 1;
 
         if (marketplace_id) {
-            query += ` AND o.marketplace_id = $${paramIndex}`;
-            params.push(marketplace_id);
+            // Handle both integer ID and string slug/name
+            const marketplaceIdInt = parseInt(marketplace_id);
+            if (!isNaN(marketplaceIdInt)) {
+                // Integer ID
+                query += ` AND o.marketplace_id = $${paramIndex}`;
+                params.push(marketplaceIdInt);
+            } else {
+                // String slug/name - look up by name or slug
+                query += ` AND (m.name = $${paramIndex} OR m.slug = $${paramIndex})`;
+                params.push(marketplace_id);
+            }
             paramIndex++;
         }
 
@@ -118,11 +127,14 @@ router.get('/', async (req, res) => {
 
         query += ` GROUP BY o.id, m.name, m.api_type ORDER BY o.created_at DESC`;
 
+        logger.info('📋 GET /api/seller/orders - Query', { query, params });
         const { rows } = await pool.query(query, params);
+        logger.info('📋 GET /api/seller/orders - Response', { count: rows.length });
         res.json(rows);
     } catch (error) {
-        logger.error('Error fetching orders:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        logger.error('❌ Error fetching orders:', error);
+        logger.error('❌ Error stack:', error.stack);
+        res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 });
 
