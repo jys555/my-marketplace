@@ -458,11 +458,7 @@ function openEditPriceModal(productSku) {
     document.getElementById('edit-cost-price').value = product.cost_price || '';
     document.getElementById('edit-selling-price').value = product.sale_price || '';
     document.getElementById('edit-strikethrough-price').value = product.price || '';
-    // Calculate commission rate from service_fee
-    const commissionRate = product.sale_price > 0 && product.service_fee > 0 
-        ? ((product.service_fee / product.sale_price) * 100).toFixed(2) 
-        : '';
-    document.getElementById('edit-commission-rate').value = commissionRate;
+    document.getElementById('edit-service-fee').value = product.service_fee || '';
     
     modal.classList.add('active');
 }
@@ -709,9 +705,9 @@ async function savePrice() {
             validator: (value, fieldName) => window.validation.validatePositive(value, fieldName),
             fieldName: 'Strikethrough price'
         },
-        'edit-commission-rate': {
-            validator: (value, fieldName) => window.validation.validateNumber(value, fieldName, 0, 100),
-            fieldName: 'Commission rate'
+        'edit-service-fee': {
+            validator: (value, fieldName) => window.validation.validatePositive(value, fieldName),
+            fieldName: 'Service fee'
         }
     };
 
