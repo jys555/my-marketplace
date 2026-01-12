@@ -237,11 +237,33 @@ router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
+        // Check if total_amount column exists
+        let totalAmountSelect = 'o.total_amount';
+        try {
+            const { rows: columnCheck } = await pool.query(`
+                SELECT column_name FROM information_schema.columns 
+                WHERE table_name = 'orders' AND column_name = 'total_amount'
+            `);
+            if (columnCheck.length === 0) {
+                totalAmountSelect = `COALESCE((
+                    SELECT SUM(oi.price * oi.quantity) 
+                    FROM order_items oi 
+                    WHERE oi.order_id = o.id
+                ), 0) as total_amount`;
+            }
+        } catch (checkError) {
+            totalAmountSelect = `COALESCE((
+                SELECT SUM(oi.price * oi.quantity) 
+                FROM order_items oi 
+                WHERE oi.order_id = o.id
+            ), 0) as total_amount`;
+        }
+
         // Order ma'lumotlari
         const { rows: orderRows } = await pool.query(
             `
             SELECT 
-                o.id, o.order_number, o.status, o.total_amount,
+                o.id, o.order_number, o.status, ${totalAmountSelect},
                 o.payment_method, o.delivery_method,
                 o.marketplace_id, o.marketplace_order_id,
                 o.customer_name, o.customer_phone, o.customer_address,

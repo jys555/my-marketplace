@@ -249,90 +249,96 @@ router.post(
                 profitability_percentage: inputProfitabilityPercentage,
             } = req.body;
 
-            // Rentabillikni hisoblash (miqdor va foiz) - service_fee bilan
-            let profitability = null;
-            let profitabilityPercentage = inputProfitabilityPercentage || null;
-            if (cost_price && selling_price && parseFloat(selling_price) > 0) {
-                const profit = parseFloat(selling_price) - parseFloat(cost_price);
-                const serviceFeeAmount = service_fee ? parseFloat(service_fee) : 0;
-                const commission = commission_rate
-                    ? (parseFloat(selling_price) * parseFloat(commission_rate)) / 100
-                    : 0;
-                profitability = profit - serviceFeeAmount - commission;
-                // Rentabillik foizini hisoblash (selling_price ga nisbatan)
-                if (!profitabilityPercentage) {
-                    profitabilityPercentage = (profitability / parseFloat(selling_price)) * 100;
-                }
-            }
-
-            // Ensure profitability_percentage column exists
-            const columnExists = await ensureProfitabilityPercentageColumn();
-
-            // Build query based on whether column exists
-            let insertColumns =
-                'product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, service_fee';
-            let insertValues = '$1, $2, $3, $4, $5, $6, $7';
-            let updateClause = `
-                cost_price = EXCLUDED.cost_price,
-                selling_price = EXCLUDED.selling_price,
-                commission_rate = EXCLUDED.commission_rate,
-                strikethrough_price = EXCLUDED.strikethrough_price,
-                service_fee = EXCLUDED.service_fee`;
-            let returningClause =
-                'id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, service_fee, updated_at';
-            const params = [
-                product_id,
-                marketplace_id || null,
-                cost_price || null,
-                selling_price || null,
-                commission_rate || null,
-                strikethrough_price || null,
-                service_fee || 0,
-            ];
-
-            // Add profitability if calculated
-            if (profitability !== null) {
-                insertColumns += ', profitability';
-                insertValues += ', $8';
-                updateClause += ', profitability = EXCLUDED.profitability';
-                returningClause = returningClause.replace(
-                    'updated_at',
-                    'profitability, updated_at'
-                );
-                params.push(profitability);
-            }
-
-            if (columnExists) {
-                const paramIndex = profitability !== null ? 9 : 8;
-                insertColumns += ', profitability_percentage';
-                insertValues += `, $${paramIndex}`;
-                updateClause += ', profitability_percentage = EXCLUDED.profitability_percentage';
-                returningClause = returningClause.replace(
-                    'updated_at',
-                    'profitability_percentage, updated_at'
-                );
-                params.push(profitabilityPercentage || null);
-            }
-
-            const { rows } = await pool.query(
-                `
-            INSERT INTO product_prices (${insertColumns})
-            VALUES (${insertValues})
-            ON CONFLICT (product_id, marketplace_id) 
-            DO UPDATE SET
-                ${updateClause},
-                updated_at = NOW()
-            RETURNING ${returningClause}
-        `,
-                params
+            // Update products table directly (product_prices table was removed)
+            // Get existing product data
+            const { rows: productRows } = await pool.query(
+                `SELECT cost_price, price, sale_price, service_fee FROM products WHERE id = $1`,
+                [product_id]
             );
 
-            // Rentabillikni qayta hisoblash (agar kerak bo'lsa)
-            if (rows.length > 0) {
-                await priceService.recalculateProfitability(product_id, marketplace_id || null);
+            if (productRows.length === 0) {
+                return next(new NotFoundError('Product not found'));
             }
 
-            res.status(201).json(rows[0]);
+            const existingProduct = productRows[0];
+
+            // Prepare update values
+            const updateFields = [];
+            const updateParams = [];
+            let paramIndex = 1;
+
+            if (cost_price !== undefined && cost_price !== null) {
+                updateFields.push(`cost_price = $${paramIndex}`);
+                updateParams.push(cost_price);
+                paramIndex++;
+            }
+
+            if (selling_price !== undefined && selling_price !== null) {
+                // selling_price -> sale_price (if different from price)
+                const finalPrice = parseFloat(selling_price);
+                const originalPrice = parseFloat(existingProduct.price) || 0;
+                
+                if (finalPrice !== originalPrice) {
+                    // If selling_price is different, set it as sale_price
+                    updateFields.push(`sale_price = $${paramIndex}`);
+                    updateParams.push(finalPrice);
+                } else {
+                    // If same, clear sale_price
+                    updateFields.push(`sale_price = NULL`);
+                }
+                paramIndex++;
+            }
+
+            if (strikethrough_price !== undefined && strikethrough_price !== null) {
+                // strikethrough_price -> price (original price)
+                updateFields.push(`price = $${paramIndex}`);
+                updateParams.push(strikethrough_price);
+                paramIndex++;
+            }
+
+            if (service_fee !== undefined && service_fee !== null) {
+                updateFields.push(`service_fee = $${paramIndex}`);
+                updateParams.push(service_fee);
+                paramIndex++;
+            }
+
+            // Calculate final values for profitability
+            const finalCostPrice = cost_price !== undefined ? cost_price : existingProduct.cost_price;
+            const finalSellingPrice = selling_price !== undefined ? selling_price : (existingProduct.sale_price || existingProduct.price);
+            const finalServiceFee = service_fee !== undefined ? service_fee : (existingProduct.service_fee || 0);
+
+            // Calculate profitability
+            let profitability = null;
+            if (finalCostPrice && finalSellingPrice && parseFloat(finalSellingPrice) > 0) {
+                const profit = parseFloat(finalSellingPrice) - parseFloat(finalCostPrice);
+                const serviceFeeAmount = parseFloat(finalServiceFee) || 0;
+                profitability = profit - serviceFeeAmount;
+            }
+
+            if (updateFields.length === 0) {
+                return res.status(400).json({ error: 'No fields to update' });
+            }
+
+            updateParams.push(product_id);
+            const updateQuery = `
+                UPDATE products 
+                SET ${updateFields.join(', ')}, updated_at = NOW()
+                WHERE id = $${paramIndex}
+                RETURNING id, cost_price, price, sale_price, service_fee, updated_at
+            `;
+
+            const { rows } = await pool.query(updateQuery, updateParams);
+
+            // Return response with calculated profitability
+            const response = {
+                ...rows[0],
+                profitability: profitability,
+                profitability_percentage: profitability && finalSellingPrice 
+                    ? (profitability / parseFloat(finalSellingPrice)) * 100 
+                    : null
+            };
+
+            res.status(200).json(response);
         } catch (error) {
             if (error.code === '23503') {
                 return next(new NotFoundError('Product or marketplace'));
@@ -366,44 +372,82 @@ router.put(
 
             // Rentabillikni hisoblash (miqdor va foiz)
             // Avval mavjud cost_price va selling_price ni olish
-            const { rows: existingRows } = await pool.query(
-                `
-            SELECT cost_price, selling_price, commission_rate FROM product_prices WHERE id = $1
-        `,
+            // Get existing product data (product_prices table was removed)
+            const { rows: productRows } = await pool.query(
+                `SELECT cost_price, price, sale_price, service_fee FROM products WHERE id = $1`,
                 [id]
             );
 
+            if (productRows.length === 0) {
+                return next(new NotFoundError('Product not found'));
+            }
+
+            const existingRows = [{
+                cost_price: productRows[0].cost_price,
+                selling_price: productRows[0].sale_price || productRows[0].price,
+                commission_rate: null // commission_rate doesn't exist, use service_fee
+            }];
+
+            const existingProduct = productRows[0];
+            
+            // Prepare update values
+            const updateFields = [];
+            const updateParams = [];
+            let paramIndex = 1;
+
+            if (cost_price !== undefined && cost_price !== null) {
+                updateFields.push(`cost_price = $${paramIndex}`);
+                updateParams.push(cost_price);
+                paramIndex++;
+            }
+
+            if (selling_price !== undefined && selling_price !== null) {
+                // selling_price -> sale_price (if different from price)
+                const finalPrice = parseFloat(selling_price);
+                const originalPrice = parseFloat(existingProduct.price) || 0;
+                
+                if (finalPrice !== originalPrice) {
+                    updateFields.push(`sale_price = $${paramIndex}`);
+                    updateParams.push(finalPrice);
+                } else {
+                    updateFields.push(`sale_price = NULL`);
+                }
+                paramIndex++;
+            }
+
+            if (strikethrough_price !== undefined && strikethrough_price !== null) {
+                // strikethrough_price -> price (original price)
+                updateFields.push(`price = $${paramIndex}`);
+                updateParams.push(strikethrough_price);
+                paramIndex++;
+            }
+
+            if (updateFields.length === 0) {
+                return res.status(400).json({ error: 'No fields to update' });
+            }
+
+            // Calculate final values for profitability
+            const finalCostPrice = cost_price !== undefined ? cost_price : existingProduct.cost_price;
+            const finalSellingPrice = selling_price !== undefined ? selling_price : (existingProduct.sale_price || existingProduct.price);
+            const finalServiceFee = existingProduct.service_fee || 0;
+
+            // Calculate profitability
             let profitability = null;
             let profitabilityPercentage = null;
-            const finalCostPrice =
-                cost_price !== undefined ? cost_price : existingRows[0]?.cost_price;
-            const finalSellingPrice =
-                selling_price !== undefined ? selling_price : existingRows[0]?.selling_price;
-            const finalCommissionRate =
-                commission_rate !== undefined ? commission_rate : existingRows[0]?.commission_rate;
-
             if (finalCostPrice && finalSellingPrice && parseFloat(finalSellingPrice) > 0) {
                 const profit = parseFloat(finalSellingPrice) - parseFloat(finalCostPrice);
-                const commission = finalCommissionRate
-                    ? (parseFloat(finalSellingPrice) * parseFloat(finalCommissionRate)) / 100
-                    : 0;
-                profitability = profit - commission;
-                // Rentabillik foizini hisoblash (selling_price ga nisbatan)
+                const serviceFeeAmount = parseFloat(finalServiceFee) || 0;
+                profitability = profit - serviceFeeAmount;
                 profitabilityPercentage = (profitability / parseFloat(finalSellingPrice)) * 100;
             }
 
-            // Ensure profitability_percentage column exists
-            const columnExists = await ensureProfitabilityPercentageColumn();
-
-            // Build query based on whether column exists
-            let updateClause = `
-                cost_price = COALESCE($1, cost_price),
-                selling_price = COALESCE($2, selling_price),
-                commission_rate = COALESCE($3, commission_rate),
-                strikethrough_price = COALESCE($4, strikethrough_price)`;
-            let returningClause =
-                'id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, updated_at';
-            let params = [cost_price, selling_price, commission_rate, strikethrough_price, id];
+            updateParams.push(id);
+            const updateQuery = `
+                UPDATE products 
+                SET ${updateFields.join(', ')}, updated_at = NOW()
+                WHERE id = $${paramIndex}
+                RETURNING id, cost_price, price, sale_price, service_fee, updated_at
+            `;
 
             // Add profitability if calculated
             if (profitability !== null) {
