@@ -554,9 +554,39 @@ body {
     padding-right: calc(20px + var(--safe-area-right));
 }
 
-/* Edit price modal - completely transparent overlay so background is visible */
+/* Edit price modal - Right side drawer modal */
 #edit-price-modal.modal-overlay {
-    background: transparent;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: flex-end;
+    align-items: stretch;
+    padding: 0;
+}
+
+#edit-price-modal .modal-content {
+    width: 100%;
+    max-width: 500px;
+    height: 100%;
+    max-height: 100vh;
+    margin: 0;
+    border-radius: 0;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+#edit-price-modal.modal-overlay.active .modal-content {
+    animation: slideInRight 0.3s ease-out;
 }
 
 .modal-overlay.active {

@@ -74,21 +74,39 @@ router.get('/', async (req, res) => {
     try {
         const { marketplace_id, status, start_date, end_date } = req.query;
 
+        logger.info('📋 GET /api/seller/orders - Request', { 
+            marketplace_id, 
+            status, 
+            start_date, 
+            end_date 
+        });
+
         // Handle marketplace_id - convert string to integer ID if needed
         let finalMarketplaceId = null;
         if (marketplace_id) {
-            const marketplaceIdInt = parseInt(marketplace_id);
-            if (!isNaN(marketplaceIdInt)) {
-                finalMarketplaceId = marketplaceIdInt;
-            } else {
-                // String slug/name - look up marketplace ID first
-                const { rows: marketplaceRows } = await pool.query(
-                    `SELECT id FROM marketplaces WHERE name = $1 OR slug = $1 LIMIT 1`,
-                    [marketplace_id]
-                );
-                if (marketplaceRows.length > 0) {
-                    finalMarketplaceId = marketplaceRows[0].id;
+            try {
+                const marketplaceIdInt = parseInt(marketplace_id);
+                if (!isNaN(marketplaceIdInt)) {
+                    finalMarketplaceId = marketplaceIdInt;
+                } else {
+                    // String slug/name - look up marketplace ID first
+                    const { rows: marketplaceRows } = await pool.query(
+                        `SELECT id FROM marketplaces WHERE name = $1 OR slug = $1 LIMIT 1`,
+                        [marketplace_id]
+                    );
+                    if (marketplaceRows.length > 0) {
+                        finalMarketplaceId = marketplaceRows[0].id;
+                        logger.info('📋 Marketplace ID found:', { 
+                            input: marketplace_id, 
+                            found_id: finalMarketplaceId 
+                        });
+                    } else {
+                        logger.warn('⚠️ Marketplace not found:', { input: marketplace_id });
+                    }
                 }
+            } catch (marketplaceError) {
+                logger.error('❌ Error looking up marketplace:', marketplaceError);
+                // Continue without marketplace filter if lookup fails
             }
         }
 
