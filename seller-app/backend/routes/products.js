@@ -606,7 +606,7 @@ router.put(
                 image_url = COALESCE($7, image_url),
                 category_id = COALESCE($8, category_id),
                 sku = COALESCE($9, sku)
-            WHERE id = $10 OR sku = $10
+            WHERE id = $10
             RETURNING id, name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, is_active, sku, created_at
         `,
                 [
