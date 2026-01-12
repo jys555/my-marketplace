@@ -563,13 +563,7 @@ router.post('/', async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        const {
-            marketplace_id,
-            items,
-            customer_name,
-            customer_phone,
-            customer_address,
-        } = req.body;
+        const { marketplace_id, items, customer_name, customer_phone, customer_address } = req.body;
 
         if (!items || !Array.isArray(items) || items.length === 0) {
             await client.query('ROLLBACK');

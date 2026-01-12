@@ -729,13 +729,13 @@ async function savePrice() {
         marketplace_id: marketplaceId ? parseInt(marketplaceId) : null,
         cost_price: validation.data['edit-cost-price'] || null,
         selling_price: validation.data['edit-selling-price'] || null,
-        commission_rate: validation.data['edit-commission-rate'] || null,
+        service_fee: validation.data['edit-service-fee'] || null,
         strikethrough_price: validation.data['edit-strikethrough-price'] || null
     };
 
     try {
         // Save price
-        await apiRequest('/prices', {
+        const savedPrice = await apiRequest('/prices', {
             method: 'POST',
             body: JSON.stringify(priceData)
         });
@@ -746,13 +746,36 @@ async function savePrice() {
                 method: 'PUT',
                 body: JSON.stringify({
                     price: priceData.strikethrough_price || priceData.selling_price,
-                    sale_price: priceData.selling_price
+                    sale_price: priceData.selling_price,
+                    cost_price: priceData.cost_price,
+                    service_fee: priceData.service_fee
                 })
             });
         }
 
+        // Update local product data (optimistic update - no full reload needed)
+        const productIndex = products.findIndex(p => p.id === productId);
+        if (productIndex !== -1) {
+            products[productIndex].cost_price = priceData.cost_price;
+            products[productIndex].price = priceData.strikethrough_price || priceData.selling_price;
+            products[productIndex].sale_price = priceData.selling_price;
+            products[productIndex].service_fee = priceData.service_fee || 0;
+            
+            // Re-render just this product row
+            const tableBody = document.getElementById('products-table-body');
+            if (tableBody) {
+                const rows = tableBody.querySelectorAll('tr');
+                rows.forEach(row => {
+                    if (parseInt(row.dataset.productId) === productId) {
+                        const newRow = createProductRow(products[productIndex]);
+                        row.replaceWith(newRow);
+                    }
+                });
+            }
+        }
+
         closeEditModal();
-        await loadProducts();
+        // Don't reload all products - just updated the specific one above
     } catch (error) {
         console.error('Error saving price:', error);
         alert('Xatolik yuz berdi. Iltimos, qayta urinib ko\'ring.');
