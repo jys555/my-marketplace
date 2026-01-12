@@ -154,13 +154,32 @@ router.get('/', async (req, res) => {
         query += ` ORDER BY o.created_at DESC`;
 
         logger.info('📋 GET /api/seller/orders - Query', { query, params });
+        
+        // Check pool connection
+        if (!pool) {
+            logger.error('❌ Database pool is not initialized');
+            return res.status(500).json({ 
+                error: 'Internal Server Error', 
+                details: 'Database connection not available' 
+            });
+        }
+
         const { rows } = await pool.query(query, params);
         logger.info('📋 GET /api/seller/orders - Response', { count: rows.length });
         res.json(rows);
     } catch (error) {
         logger.error('❌ Error fetching orders:', error);
-        logger.error('❌ Error stack:', error.stack);
-        res.status(500).json({ error: 'Internal Server Error', details: error.message });
+        logger.error('❌ Error details:', {
+            message: error.message,
+            stack: error.stack,
+            code: error.code,
+            detail: error.detail
+        });
+        res.status(500).json({ 
+            error: 'Internal Server Error', 
+            details: error.message,
+            code: error.code 
+        });
     }
 });
 
