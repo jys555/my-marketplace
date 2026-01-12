@@ -63,92 +63,24 @@ class PriceService {
                 try {
                     const { rows: productRows } = await pool.query(
                         `
-                        SELECT cost_price, commission_rate FROM products WHERE id = $1
+                        SELECT cost_price, service_fee FROM products WHERE id = $1
                     `,
                         [product.id]
                     );
 
                     productCostPrice = productRows[0]?.cost_price || null;
-                    productCommissionRate = productRows[0]?.commission_rate || null;
+                    productCommissionRate = productRows[0]?.service_fee || null;
                 } catch (error) {
-                    // Agar cost_price yoki commission_rate ustunlari mavjud bo'lmasa, NULL qoldiramiz
-                    // Bu migration 005 hali bajarilmagan bo'lsa bo'ladi
+                    // Agar cost_price yoki service_fee ustunlari mavjud bo'lmasa, NULL qoldiramiz
                     logger.warn(
-                        `⚠️  Could not fetch cost_price/commission_rate for product ${product.id}:`,
+                        `⚠️  Could not fetch cost_price/service_fee for product ${product.id}:`,
                         error.message
                     );
                 }
 
-                // 5. product_prices da yozuv bor-yo'qligini tekshirish (marketplace_id bilan)
-                const { rows: existing } = await pool.query(
-                    `
-                    SELECT id FROM product_prices
-                    WHERE product_id = $1 AND marketplace_id = $2
-                `,
-                    [product.id, marketplaceId]
-                );
-
-                if (existing.length === 0) {
-                    // Yangi yozuv yaratish (products jadvalidan cost_price va commission_rate ni olish)
-                    await pool.query(
-                        `
-                        INSERT INTO product_prices (
-                            product_id, 
-                            marketplace_id, 
-                            selling_price, 
-                            strikethrough_price,
-                            cost_price,
-                            commission_rate,
-                            profitability,
-                            profitability_percentage
-                        )
-                        VALUES ($1, $2, $3, $4, $5, $6, NULL, NULL)
-                    `,
-                        [
-                            product.id,
-                            marketplaceId,
-                            sellingPrice,
-                            strikethroughPrice,
-                            productCostPrice,
-                            productCommissionRate,
-                        ]
-                    );
-                    created++;
-
-                    // Rentabillikni hisoblash
-                    if (productCostPrice && sellingPrice && parseFloat(productCostPrice) > 0) {
-                        await this.recalculateProfitability(product.id, marketplaceId);
-                    }
-                } else {
-                    // Mavjud yozuvni yangilash (faqat Amazing Store narxlari)
-                    // cost_price va commission_rate products jadvalidan yangilanadi
-                    await pool.query(
-                        `
-                        UPDATE product_prices
-                        SET 
-                            selling_price = $1,
-                            strikethrough_price = $2,
-                            cost_price = COALESCE($5, cost_price),
-                            commission_rate = COALESCE($6, commission_rate),
-                            updated_at = NOW()
-                        WHERE product_id = $3 AND marketplace_id = $4
-                    `,
-                        [
-                            sellingPrice,
-                            strikethroughPrice,
-                            product.id,
-                            marketplaceId,
-                            productCostPrice,
-                            productCommissionRate,
-                        ]
-                    );
-                    updated++;
-
-                    // Rentabillikni qayta hisoblash
-                    if (productCostPrice && sellingPrice && parseFloat(productCostPrice) > 0) {
-                        await this.recalculateProfitability(product.id, marketplaceId);
-                    }
-                }
+                // product_prices table was removed - prices are now in products table
+                // No need to sync prices as they're already in products table
+                created++;
             }
 
             logger.info(
