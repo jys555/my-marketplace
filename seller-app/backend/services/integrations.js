@@ -137,16 +137,15 @@ class IntegrationService {
                 INSERT INTO marketplace_products (
                     product_id, marketplace_id, marketplace_product_id,
                     marketplace_sku, marketplace_name, marketplace_price,
-                    marketplace_strikethrough_price, commission_rate, status, last_synced_at
+                    marketplace_strikethrough_price, status, last_synced_at
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
                 ON CONFLICT (product_id, marketplace_id, marketplace_product_id)
                 DO UPDATE SET
                     marketplace_sku = EXCLUDED.marketplace_sku,
                     marketplace_name = EXCLUDED.marketplace_name,
                     marketplace_price = EXCLUDED.marketplace_price,
                     marketplace_strikethrough_price = EXCLUDED.marketplace_strikethrough_price,
-                    commission_rate = EXCLUDED.commission_rate,
                     status = EXCLUDED.status,
                     last_synced_at = NOW(),
                     updated_at = NOW()
@@ -160,7 +159,6 @@ class IntegrationService {
                     marketplaceData.marketplace_name || null,
                     marketplaceData.marketplace_price || null,
                     marketplaceData.marketplace_strikethrough_price || null,
-                    marketplaceData.commission_rate || null,
                     marketplaceData.status || 'active',
                 ]
             );

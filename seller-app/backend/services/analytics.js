@@ -114,10 +114,10 @@ class AnalyticsService {
             let itemsQuery = `
                 SELECT 
                     oi.product_id, oi.quantity, oi.price,
-                    pp.cost_price
+                    p.cost_price
                 FROM order_items oi
                 INNER JOIN orders o ON oi.order_id = o.id
-                LEFT JOIN product_prices pp ON oi.product_id = pp.product_id AND (pp.marketplace_id = o.marketplace_id OR (pp.marketplace_id IS NULL AND o.marketplace_id IS NULL))
+                LEFT JOIN products p ON oi.product_id = p.id
                 WHERE DATE(o.order_date) = $1 AND o.status != 'cancelled'
             `;
             const itemsParams = [dateStr];
@@ -245,10 +245,10 @@ class AnalyticsService {
                 SELECT 
                     oi.quantity, oi.price,
                     o.status,
-                    pp.cost_price
+                    p.cost_price
                 FROM order_items oi
                 INNER JOIN orders o ON oi.order_id = o.id
-                LEFT JOIN product_prices pp ON oi.product_id = pp.product_id AND (pp.marketplace_id = o.marketplace_id OR (pp.marketplace_id IS NULL AND o.marketplace_id IS NULL))
+                LEFT JOIN products p ON oi.product_id = p.id
                 WHERE oi.product_id = $1 AND DATE(o.order_date) = $2
             `;
             const itemsParams = [productId, dateStr];

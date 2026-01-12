@@ -119,7 +119,6 @@ router.get('/', async (req, res) => {
                     FROM order_items oi 
                     WHERE oi.order_id = o.id
                 ), 0) as total_amount,
-                o.payment_method, o.delivery_method,
                 o.marketplace_id, o.marketplace_order_id,
                 o.customer_name, o.customer_phone, o.customer_address,
                 o.order_date, o.delivery_date,
@@ -253,7 +252,6 @@ router.get('/:id', async (req, res) => {
                     FROM order_items oi 
                     WHERE oi.order_id = o.id
                 ), 0) as total_amount,
-                o.payment_method, o.delivery_method,
                 o.marketplace_id, o.marketplace_order_id,
                 o.customer_name, o.customer_phone, o.customer_address,
                 o.order_date, o.delivery_date,
@@ -571,8 +569,6 @@ router.post('/', async (req, res) => {
             customer_name,
             customer_phone,
             customer_address,
-            payment_method,
-            delivery_method,
         } = req.body;
 
         if (!items || !Array.isArray(items) || items.length === 0) {
@@ -615,24 +611,20 @@ router.post('/', async (req, res) => {
 
         const orderNumber = `MANUAL-${Date.now()}`;
 
-        // Order yaratish
+        // Order yaratish (payment_method, delivery_method, total_amount yo'q)
         const { rows: orderRows } = await client.query(
             `
             INSERT INTO orders (
-                marketplace_id, order_number, total_amount, status,
-                payment_method, delivery_method,
+                marketplace_id, order_number, status,
                 customer_name, customer_phone, customer_address,
                 order_date
             )
-            VALUES ($1, $2, $3, 'new', $4, $5, $6, $7, $8, NOW())
-            RETURNING id, order_number, status, total_amount, created_at
+            VALUES ($1, $2, 'new', $3, $4, $5, NOW())
+            RETURNING id, order_number, status, created_at
         `,
             [
                 marketplace_id || null,
                 orderNumber,
-                totalAmount,
-                payment_method || null,
-                delivery_method || null,
                 customer_name || null,
                 customer_phone || null,
                 customer_address || null,
