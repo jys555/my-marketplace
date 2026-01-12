@@ -449,76 +449,20 @@ router.put(
                 RETURNING id, cost_price, price, sale_price, service_fee, updated_at
             `;
 
-            // Add profitability if calculated
-            if (profitability !== null) {
-                updateClause += ', profitability = $5';
-                returningClause = returningClause.replace(
-                    'updated_at',
-                    'profitability, updated_at'
-                );
-                params[params.length - 1] = profitability; // Replace id
-                params.push(id); // Add id back
-            }
-
-            if (columnExists) {
-                const profitabilityParamIndex = profitability !== null ? 6 : 5;
-                updateClause += `, profitability_percentage = COALESCE($${profitabilityParamIndex}, profitability_percentage)`;
-                returningClause = returningClause.replace(
-                    'updated_at',
-                    'profitability_percentage, updated_at'
-                );
-                params[params.length - 1] = profitabilityPercentage || null; // Replace last param
-                if (profitability === null) {
-                    params[params.length - 1] = id; // Keep id
-                    params.push(profitabilityPercentage || null); // Add profitability_percentage
-                    params.push(id); // Add id back
-                } else {
-                    params.push(profitabilityPercentage || null); // Add profitability_percentage
-                    params.push(id); // Add id back
-                }
-            }
-
-            const { rows } = await pool.query(
-                `
-            UPDATE product_prices
-            SET 
-                ${updateClause},
-                updated_at = NOW()
-            WHERE id = $${params.length}
-            RETURNING ${returningClause}
-        `,
-                params
-            );
-
-            // Rentabillikni qayta hisoblash (agar kerak bo'lsa)
-            if (rows.length > 0) {
-                await priceService.recalculateProfitability(
-                    rows[0].product_id,
-                    rows[0].marketplace_id
-                );
-                // Yangilangan ma'lumotlarni qayta olish
-                let selectCols =
-                    'id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, updated_at';
-                if (columnExists) {
-                    selectCols =
-                        'id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, profitability, profitability_percentage, updated_at';
-                }
-                const { rows: updatedRows } = await pool.query(
-                    `
-                SELECT ${selectCols} FROM product_prices WHERE id = $1
-            `,
-                    [id]
-                );
-                if (updatedRows.length > 0) {
-                    return res.json(updatedRows[0]);
-                }
-            }
+            const { rows } = await pool.query(updateQuery, updateParams);
 
             if (rows.length === 0) {
-                return res.status(404).json({ error: 'Price not found' });
+                return res.status(404).json({ error: 'Product not found' });
             }
 
-            res.json(rows[0]);
+            // Return response with calculated profitability
+            const response = {
+                ...rows[0],
+                profitability: profitability,
+                profitability_percentage: profitabilityPercentage
+            };
+
+            res.json(response);
         } catch (error) {
             next(error);
         }
