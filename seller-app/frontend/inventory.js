@@ -24,6 +24,12 @@ async function loadInventory() {
         emptyState.style.display = 'none';
 
         inventory = await apiRequest('/inventory');
+        
+        // Ensure inventory is an array
+        if (!Array.isArray(inventory)) {
+            console.warn('⚠️ Inventory is not an array, using empty array:', inventory);
+            inventory = [];
+        }
 
         // Filter by search
         const searchTerm = document.getElementById('search-input')?.value.toLowerCase() || '';
