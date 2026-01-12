@@ -10,7 +10,7 @@ const { AppError, NotFoundError } = require('../utils/errors');
 router.get('/', async (req, res, next) => {
     try {
         const lang = req.query.lang || 'uz';
-        
+
         const { rows } = await pool.query(
             `
             SELECT 
@@ -32,7 +32,7 @@ router.get('/', async (req, res, next) => {
             `,
             [lang]
         );
-        
+
         res.json(rows);
     } catch (error) {
         next(error);
@@ -47,7 +47,7 @@ router.get('/:id', async (req, res, next) => {
     try {
         const { id } = req.params;
         const lang = req.query.lang || 'uz';
-        
+
         const { rows } = await pool.query(
             `
             SELECT 
@@ -68,11 +68,11 @@ router.get('/:id', async (req, res, next) => {
             `,
             [id, lang]
         );
-        
+
         if (rows.length === 0) {
             throw new NotFoundError('Category not found');
         }
-        
+
         res.json(rows[0]);
     } catch (error) {
         next(error);
@@ -86,12 +86,12 @@ router.get('/:id', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
     try {
         const { name_uz, name_ru, icon, color, sort_order, is_active } = req.body;
-        
+
         // Validation
         if (!name_uz || !name_ru) {
             throw new AppError('name_uz and name_ru are required', 400);
         }
-        
+
         const { rows } = await pool.query(
             `
             INSERT INTO categories (name_uz, name_ru, icon, color, sort_order, is_active)
@@ -100,7 +100,7 @@ router.post('/', async (req, res, next) => {
             `,
             [name_uz, name_ru, icon || null, color || null, sort_order || 0, is_active !== false]
         );
-        
+
         res.status(201).json(rows[0]);
     } catch (error) {
         next(error);
@@ -115,7 +115,7 @@ router.put('/:id', async (req, res, next) => {
     try {
         const { id } = req.params;
         const { name_uz, name_ru, icon, color, sort_order, is_active } = req.body;
-        
+
         const { rows } = await pool.query(
             `
             UPDATE categories
@@ -131,11 +131,11 @@ router.put('/:id', async (req, res, next) => {
             `,
             [id, name_uz, name_ru, icon, color, sort_order, is_active]
         );
-        
+
         if (rows.length === 0) {
             throw new NotFoundError('Category not found');
         }
-        
+
         res.json(rows[0]);
     } catch (error) {
         next(error);
@@ -149,16 +149,13 @@ router.put('/:id', async (req, res, next) => {
 router.delete('/:id', async (req, res, next) => {
     try {
         const { id } = req.params;
-        
-        const { rows } = await pool.query(
-            'DELETE FROM categories WHERE id = $1 RETURNING *',
-            [id]
-        );
-        
+
+        const { rows } = await pool.query('DELETE FROM categories WHERE id = $1 RETURNING *', [id]);
+
         if (rows.length === 0) {
             throw new NotFoundError('Category not found');
         }
-        
+
         res.json({ message: 'Category deleted successfully' });
     } catch (error) {
         next(error);

@@ -154,12 +154,12 @@ router.get('/', async (req, res) => {
         // PERFORMANCE: Pagination ma'lumotlari bilan javob qaytarish
         const hasMore = validOffset + rows.length < total;
 
-        logger.info('📦 GET /api/seller/products - Response', { 
-            productsCount: products.length, 
-            total, 
-            limit: validLimit, 
-            offset: validOffset, 
-            hasMore 
+        logger.info('📦 GET /api/seller/products - Response', {
+            productsCount: products.length,
+            total,
+            limit: validLimit,
+            offset: validOffset,
+            hasMore,
         });
 
         res.json({
@@ -376,11 +376,10 @@ router.post(
             } = req.body;
 
             // Check if SKU already exists
-            const { rows: existing } = await pool.query(
-                'SELECT id FROM products WHERE sku = $1',
-                [sku]
-            );
-            
+            const { rows: existing } = await pool.query('SELECT id FROM products WHERE sku = $1', [
+                sku,
+            ]);
+
             if (existing.length > 0) {
                 return res.status(409).json({ error: 'SKU allaqachon mavjud' });
             }
@@ -392,23 +391,29 @@ router.post(
                 sale_price,
                 cost_price,
                 service_fee,
-                category_id
+                category_id,
             });
 
             // VALIDATION: Check required price fields
             if (!price || price <= 0) {
                 logger.error('❌ Invalid price:', price);
-                return res.status(400).json({ error: 'Price majburiy va 0 dan katta bo\'lishi kerak' });
+                return res
+                    .status(400)
+                    .json({ error: "Price majburiy va 0 dan katta bo'lishi kerak" });
             }
-            
+
             if (!cost_price || cost_price <= 0) {
                 logger.error('❌ Invalid cost_price:', cost_price);
-                return res.status(400).json({ error: 'Cost price majburiy va 0 dan katta bo\'lishi kerak' });
+                return res
+                    .status(400)
+                    .json({ error: "Cost price majburiy va 0 dan katta bo'lishi kerak" });
             }
-            
+
             if (service_fee === null || service_fee === undefined || service_fee < 0) {
                 logger.error('❌ Invalid service_fee:', service_fee);
-                return res.status(400).json({ error: 'Service fee majburiy (0 yoki undan yuqori)' });
+                return res
+                    .status(400)
+                    .json({ error: 'Service fee majburiy (0 yoki undan yuqori)' });
             }
 
             const { rows } = await pool.query(
@@ -435,15 +440,15 @@ router.post(
                 ]
             );
 
-            logger.info('✅ Product created successfully:', { 
-                sku, 
+            logger.info('✅ Product created successfully:', {
+                sku,
                 name_uz,
                 id: rows[0].id,
                 price: rows[0].price,
                 cost_price: rows[0].cost_price,
-                service_fee: rows[0].service_fee
+                service_fee: rows[0].service_fee,
             });
-            
+
             res.status(201).json(rows[0]);
         } catch (error) {
             if (error.code === '23505') {

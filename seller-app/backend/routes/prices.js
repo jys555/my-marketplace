@@ -295,7 +295,10 @@ router.post(
                 insertColumns += ', profitability';
                 insertValues += ', $8';
                 updateClause += ', profitability = EXCLUDED.profitability';
-                returningClause = returningClause.replace('updated_at', 'profitability, updated_at');
+                returningClause = returningClause.replace(
+                    'updated_at',
+                    'profitability, updated_at'
+                );
                 params.push(profitability);
             }
 
@@ -304,7 +307,10 @@ router.post(
                 insertColumns += ', profitability_percentage';
                 insertValues += `, $${paramIndex}`;
                 updateClause += ', profitability_percentage = EXCLUDED.profitability_percentage';
-                returningClause = returningClause.replace('updated_at', 'profitability_percentage, updated_at');
+                returningClause = returningClause.replace(
+                    'updated_at',
+                    'profitability_percentage, updated_at'
+                );
                 params.push(profitabilityPercentage || null);
             }
 
@@ -397,18 +403,15 @@ router.put(
                 strikethrough_price = COALESCE($4, strikethrough_price)`;
             let returningClause =
                 'id, product_id, marketplace_id, cost_price, selling_price, commission_rate, strikethrough_price, updated_at';
-            let params = [
-                cost_price,
-                selling_price,
-                commission_rate,
-                strikethrough_price,
-                id,
-            ];
+            let params = [cost_price, selling_price, commission_rate, strikethrough_price, id];
 
             // Add profitability if calculated
             if (profitability !== null) {
                 updateClause += ', profitability = $5';
-                returningClause = returningClause.replace('updated_at', 'profitability, updated_at');
+                returningClause = returningClause.replace(
+                    'updated_at',
+                    'profitability, updated_at'
+                );
                 params[params.length - 1] = profitability; // Replace id
                 params.push(id); // Add id back
             }
@@ -416,7 +419,10 @@ router.put(
             if (columnExists) {
                 const profitabilityParamIndex = profitability !== null ? 6 : 5;
                 updateClause += `, profitability_percentage = COALESCE($${profitabilityParamIndex}, profitability_percentage)`;
-                returningClause = returningClause.replace('updated_at', 'profitability_percentage, updated_at');
+                returningClause = returningClause.replace(
+                    'updated_at',
+                    'profitability_percentage, updated_at'
+                );
                 params[params.length - 1] = profitabilityPercentage || null; // Replace last param
                 if (profitability === null) {
                     params[params.length - 1] = id; // Keep id

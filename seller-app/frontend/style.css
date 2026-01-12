@@ -554,9 +554,9 @@ body {
     padding-right: calc(20px + var(--safe-area-right));
 }
 
-/* Edit price modal - transparent overlay so background is visible */
+/* Edit price modal - completely transparent overlay so background is visible */
 #edit-price-modal.modal-overlay {
-    background: rgba(0,0,0,0.3);
+    background: transparent;
 }
 
 .modal-overlay.active {

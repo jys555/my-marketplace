@@ -165,17 +165,14 @@ router.delete('/:id', async (req, res, next) => {
     try {
         const { id } = req.params;
 
-        const { rows } = await pool.query(
-            'DELETE FROM banners WHERE id = $1 RETURNING id',
-            [id]
-        );
+        const { rows } = await pool.query('DELETE FROM banners WHERE id = $1 RETURNING id', [id]);
 
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Banner topilmadi' });
         }
 
         logger.info('✅ Banner deleted:', { id });
-        res.json({ message: 'Banner o\'chirildi', id: rows[0].id });
+        res.json({ message: "Banner o'chirildi", id: rows[0].id });
     } catch (error) {
         logger.error('❌ Error deleting banner:', error);
         next(error);
@@ -183,4 +180,3 @@ router.delete('/:id', async (req, res, next) => {
 });
 
 module.exports = router;
-

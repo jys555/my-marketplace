@@ -335,8 +335,8 @@ export function renderProducts(append = false) {
             <div class="product-card-info">
               <h4>${safeName}</h4>
               <p class="price-line">
-                <span class="current-price">${Number(displayPrice).toLocaleString()} so'm</span>
-                ${hasSale ? `<span class="original-price">${p.price.toLocaleString()} so'm</span>` : ''}
+                <span class="current-price">${displayPrice.toLocaleString()} so'm</span>
+                ${hasSale ? `<span class="original-price">${price.toLocaleString()} so'm</span>` : ''}
               </p>
             </div>
           </div>
@@ -670,11 +670,14 @@ function getFavoritesContent() {
         <div class="page-content favorites-page">
         <div class="products-grid" id="products">
                 ${favoriteProducts.map(p => {
-                    const hasSale = p.sale_price && p.price > p.sale_price;
-                    const salePercentage = hasSale ? Math.round(((p.price - p.sale_price) / p.price) * 100) : 0;
+                    // Ensure price and sale_price are numbers
+                    const price = parseFloat(p.price) || 0;
+                    const salePrice = p.sale_price ? parseFloat(p.sale_price) : null;
+                    const hasSale = salePrice && price > salePrice && salePrice > 0;
+                    const salePercentage = hasSale ? Math.round(((price - salePrice) / price) * 100) : 0;
                     const safeName = escapeHtml(p.name);
                     const safeImage = escapeHtml(p.image) || 'https://via.placeholder.com/150';
-                    const displayPrice = hasSale ? p.sale_price : p.price;
+                    const displayPrice = hasSale ? salePrice : price;
                     return `
               <div class="product-card" data-id="${p.id}">
                         <div class="product-card-image-wrapper">
@@ -689,8 +692,8 @@ function getFavoritesContent() {
                         <div class="product-card-info">
                           <h4>${safeName}</h4>
                           <p class="price-line">
-                            <span class="current-price">${Number(displayPrice).toLocaleString()} so'm</span>
-                            ${hasSale ? `<span class="original-price">${p.price.toLocaleString()} so'm</span>` : ''}
+                            <span class="current-price">${displayPrice.toLocaleString()} so'm</span>
+                            ${hasSale ? `<span class="original-price">${price.toLocaleString()} so'm</span>` : ''}
                           </p>
                         </div>
                       </div>
