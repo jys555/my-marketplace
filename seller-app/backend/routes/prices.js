@@ -277,7 +277,7 @@ router.post(
                 // selling_price -> sale_price (if different from price)
                 const finalPrice = parseFloat(selling_price);
                 const originalPrice = parseFloat(existingProduct.price) || 0;
-                
+
                 if (finalPrice !== originalPrice) {
                     // If selling_price is different, set it as sale_price
                     updateFields.push(`sale_price = $${paramIndex}`);
@@ -303,9 +303,14 @@ router.post(
             }
 
             // Calculate final values for profitability
-            const finalCostPrice = cost_price !== undefined ? cost_price : existingProduct.cost_price;
-            const finalSellingPrice = selling_price !== undefined ? selling_price : (existingProduct.sale_price || existingProduct.price);
-            const finalServiceFee = service_fee !== undefined ? service_fee : (existingProduct.service_fee || 0);
+            const finalCostPrice =
+                cost_price !== undefined ? cost_price : existingProduct.cost_price;
+            const finalSellingPrice =
+                selling_price !== undefined
+                    ? selling_price
+                    : existingProduct.sale_price || existingProduct.price;
+            const finalServiceFee =
+                service_fee !== undefined ? service_fee : existingProduct.service_fee || 0;
 
             // Calculate profitability
             let profitability = null;
@@ -333,9 +338,10 @@ router.post(
             const response = {
                 ...rows[0],
                 profitability: profitability,
-                profitability_percentage: profitability && finalSellingPrice 
-                    ? (profitability / parseFloat(finalSellingPrice)) * 100 
-                    : null
+                profitability_percentage:
+                    profitability && finalSellingPrice
+                        ? (profitability / parseFloat(finalSellingPrice)) * 100
+                        : null,
             };
 
             res.status(200).json(response);
@@ -382,14 +388,16 @@ router.put(
                 return next(new NotFoundError('Product not found'));
             }
 
-            const existingRows = [{
-                cost_price: productRows[0].cost_price,
-                selling_price: productRows[0].sale_price || productRows[0].price,
-                commission_rate: null // commission_rate doesn't exist, use service_fee
-            }];
+            const existingRows = [
+                {
+                    cost_price: productRows[0].cost_price,
+                    selling_price: productRows[0].sale_price || productRows[0].price,
+                    commission_rate: null, // commission_rate doesn't exist, use service_fee
+                },
+            ];
 
             const existingProduct = productRows[0];
-            
+
             // Prepare update values
             const updateFields = [];
             const updateParams = [];
@@ -405,7 +413,7 @@ router.put(
                 // selling_price -> sale_price (if different from price)
                 const finalPrice = parseFloat(selling_price);
                 const originalPrice = parseFloat(existingProduct.price) || 0;
-                
+
                 if (finalPrice !== originalPrice) {
                     updateFields.push(`sale_price = $${paramIndex}`);
                     updateParams.push(finalPrice);
@@ -427,8 +435,12 @@ router.put(
             }
 
             // Calculate final values for profitability
-            const finalCostPrice = cost_price !== undefined ? cost_price : existingProduct.cost_price;
-            const finalSellingPrice = selling_price !== undefined ? selling_price : (existingProduct.sale_price || existingProduct.price);
+            const finalCostPrice =
+                cost_price !== undefined ? cost_price : existingProduct.cost_price;
+            const finalSellingPrice =
+                selling_price !== undefined
+                    ? selling_price
+                    : existingProduct.sale_price || existingProduct.price;
             const finalServiceFee = existingProduct.service_fee || 0;
 
             // Calculate profitability
@@ -459,7 +471,7 @@ router.put(
             const response = {
                 ...rows[0],
                 profitability: profitability,
-                profitability_percentage: profitabilityPercentage
+                profitability_percentage: profitabilityPercentage,
             };
 
             res.json(response);

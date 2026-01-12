@@ -74,11 +74,11 @@ router.get('/', async (req, res) => {
     try {
         const { marketplace_id, status, start_date, end_date } = req.query;
 
-        logger.info('📋 GET /api/seller/orders - Request', { 
-            marketplace_id, 
-            status, 
-            start_date, 
-            end_date 
+        logger.info('📋 GET /api/seller/orders - Request', {
+            marketplace_id,
+            status,
+            start_date,
+            end_date,
         });
 
         // Handle marketplace_id - convert string to integer ID if needed
@@ -96,9 +96,9 @@ router.get('/', async (req, res) => {
                     );
                     if (marketplaceRows.length > 0) {
                         finalMarketplaceId = marketplaceRows[0].id;
-                        logger.info('📋 Marketplace ID found:', { 
-                            input: marketplace_id, 
-                            found_id: finalMarketplaceId 
+                        logger.info('📋 Marketplace ID found:', {
+                            input: marketplace_id,
+                            found_id: finalMarketplaceId,
                         });
                     } else {
                         logger.warn('⚠️ Marketplace not found:', { input: marketplace_id });
@@ -110,9 +110,15 @@ router.get('/', async (req, res) => {
             }
         }
 
+        // Calculate total_amount from order_items (column doesn't exist in orders table)
         let query = `
             SELECT 
-                o.id, o.order_number, o.status, o.total_amount,
+                o.id, o.order_number, o.status,
+                COALESCE((
+                    SELECT SUM(oi.price * oi.quantity) 
+                    FROM order_items oi 
+                    WHERE oi.order_id = o.id
+                ), 0) as total_amount,
                 o.payment_method, o.delivery_method,
                 o.marketplace_id, o.marketplace_order_id,
                 o.customer_name, o.customer_phone, o.customer_address,
@@ -154,13 +160,13 @@ router.get('/', async (req, res) => {
         query += ` ORDER BY o.created_at DESC`;
 
         logger.info('📋 GET /api/seller/orders - Query', { query, params });
-        
+
         // Check pool connection
         if (!pool) {
             logger.error('❌ Database pool is not initialized');
-            return res.status(500).json({ 
-                error: 'Internal Server Error', 
-                details: 'Database connection not available' 
+            return res.status(500).json({
+                error: 'Internal Server Error',
+                details: 'Database connection not available',
             });
         }
 
@@ -173,12 +179,12 @@ router.get('/', async (req, res) => {
             message: error.message,
             stack: error.stack,
             code: error.code,
-            detail: error.detail
+            detail: error.detail,
         });
-        res.status(500).json({ 
-            error: 'Internal Server Error', 
+        res.status(500).json({
+            error: 'Internal Server Error',
             details: error.message,
-            code: error.code 
+            code: error.code,
         });
     }
 });
