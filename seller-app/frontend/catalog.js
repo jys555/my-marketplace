@@ -722,11 +722,11 @@ async function savePrice() {
     const strikethroughPrice = validation.data['edit-strikethrough-price'];
     
     if (strikethroughPrice && sellingPrice && sellingPrice > strikethroughPrice) {
+        // Faqat birinchi xatolik bo'lgan field'ga error ko'rsatish (selling_price)
         const sellingPriceField = document.getElementById('edit-selling-price');
-        const strikethroughPriceField = document.getElementById('edit-strikethrough-price');
-        
-        window.validation.showError(sellingPriceField, 'Sotish narxi marketing narxidan (chizilgan narx) kichik yoki teng bo\'lishi kerak!');
-        window.validation.showError(strikethroughPriceField, 'Marketing narxi sotish narxidan katta yoki teng bo\'lishi kerak!');
+        if (sellingPriceField) {
+            window.validation.showError(sellingPriceField, 'Sotish narxi marketing narxidan (chizilgan narx) kichik yoki teng bo\'lishi kerak!');
+        }
         return;
     }
 

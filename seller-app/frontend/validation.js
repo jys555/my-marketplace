@@ -10,7 +10,7 @@ const ERROR_MESSAGE_CLASS = 'error-message';
 /**
  * Show error for a field
  */
-function showError(field, message) {
+function showError(field, message, scrollTo = true) {
     // Remove existing error
     clearError(field);
 
@@ -29,6 +29,13 @@ function showError(field, message) {
     // Insert error message after field
     if (field.parentNode) {
         field.parentNode.insertBefore(errorDiv, field.nextSibling);
+    }
+
+    // Scroll to field if requested
+    if (scrollTo && field.scrollIntoView) {
+        setTimeout(() => {
+            field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
     }
 }
 
@@ -194,14 +201,14 @@ function validateDate(value, fieldName) {
 /**
  * Validate a form field
  */
-function validateField(field, validator, fieldName) {
+function validateField(field, validator, fieldName, scrollTo = true) {
     try {
         const value = field.value;
         const result = validator(value, fieldName);
         clearError(field);
         return { valid: true, value: result };
     } catch (error) {
-        showError(field, error.message);
+        showError(field, error.message, scrollTo);
         return { valid: false, error: error.message };
     }
 }
@@ -217,6 +224,7 @@ function validateForm(form, schema) {
     const data = {};
     const errors = [];
     let isValid = true;
+    let firstErrorField = null;
 
     for (const [fieldId, config] of Object.entries(schema)) {
         const field = form.querySelector(`#${fieldId}`);
@@ -226,14 +234,25 @@ function validateForm(form, schema) {
         }
 
         const { validator, fieldName } = config;
-        const result = validateField(field, validator, fieldName || fieldId);
+        const result = validateField(field, validator, fieldName || fieldId, false); // Don't scroll yet
 
         if (!result.valid) {
             isValid = false;
             errors.push({ field: fieldId, message: result.error });
+            // Save first error field for scrolling
+            if (!firstErrorField) {
+                firstErrorField = field;
+            }
         } else if (result.value !== undefined) {
             data[fieldId] = result.value;
         }
+    }
+
+    // Scroll to first error field if any
+    if (firstErrorField && firstErrorField.scrollIntoView) {
+        setTimeout(() => {
+            firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
     }
 
     return { valid: isValid, data, errors };
