@@ -717,6 +717,19 @@ async function savePrice() {
         return;
     }
 
+    // Cross-field validation: sale_price must be <= price (strikethrough_price)
+    const sellingPrice = validation.data['edit-selling-price'];
+    const strikethroughPrice = validation.data['edit-strikethrough-price'];
+    
+    if (strikethroughPrice && sellingPrice && sellingPrice > strikethroughPrice) {
+        const sellingPriceField = document.getElementById('edit-selling-price');
+        const strikethroughPriceField = document.getElementById('edit-strikethrough-price');
+        
+        window.validation.showError(sellingPriceField, 'Sotish narxi marketing narxidan (chizilgan narx) kichik yoki teng bo\'lishi kerak!');
+        window.validation.showError(strikethroughPriceField, 'Marketing narxi sotish narxidan katta yoki teng bo\'lishi kerak!');
+        return;
+    }
+
     const productId = parseInt(document.getElementById('edit-product-id').value);
     const marketplaceId = document.getElementById('edit-marketplace-id').value || null;
 
