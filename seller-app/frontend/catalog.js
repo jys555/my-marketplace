@@ -786,24 +786,16 @@ async function savePrice() {
     };
 
     try {
-        // Save price
-        const savedPrice = await apiRequest('/prices', {
-            method: 'POST',
-            body: JSON.stringify(priceData)
+        // Update product directly (product_prices table was removed, all prices in products table)
+        await apiRequest(`/products/${productId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                price: priceData.strikethrough_price || priceData.selling_price,
+                sale_price: priceData.selling_price,
+                cost_price: priceData.cost_price,
+                service_fee: priceData.service_fee
+            })
         });
-
-        // Update product in Amazing Store if marketplace is Amazing Store
-        if (!marketplaceId || currentMarketplaceName === 'AMAZING_STORE') {
-            await apiRequest(`/products/${productId}`, {
-                method: 'PUT',
-                body: JSON.stringify({
-                    price: priceData.strikethrough_price || priceData.selling_price,
-                    sale_price: priceData.selling_price,
-                    cost_price: priceData.cost_price,
-                    service_fee: priceData.service_fee
-                })
-            });
-        }
 
         // Update local product data (optimistic update - no full reload needed)
         const productIndex = products.findIndex(p => p.id === productId);

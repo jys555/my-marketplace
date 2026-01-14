@@ -224,6 +224,8 @@ function validateForm(form, schema) {
     const data = {};
     const errors = [];
     let isValid = true;
+    // NOTE: Bu "oxirgi tekshirilgan field" (schema bo'yicha ketma-ket tekshiriladi)
+    // "Oxirgi o'zgartirilgan field" uchun alohida tracking kerak (input event listener)
     let lastErrorField = null; // Oxirgi tekshirilgan xatolik bo'lgan field
 
     for (const [fieldId, config] of Object.entries(schema)) {
@@ -239,14 +241,14 @@ function validateForm(form, schema) {
         if (!result.valid) {
             isValid = false;
             errors.push({ field: fieldId, message: result.error });
-            // Save last error field for scrolling (oxirgi tekshirilgan field)
+            // Save last error field for scrolling (oxirgi tekshirilgan field - schema bo'yicha ketma-ket)
             lastErrorField = field;
         } else if (result.value !== undefined) {
             data[fieldId] = result.value;
         }
     }
 
-    // Scroll to last error field if any (oxirgi ishlatilgan field)
+    // Scroll to last error field if any (oxirgi tekshirilgan field)
     if (lastErrorField && lastErrorField.scrollIntoView) {
         setTimeout(() => {
             lastErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
