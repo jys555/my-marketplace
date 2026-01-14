@@ -217,23 +217,49 @@ async function handleProductUpload() {
         
         // Validate sale_price <= price with visual error display (oxirgi o'zgartirilgan field'ga error)
         if (productData.sale_price >= productData.price) {
-            // Oxirgi o'zgartirilgan field'ga error (yoki sale_price)
+            // Oxirgi o'zgartirilgan field'ga mos xatolik xabari
             const errorField = lastEditedFieldInUpload || document.getElementById('product-sale-price');
             if (errorField && window.validation) {
-                window.validation.showError(errorField, 'Haqiqiy sotish narxi marketing narxidan kichik bo\'lishi kerak!');
+                const fieldId = errorField.id;
+                let errorMessage = '';
+                
+                if (fieldId === 'product-sale-price') {
+                    errorMessage = 'Sotish narxi chizilgan narxdan kichik bo\'lishi kerak';
+                } else if (fieldId === 'product-price') {
+                    errorMessage = 'Chizilgan narx sotish narxidan katta bo\'lishi kerak';
+                } else {
+                    errorMessage = 'Sotish narxi chizilgan narxdan kichik bo\'lishi kerak';
+                }
+                
+                window.validation.showError(errorField, errorMessage);
             }
-            throw new Error('Haqiqiy sotish narxi marketing narxidan kichik bo\'lishi kerak!');
+            // Don't throw - error already shown on field
+            return;
         }
         
         // Rentabillik hisoblash (sale_price - cost_price - service_fee) - oxirgi o'zgartirilgan field'ga error
         const profitability = productData.sale_price - productData.cost_price - productData.service_fee;
         if (profitability <= 0) {
-            // Oxirgi o'zgartirilgan field'ga error (yoki sale_price)
+            // Oxirgi o'zgartirilgan field'ga mos xatolik xabari
             const errorField = lastEditedFieldInUpload || document.getElementById('product-sale-price');
             if (errorField && window.validation) {
-                window.validation.showError(errorField, `Foyda manfiy! Hisob: ${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability}`);
+                const fieldId = errorField.id;
+                let errorMessage = '';
+                
+                if (fieldId === 'product-sale-price') {
+                    errorMessage = `Foyda manfiy! Sotish narxi tannarx va xizmatlar narxidan katta bo'lishi kerak (${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability})`;
+                } else if (fieldId === 'product-cost-price') {
+                    errorMessage = `Foyda manfiy! Tannarx sotish narxidan kichik bo'lishi kerak (${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability})`;
+                } else if (fieldId === 'product-service-fee') {
+                    errorMessage = `Foyda manfiy! Xizmatlar narxi juda yuqori (${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability})`;
+                } else {
+                    errorMessage = `Foyda manfiy! Hisob: ${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability}`;
+                }
+                
+                window.validation.showError(errorField, errorMessage);
             }
-            throw new Error(`Foyda manfiy! Hisob: ${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability}`);
+            // Don't throw - error already shown on field
+            return;
         }
         
         // Create product
@@ -256,7 +282,11 @@ async function handleProductUpload() {
         
     } catch (error) {
         console.error('Error uploading product:', error);
-        showError(error.message || 'Tovarni yuklab bo\'lmadi');
+        // Error already shown on field via window.validation.showError
+        // Only show general error if it's not a validation error
+        if (!error.message || (!error.message.includes('majburiy') && !error.message.includes('kichik') && !error.message.includes('manfiy'))) {
+            showError(error.message || 'Tovarni yuklab bo\'lmadi');
+        }
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
