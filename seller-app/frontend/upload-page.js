@@ -4,6 +4,7 @@
  */
 
 let categories = [];
+let lastEditedFieldInUpload = null; // Track last edited field in upload form
 
 // ============================================
 // TAB SWITCHING
@@ -41,7 +42,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     await loadCategories();
     setupConditionalFields();
+    setupFieldTracking();
 });
+
+// Track last edited field in upload form
+function setupFieldTracking() {
+    const priceFields = [
+        'product-price',
+        'product-cost-price',
+        'product-sale-price',
+        'product-service-fee'
+    ];
+    
+    priceFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('input', () => {
+                lastEditedFieldInUpload = field;
+            });
+        }
+    });
+}
 
 async function loadCategories() {
     try {
@@ -194,21 +215,23 @@ async function handleProductUpload() {
             throw new Error('Xizmatlar narxi majburiy (0 yoki undan yuqori)!');
         }
         
-        // Validate sale_price <= price with visual error display (oxirgi tekshirilgan field'ga error)
+        // Validate sale_price <= price with visual error display (oxirgi o'zgartirilgan field'ga error)
         if (productData.sale_price >= productData.price) {
-            lastErrorField = document.getElementById('product-sale-price');
-            if (lastErrorField && window.validation) {
-                window.validation.showError(lastErrorField, 'Haqiqiy sotish narxi marketing narxidan kichik bo\'lishi kerak!');
+            // Oxirgi o'zgartirilgan field'ga error (yoki sale_price)
+            const errorField = lastEditedFieldInUpload || document.getElementById('product-sale-price');
+            if (errorField && window.validation) {
+                window.validation.showError(errorField, 'Haqiqiy sotish narxi marketing narxidan kichik bo\'lishi kerak!');
             }
             throw new Error('Haqiqiy sotish narxi marketing narxidan kichik bo\'lishi kerak!');
         }
         
-        // Rentabillik hisoblash (sale_price - cost_price - service_fee) - oxirgi tekshirilgan field'ga error
+        // Rentabillik hisoblash (sale_price - cost_price - service_fee) - oxirgi o'zgartirilgan field'ga error
         const profitability = productData.sale_price - productData.cost_price - productData.service_fee;
         if (profitability <= 0) {
-            lastErrorField = document.getElementById('product-sale-price');
-            if (lastErrorField && window.validation) {
-                window.validation.showError(lastErrorField, `Foyda manfiy! Hisob: ${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability}`);
+            // Oxirgi o'zgartirilgan field'ga error (yoki sale_price)
+            const errorField = lastEditedFieldInUpload || document.getElementById('product-sale-price');
+            if (errorField && window.validation) {
+                window.validation.showError(errorField, `Foyda manfiy! Hisob: ${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability}`);
             }
             throw new Error(`Foyda manfiy! Hisob: ${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability}`);
         }

@@ -442,6 +442,9 @@ async function updateProductQuantity(productSku, quantity) {
     }
 }
 
+// Track last edited field in edit price modal
+let lastEditedFieldInModal = null;
+
 // Open Edit Price Modal (SKU orqali)
 function openEditPriceModal(productSku) {
     const product = products.find(p => p.sku === productSku);
@@ -452,6 +455,9 @@ function openEditPriceModal(productSku) {
     
     if (!modal) return;
     
+    // Reset last edited field
+    lastEditedFieldInModal = null;
+    
     // ID'ni yashirilgan holda saqlash (backend uchun)
     document.getElementById('edit-product-id').value = product._id || product.id;
     document.getElementById('edit-marketplace-id').value = currentMarketplaceId || '';
@@ -459,6 +465,24 @@ function openEditPriceModal(productSku) {
     document.getElementById('edit-selling-price').value = product.sale_price || '';
     document.getElementById('edit-strikethrough-price').value = product.price || '';
     document.getElementById('edit-service-fee').value = product.service_fee || '';
+    
+    // Track last edited field
+    const fields = ['edit-cost-price', 'edit-selling-price', 'edit-strikethrough-price', 'edit-service-fee'];
+    fields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            // Remove existing listeners by cloning (but preserve value)
+            const value = field.value;
+            const newField = field.cloneNode(true);
+            newField.value = value; // Preserve value
+            field.parentNode.replaceChild(newField, field);
+            
+            // Add new listener
+            newField.addEventListener('input', () => {
+                lastEditedFieldInModal = newField;
+            });
+        }
+    });
     
     modal.classList.add('active');
 }
@@ -727,13 +751,11 @@ async function savePrice() {
     // Agar strikethrough_price bo'lmasa, selling_price o'zi price bo'ladi
     const actualPrice = strikethroughPrice || sellingPrice;
     
-    let lastErrorField = null;
-    
     if (actualPrice && sellingPrice && sellingPrice > actualPrice) {
-        // Oxirgi tekshirilgan field'ga error (selling_price)
-        lastErrorField = document.getElementById('edit-selling-price');
-        if (lastErrorField) {
-            window.validation.showError(lastErrorField, 'Sotish narxi marketing narxidan (chizilgan narx) kichik yoki teng bo\'lishi kerak!');
+        // Oxirgi o'zgartirilgan field'ga error (yoki selling_price)
+        const errorField = lastEditedFieldInModal || document.getElementById('edit-selling-price');
+        if (errorField) {
+            window.validation.showError(errorField, 'Sotish narxi marketing narxidan (chizilgan narx) kichik yoki teng bo\'lishi kerak!');
         }
         return;
     }
@@ -742,10 +764,10 @@ async function savePrice() {
     if (sellingPrice && costPrice !== null && serviceFee !== null) {
         const profitability = sellingPrice - costPrice - serviceFee;
         if (profitability <= 0) {
-            // Oxirgi tekshirilgan field'ga error (selling_price)
-            lastErrorField = document.getElementById('edit-selling-price');
-            if (lastErrorField) {
-                window.validation.showError(lastErrorField, `Foyda manfiy! Hisob: ${sellingPrice} - ${costPrice} - ${serviceFee} = ${profitability}`);
+            // Oxirgi o'zgartirilgan field'ga error (yoki selling_price)
+            const errorField = lastEditedFieldInModal || document.getElementById('edit-selling-price');
+            if (errorField) {
+                window.validation.showError(errorField, `Foyda manfiy! Hisob: ${sellingPrice} - ${costPrice} - ${serviceFee} = ${profitability}`);
             }
             return;
         }
