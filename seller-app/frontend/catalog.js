@@ -752,20 +752,49 @@ async function savePrice() {
     const actualPrice = strikethroughPrice || sellingPrice;
     
     if (actualPrice && sellingPrice && sellingPrice > actualPrice) {
-        // Oxirgi o'zgartirilgan field'ga mos xatolik xabari
-        const errorField = lastEditedFieldInModal || document.getElementById('edit-selling-price');
-        if (errorField) {
-            const fieldId = errorField.id;
-            let errorMessage = '';
+        // Xatolikka sabab bo'lgan field'ni aniqlash
+        let errorField = null;
+        let errorMessage = '';
+        
+        // Agar lastEditedFieldInModal xatolikka sabab bo'lgan field bo'lsa, uni ishlat
+        if (lastEditedFieldInModal) {
+            const fieldId = lastEditedFieldInModal.id;
+            if (fieldId === 'edit-selling-price' || fieldId === 'edit-strikethrough-price') {
+                errorField = lastEditedFieldInModal;
+            }
+        }
+        
+        // Agar topilmagan bo'lsa, mantiqiy aniqlash
+        if (!errorField) {
+            // sellingPrice > strikethroughPrice bo'lsa, xatolikka sabab bo'lgan field'ni aniqlash
+            // Agar strikethroughPrice kichik bo'lsa (masalan, 66000), u xatolikka sabab bo'lgan
+            // Agar sellingPrice katta bo'lsa (masalan, 345000), u xatolikka sabab bo'lgan
+            // Oddiy qoida: qaysi biri noto'g'ri bo'lsa, shu field'ga error
+            // Lekin biz faqat bitta field'ga error ko'rsatamiz
+            // Agar strikethroughPrice kichik bo'lsa (66000 < 345000), strikethrough_price field'iga error
+            // Agar sellingPrice katta bo'lsa (345000 > 66000), selling_price field'iga error
+            // Mantiqiy: qaysi biri noto'g'ri bo'lsa, shu field'ga error
             
+            // Agar strikethroughPrice kichik bo'lsa (masalan, 66000 < 345000), u xatolikka sabab
+            if (strikethroughPrice && strikethroughPrice < sellingPrice) {
+                errorField = document.getElementById('edit-strikethrough-price');
+                errorMessage = 'Chizilgan narx sotish narxidan katta bo\'lishi kerak';
+            } else {
+                // sellingPrice katta bo'lsa
+                errorField = document.getElementById('edit-selling-price');
+                errorMessage = 'Sotish narxi chizilgan narxdan kichik bo\'lishi kerak';
+            }
+        } else {
+            // lastEditedFieldInModal to'g'ri field bo'lsa, unga mos xabar
+            const fieldId = errorField.id;
             if (fieldId === 'edit-selling-price') {
                 errorMessage = 'Sotish narxi chizilgan narxdan kichik bo\'lishi kerak';
             } else if (fieldId === 'edit-strikethrough-price') {
                 errorMessage = 'Chizilgan narx sotish narxidan katta bo\'lishi kerak';
-            } else {
-                errorMessage = 'Sotish narxi chizilgan narxdan kichik bo\'lishi kerak';
             }
-            
+        }
+        
+        if (errorField && errorMessage) {
             window.validation.showError(errorField, errorMessage);
         }
         return;
@@ -775,22 +804,64 @@ async function savePrice() {
     if (sellingPrice && costPrice !== null && serviceFee !== null) {
         const profitability = sellingPrice - costPrice - serviceFee;
         if (profitability <= 0) {
-            // Oxirgi o'zgartirilgan field'ga mos xatolik xabari
-            const errorField = lastEditedFieldInModal || document.getElementById('edit-selling-price');
-            if (errorField) {
-                const fieldId = errorField.id;
-                let errorMessage = '';
+            // Xatolikka sabab bo'lgan field'ni aniqlash
+            let errorField = null;
+            let errorMessage = '';
+            
+        // Agar lastEditedFieldInModal xatolikka sabab bo'lgan field bo'lsa, uni ishlat
+            if (lastEditedFieldInModal) {
+                const fieldId = lastEditedFieldInModal.id;
+                if (fieldId === 'edit-selling-price' || fieldId === 'edit-cost-price' || fieldId === 'edit-service-fee') {
+                    errorField = lastEditedFieldInModal;
+                }
+            }
+            
+            // Agar topilmagan bo'lsa, mantiqiy aniqlash
+            if (!errorField) {
+                // Qaysi field xatolikka sabab bo'lganini aniqlash
+                // Agar costPrice katta bo'lsa → cost_price field'iga error
+                // Agar serviceFee katta bo'lsa → service_fee field'iga error
+                // Agar sellingPrice kichik bo'lsa → selling_price field'iga error
                 
+                // Oddiy qoida: qaysi biri noto'g'ri bo'lsa, shu field'ga error
+                // Lekin biz faqat bitta field'ga error ko'rsatamiz
+                // Mantiqiy: qaysi biri xatolikka sabab bo'lganini aniqlash
+                
+                // Agar costPrice + serviceFee > sellingPrice bo'lsa
+                const totalCost = costPrice + serviceFee;
+                if (totalCost >= sellingPrice) {
+                    // Qaysi biri katta ekanligini aniqlash
+                    if (serviceFee > costPrice && serviceFee > sellingPrice * 0.5) {
+                        // serviceFee juda katta
+                        errorField = document.getElementById('edit-service-fee');
+                        errorMessage = `Foyda manfiy! Xizmatlar narxi juda yuqori (${sellingPrice} - ${costPrice} - ${serviceFee} = ${profitability})`;
+                    } else if (costPrice > sellingPrice) {
+                        // costPrice juda katta
+                        errorField = document.getElementById('edit-cost-price');
+                        errorMessage = `Foyda manfiy! Tannarx sotish narxidan kichik bo'lishi kerak (${sellingPrice} - ${costPrice} - ${serviceFee} = ${profitability})`;
+                    } else {
+                        // sellingPrice juda kichik
+                        errorField = document.getElementById('edit-selling-price');
+                        errorMessage = `Foyda manfiy! Sotish narxi tannarx va xizmatlar narxidan katta bo'lishi kerak (${sellingPrice} - ${costPrice} - ${serviceFee} = ${profitability})`;
+                    }
+                } else {
+                    // sellingPrice juda kichik
+                    errorField = document.getElementById('edit-selling-price');
+                    errorMessage = `Foyda manfiy! Sotish narxi tannarx va xizmatlar narxidan katta bo'lishi kerak (${sellingPrice} - ${costPrice} - ${serviceFee} = ${profitability})`;
+                }
+            } else {
+                // lastEditedFieldInModal to'g'ri field bo'lsa, unga mos xabar
+                const fieldId = errorField.id;
                 if (fieldId === 'edit-selling-price') {
                     errorMessage = `Foyda manfiy! Sotish narxi tannarx va xizmatlar narxidan katta bo'lishi kerak (${sellingPrice} - ${costPrice} - ${serviceFee} = ${profitability})`;
                 } else if (fieldId === 'edit-cost-price') {
                     errorMessage = `Foyda manfiy! Tannarx sotish narxidan kichik bo'lishi kerak (${sellingPrice} - ${costPrice} - ${serviceFee} = ${profitability})`;
                 } else if (fieldId === 'edit-service-fee') {
                     errorMessage = `Foyda manfiy! Xizmatlar narxi juda yuqori (${sellingPrice} - ${costPrice} - ${serviceFee} = ${profitability})`;
-                } else {
-                    errorMessage = `Foyda manfiy! Hisob: ${sellingPrice} - ${costPrice} - ${serviceFee} = ${profitability}`;
                 }
-                
+            }
+            
+            if (errorField && errorMessage) {
                 window.validation.showError(errorField, errorMessage);
             }
             return;

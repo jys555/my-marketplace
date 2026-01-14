@@ -215,47 +215,103 @@ async function handleProductUpload() {
             throw new Error('Xizmatlar narxi majburiy (0 yoki undan yuqori)!');
         }
         
-        // Validate sale_price <= price with visual error display (oxirgi o'zgartirilgan field'ga error)
+        // Validate sale_price <= price with visual error display (xatolikka sabab bo'lgan field'ga error)
         if (productData.sale_price >= productData.price) {
-            // Oxirgi o'zgartirilgan field'ga mos xatolik xabari
-            const errorField = lastEditedFieldInUpload || document.getElementById('product-sale-price');
-            if (errorField && window.validation) {
+            // Xatolikka sabab bo'lgan field'ni aniqlash
+            let errorField = null;
+            let errorMessage = '';
+            
+            // Agar lastEditedFieldInUpload xatolikka sabab bo'lgan field bo'lsa, uni ishlat
+            if (lastEditedFieldInUpload) {
+                const fieldId = lastEditedFieldInUpload.id;
+                if (fieldId === 'product-sale-price' || fieldId === 'product-price') {
+                    errorField = lastEditedFieldInUpload;
+                }
+            }
+            
+            // Agar topilmagan bo'lsa, mantiqiy aniqlash
+            if (!errorField) {
+                // sale_price >= price bo'lsa, xatolikka sabab bo'lgan field'ni aniqlash
+                // Agar price kichik bo'lsa (masalan, 66000 < 345000), u xatolikka sabab
+                // Agar sale_price katta bo'lsa (masalan, 345000 > 66000), u xatolikka sabab
+                if (productData.price < productData.sale_price) {
+                    // price kichik bo'lsa, price field'iga error
+                    errorField = document.getElementById('product-price');
+                    errorMessage = 'Chizilgan narx sotish narxidan katta bo\'lishi kerak';
+                } else {
+                    // sale_price katta bo'lsa
+                    errorField = document.getElementById('product-sale-price');
+                    errorMessage = 'Sotish narxi chizilgan narxdan kichik bo\'lishi kerak';
+                }
+            } else {
+                // lastEditedFieldInUpload to'g'ri field bo'lsa, unga mos xabar
                 const fieldId = errorField.id;
-                let errorMessage = '';
-                
                 if (fieldId === 'product-sale-price') {
                     errorMessage = 'Sotish narxi chizilgan narxdan kichik bo\'lishi kerak';
                 } else if (fieldId === 'product-price') {
                     errorMessage = 'Chizilgan narx sotish narxidan katta bo\'lishi kerak';
-                } else {
-                    errorMessage = 'Sotish narxi chizilgan narxdan kichik bo\'lishi kerak';
                 }
-                
+            }
+            
+            if (errorField && errorMessage && window.validation) {
                 window.validation.showError(errorField, errorMessage);
             }
             // Don't throw - error already shown on field
             return;
         }
         
-        // Rentabillik hisoblash (sale_price - cost_price - service_fee) - oxirgi o'zgartirilgan field'ga error
+        // Rentabillik hisoblash (sale_price - cost_price - service_fee) - xatolikka sabab bo'lgan field'ga error
         const profitability = productData.sale_price - productData.cost_price - productData.service_fee;
         if (profitability <= 0) {
-            // Oxirgi o'zgartirilgan field'ga mos xatolik xabari
-            const errorField = lastEditedFieldInUpload || document.getElementById('product-sale-price');
-            if (errorField && window.validation) {
+            // Xatolikka sabab bo'lgan field'ni aniqlash
+            let errorField = null;
+            let errorMessage = '';
+            
+            // Agar lastEditedFieldInUpload xatolikka sabab bo'lgan field bo'lsa, uni ishlat
+            if (lastEditedFieldInUpload) {
+                const fieldId = lastEditedFieldInUpload.id;
+                if (fieldId === 'product-sale-price' || fieldId === 'product-cost-price' || fieldId === 'product-service-fee') {
+                    errorField = lastEditedFieldInUpload;
+                }
+            }
+            
+            // Agar topilmagan bo'lsa, mantiqiy aniqlash
+            if (!errorField) {
+                // Qaysi field xatolikka sabab bo'lganini aniqlash
+                const totalCost = productData.cost_price + productData.service_fee;
+                if (totalCost >= productData.sale_price) {
+                    // Qaysi biri katta ekanligini aniqlash
+                    if (productData.service_fee > productData.cost_price && productData.service_fee > productData.sale_price * 0.5) {
+                        // service_fee juda katta
+                        errorField = document.getElementById('product-service-fee');
+                        errorMessage = `Foyda manfiy! Xizmatlar narxi juda yuqori (${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability})`;
+                    } else if (productData.cost_price > productData.sale_price) {
+                        // cost_price juda katta
+                        errorField = document.getElementById('product-cost-price');
+                        errorMessage = `Foyda manfiy! Tannarx sotish narxidan kichik bo'lishi kerak (${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability})`;
+                    } else {
+                        // sale_price juda kichik
+                        errorField = document.getElementById('product-sale-price');
+                        errorMessage = `Foyda manfiy! Sotish narxi tannarx va xizmatlar narxidan katta bo'lishi kerak (${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability})`;
+                    }
+                } else {
+                    // sale_price juda kichik
+                    errorField = document.getElementById('product-sale-price');
+                    errorMessage = `Foyda manfiy! Sotish narxi tannarx va xizmatlar narxidan katta bo'lishi kerak (${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability})`;
+                }
+            } else {
+                // lastEditedFieldInUpload to'g'ri field bo'lsa, unga mos xabar
                 const fieldId = errorField.id;
-                let errorMessage = '';
-                
                 if (fieldId === 'product-sale-price') {
                     errorMessage = `Foyda manfiy! Sotish narxi tannarx va xizmatlar narxidan katta bo'lishi kerak (${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability})`;
                 } else if (fieldId === 'product-cost-price') {
                     errorMessage = `Foyda manfiy! Tannarx sotish narxidan kichik bo'lishi kerak (${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability})`;
                 } else if (fieldId === 'product-service-fee') {
                     errorMessage = `Foyda manfiy! Xizmatlar narxi juda yuqori (${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability})`;
-                } else {
-                    errorMessage = `Foyda manfiy! Hisob: ${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability}`;
                 }
-                
+            }
+            
+            if (errorField && errorMessage && window.validation) {
                 window.validation.showError(errorField, errorMessage);
             }
             // Don't throw - error already shown on field
