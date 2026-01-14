@@ -103,112 +103,112 @@ async function handleProductUpload() {
             window.validation.clearAllErrors(form);
         }
         
-        // Validation - BARCHA MAJBURIY MAYDONLAR (with visual error display - faqat birinchi xatolik)
-        let firstErrorField = null;
+        // Validation - BARCHA MAJBURIY MAYDONLAR (with visual error display - oxirgi tekshirilgan field'ga error)
+        let lastErrorField = null;
         
         if (!productData.sku) {
-            firstErrorField = document.getElementById('product-sku');
-            if (firstErrorField && window.validation) {
-                window.validation.showError(firstErrorField, 'SKU majburiy!');
+            lastErrorField = document.getElementById('product-sku');
+            if (lastErrorField && window.validation) {
+                window.validation.showError(lastErrorField, 'SKU majburiy!');
             }
             throw new Error('SKU majburiy!');
         }
         
         if (!productData.name_uz) {
-            firstErrorField = document.getElementById('product-name-uz');
-            if (firstErrorField && window.validation) {
-                window.validation.showError(firstErrorField, 'O\'zbekcha nom majburiy!');
+            lastErrorField = document.getElementById('product-name-uz');
+            if (lastErrorField && window.validation) {
+                window.validation.showError(lastErrorField, 'O\'zbekcha nom majburiy!');
             }
             throw new Error('O\'zbekcha nom majburiy!');
         }
         
         if (!productData.name_ru) {
-            firstErrorField = document.getElementById('product-name-ru');
-            if (firstErrorField && window.validation) {
-                window.validation.showError(firstErrorField, 'Ruscha nom majburiy!');
+            lastErrorField = document.getElementById('product-name-ru');
+            if (lastErrorField && window.validation) {
+                window.validation.showError(lastErrorField, 'Ruscha nom majburiy!');
             }
             throw new Error('Ruscha nom majburiy!');
         }
         
         if (!productData.description_uz) {
-            firstErrorField = document.getElementById('product-description-uz');
-            if (firstErrorField && window.validation) {
-                window.validation.showError(firstErrorField, 'O\'zbekcha tavsif majburiy!');
+            lastErrorField = document.getElementById('product-description-uz');
+            if (lastErrorField && window.validation) {
+                window.validation.showError(lastErrorField, 'O\'zbekcha tavsif majburiy!');
             }
             throw new Error('O\'zbekcha tavsif majburiy!');
         }
         
         if (!productData.description_ru) {
-            firstErrorField = document.getElementById('product-description-ru');
-            if (firstErrorField && window.validation) {
-                window.validation.showError(firstErrorField, 'Ruscha tavsif majburiy!');
+            lastErrorField = document.getElementById('product-description-ru');
+            if (lastErrorField && window.validation) {
+                window.validation.showError(lastErrorField, 'Ruscha tavsif majburiy!');
             }
             throw new Error('Ruscha tavsif majburiy!');
         }
         
         if (!productData.category_id) {
-            firstErrorField = document.getElementById('product-category');
-            if (firstErrorField && window.validation) {
-                window.validation.showError(firstErrorField, 'Kategoriya tanlash majburiy!');
+            lastErrorField = document.getElementById('product-category');
+            if (lastErrorField && window.validation) {
+                window.validation.showError(lastErrorField, 'Kategoriya tanlash majburiy!');
             }
             throw new Error('Kategoriya tanlash majburiy!');
         }
         
         if (!productData.image_url) {
-            firstErrorField = document.getElementById('product-image-url');
-            if (firstErrorField && window.validation) {
-                window.validation.showError(firstErrorField, 'Rasm URL majburiy!');
+            lastErrorField = document.getElementById('product-image-url');
+            if (lastErrorField && window.validation) {
+                window.validation.showError(lastErrorField, 'Rasm URL majburiy!');
             }
             throw new Error('Rasm URL majburiy!');
         }
         
         if (!productData.price || productData.price <= 0) {
-            firstErrorField = document.getElementById('product-price');
-            if (firstErrorField && window.validation) {
-                window.validation.showError(firstErrorField, 'Narx majburiy va 0 dan katta bo\'lishi kerak!');
+            lastErrorField = document.getElementById('product-price');
+            if (lastErrorField && window.validation) {
+                window.validation.showError(lastErrorField, 'Narx majburiy va 0 dan katta bo\'lishi kerak!');
             }
             throw new Error('Narx majburiy va 0 dan katta bo\'lishi kerak!');
         }
         
         if (!productData.cost_price || productData.cost_price <= 0) {
-            firstErrorField = document.getElementById('product-cost-price');
-            if (firstErrorField && window.validation) {
-                window.validation.showError(firstErrorField, 'Tan narxi majburiy va 0 dan katta bo\'lishi kerak!');
+            lastErrorField = document.getElementById('product-cost-price');
+            if (lastErrorField && window.validation) {
+                window.validation.showError(lastErrorField, 'Tan narxi majburiy va 0 dan katta bo\'lishi kerak!');
             }
             throw new Error('Tan narxi majburiy va 0 dan katta bo\'lishi kerak!');
         }
         
         if (!productData.sale_price || productData.sale_price <= 0) {
-            firstErrorField = document.getElementById('product-sale-price');
-            if (firstErrorField && window.validation) {
-                window.validation.showError(firstErrorField, 'Haqiqiy sotish narxi majburiy va 0 dan katta bo\'lishi kerak!');
+            lastErrorField = document.getElementById('product-sale-price');
+            if (lastErrorField && window.validation) {
+                window.validation.showError(lastErrorField, 'Haqiqiy sotish narxi majburiy va 0 dan katta bo\'lishi kerak!');
             }
             throw new Error('Haqiqiy sotish narxi majburiy va 0 dan katta bo\'lishi kerak!');
         }
         
         if (productData.service_fee === null || productData.service_fee === undefined || productData.service_fee < 0) {
-            firstErrorField = document.getElementById('product-service-fee');
-            if (firstErrorField && window.validation) {
-                window.validation.showError(firstErrorField, 'Xizmatlar narxi majburiy (0 yoki undan yuqori)!');
+            lastErrorField = document.getElementById('product-service-fee');
+            if (lastErrorField && window.validation) {
+                window.validation.showError(lastErrorField, 'Xizmatlar narxi majburiy (0 yoki undan yuqori)!');
             }
             throw new Error('Xizmatlar narxi majburiy (0 yoki undan yuqori)!');
         }
         
-        // Validate sale_price <= price with visual error display (faqat sale_price field'ga error)
+        // Validate sale_price <= price with visual error display (oxirgi tekshirilgan field'ga error)
         if (productData.sale_price >= productData.price) {
-            firstErrorField = document.getElementById('product-sale-price');
-            if (firstErrorField && window.validation) {
-                window.validation.showError(firstErrorField, 'Haqiqiy sotish narxi marketing narxidan kichik bo\'lishi kerak!');
+            lastErrorField = document.getElementById('product-sale-price');
+            if (lastErrorField && window.validation) {
+                window.validation.showError(lastErrorField, 'Haqiqiy sotish narxi marketing narxidan kichik bo\'lishi kerak!');
             }
             throw new Error('Haqiqiy sotish narxi marketing narxidan kichik bo\'lishi kerak!');
         }
         
-        // Rentabillik hisoblash (sale_price - cost_price - service_fee) - faqat sale_price field'ga error
+        // Rentabillik hisoblash (sale_price - cost_price - service_fee) - oxirgi tekshirilgan field'ga error
         const profitability = productData.sale_price - productData.cost_price - productData.service_fee;
         if (profitability <= 0) {
-            firstErrorField = document.getElementById('product-sale-price');
-            if (firstErrorField && window.validation) {
-                window.validation.showError(firstErrorField, `Foyda manfiy! Hisob: ${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability}`);
+            lastErrorField = document.getElementById('product-sale-price');
+            if (lastErrorField && window.validation) {
+                window.validation.showError(lastErrorField, `Foyda manfiy! Hisob: ${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability}`);
             }
             throw new Error(`Foyda manfiy! Hisob: ${productData.sale_price} - ${productData.cost_price} - ${productData.service_fee} = ${profitability}`);
         }

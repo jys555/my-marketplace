@@ -224,7 +224,7 @@ function validateForm(form, schema) {
     const data = {};
     const errors = [];
     let isValid = true;
-    let firstErrorField = null;
+    let lastErrorField = null; // Oxirgi tekshirilgan xatolik bo'lgan field
 
     for (const [fieldId, config] of Object.entries(schema)) {
         const field = form.querySelector(`#${fieldId}`);
@@ -239,19 +239,17 @@ function validateForm(form, schema) {
         if (!result.valid) {
             isValid = false;
             errors.push({ field: fieldId, message: result.error });
-            // Save first error field for scrolling
-            if (!firstErrorField) {
-                firstErrorField = field;
-            }
+            // Save last error field for scrolling (oxirgi tekshirilgan field)
+            lastErrorField = field;
         } else if (result.value !== undefined) {
             data[fieldId] = result.value;
         }
     }
 
-    // Scroll to first error field if any
-    if (firstErrorField && firstErrorField.scrollIntoView) {
+    // Scroll to last error field if any (oxirgi ishlatilgan field)
+    if (lastErrorField && lastErrorField.scrollIntoView) {
         setTimeout(() => {
-            firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            lastErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);
     }
 

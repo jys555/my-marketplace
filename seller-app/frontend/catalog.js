@@ -717,17 +717,38 @@ async function savePrice() {
         return;
     }
 
+    // Get validated data
+    const costPrice = validation.data['edit-cost-price'] || null;
+    const sellingPrice = validation.data['edit-selling-price'] || null;
+    const strikethroughPrice = validation.data['edit-strikethrough-price'] || null;
+    const serviceFee = validation.data['edit-service-fee'] || null;
+
     // Cross-field validation: sale_price must be <= price (strikethrough_price)
-    const sellingPrice = validation.data['edit-selling-price'];
-    const strikethroughPrice = validation.data['edit-strikethrough-price'];
+    // Agar strikethrough_price bo'lmasa, selling_price o'zi price bo'ladi
+    const actualPrice = strikethroughPrice || sellingPrice;
     
-    if (strikethroughPrice && sellingPrice && sellingPrice > strikethroughPrice) {
-        // Faqat birinchi xatolik bo'lgan field'ga error ko'rsatish (selling_price)
-        const sellingPriceField = document.getElementById('edit-selling-price');
-        if (sellingPriceField) {
-            window.validation.showError(sellingPriceField, 'Sotish narxi marketing narxidan (chizilgan narx) kichik yoki teng bo\'lishi kerak!');
+    let lastErrorField = null;
+    
+    if (actualPrice && sellingPrice && sellingPrice > actualPrice) {
+        // Oxirgi tekshirilgan field'ga error (selling_price)
+        lastErrorField = document.getElementById('edit-selling-price');
+        if (lastErrorField) {
+            window.validation.showError(lastErrorField, 'Sotish narxi marketing narxidan (chizilgan narx) kichik yoki teng bo\'lishi kerak!');
         }
         return;
+    }
+
+    // Rentabillik tekshirish: sale_price - cost_price - service_fee > 0
+    if (sellingPrice && costPrice !== null && serviceFee !== null) {
+        const profitability = sellingPrice - costPrice - serviceFee;
+        if (profitability <= 0) {
+            // Oxirgi tekshirilgan field'ga error (selling_price)
+            lastErrorField = document.getElementById('edit-selling-price');
+            if (lastErrorField) {
+                window.validation.showError(lastErrorField, `Foyda manfiy! Hisob: ${sellingPrice} - ${costPrice} - ${serviceFee} = ${profitability}`);
+            }
+            return;
+        }
     }
 
     const productId = parseInt(document.getElementById('edit-product-id').value);
@@ -736,10 +757,10 @@ async function savePrice() {
     const priceData = {
         product_id: productId,
         marketplace_id: marketplaceId ? parseInt(marketplaceId) : null,
-        cost_price: validation.data['edit-cost-price'] || null,
-        selling_price: validation.data['edit-selling-price'] || null,
-        service_fee: validation.data['edit-service-fee'] || null,
-        strikethrough_price: validation.data['edit-strikethrough-price'] || null
+        cost_price: costPrice,
+        selling_price: sellingPrice,
+        service_fee: serviceFee,
+        strikethrough_price: strikethroughPrice
     };
 
     try {
