@@ -380,16 +380,16 @@ router.post(
                         'SELECT telegram_id FROM users WHERE id = $1',
                         [userId]
                     );
-                    
+
                     if (userTgRows.length > 0 && userTgRows[0].telegram_id) {
-                        await botService.notifyCustomerOrderStatus(
-                            {
-                                order_number: orderNumber,
+                            await botService.notifyCustomerOrderStatus(
+                                {
+                                    order_number: orderNumber,
                                 status: 'pending',
                                 total_amount: total.toFixed(2),
-                            },
+                                },
                             userTgRows[0].telegram_id
-                        );
+                            );
                     }
                 } catch (botError) {
                     logger.error('Bot notification error (non-critical):', botError);
