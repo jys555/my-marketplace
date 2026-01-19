@@ -15,7 +15,6 @@ const {
 } = require('../middleware/validate');
 const { NotFoundError, ConflictError } = require('../utils/errors');
 const logger = require('../utils/logger');
-const integrationService = require('../services/integrations');
 
 /**
  * @swagger
@@ -357,8 +356,13 @@ router.post(
         service_fee: optional(positive),
         image_url: optional(url),
         is_active: optional(boolean),
-        marketplace_id: optional(integer), // Marketplace integratsiyasi uchun
-        marketplace_product_id: optional(string), // Marketplace'dagi tovar ID
+        // Yandex Market integratsiyasi (ixtiyoriy)
+        yandex_api_token: optional(string),
+        yandex_campaign_id: optional(string),
+        yandex_product_id: optional(string),
+        // Uzum Market integratsiyasi (ixtiyoriy)
+        uzum_api_token: optional(string),
+        uzum_product_id: optional(string),
     }),
     async (req, res, next) => {
         try {
@@ -376,8 +380,13 @@ router.post(
                 service_fee,
                 image_url,
                 is_active = true,
-                marketplace_id, // Marketplace integratsiyasi
-                marketplace_product_id, // Marketplace'dagi tovar ID
+                // Yandex Market integratsiyasi
+                yandex_api_token,
+                yandex_campaign_id,
+                yandex_product_id,
+                // Uzum Market integratsiyasi
+                uzum_api_token,
+                uzum_product_id,
             } = req.body;
 
             // Check if SKU already exists
@@ -421,28 +430,59 @@ router.post(
                     .json({ error: 'Service fee majburiy (0 yoki undan yuqori)' });
             }
 
+            // Check if marketplace columns exist (for backward compatibility)
+            const { rows: columnCheck } = await pool.query(`
+                SELECT column_name FROM information_schema.columns 
+                WHERE table_name = 'products' AND column_name IN ('yandex_api_token', 'uzum_api_token')
+            `);
+            const hasYandexColumns = columnCheck.some(c => c.column_name === 'yandex_api_token');
+            const hasUzumColumns = columnCheck.some(c => c.column_name === 'uzum_api_token');
+
+            // Build dynamic INSERT query
+            let columns = [
+                'sku', 'barcode', 'name_uz', 'name_ru', 'description_uz', 'description_ru',
+                'category_id', 'price', 'sale_price', 'cost_price', 'service_fee', 'image_url', 'is_active'
+            ];
+            let values = [
+                sku,
+                barcode || null,
+                name_uz,
+                name_ru || null,
+                description_uz || null,
+                description_ru || null,
+                category_id || null,
+                price,
+                sale_price || null,
+                cost_price,
+                service_fee,
+                image_url || null,
+                is_active,
+            ];
+
+            if (hasYandexColumns) {
+                columns.push('yandex_api_token', 'yandex_campaign_id', 'yandex_product_id');
+                values.push(
+                    yandex_api_token || null,
+                    yandex_campaign_id || null,
+                    yandex_product_id || null
+                );
+            }
+
+            if (hasUzumColumns) {
+                columns.push('uzum_api_token', 'uzum_product_id');
+                values.push(
+                    uzum_api_token || null,
+                    uzum_product_id || null
+                );
+            }
+
+            const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
+
             const { rows } = await pool.query(
-                `INSERT INTO products (
-                    sku, barcode, name_uz, name_ru, description_uz, description_ru,
-                    category_id, price, sale_price, cost_price, service_fee, image_url, is_active
-                )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                `INSERT INTO products (${columns.join(', ')})
+                VALUES (${placeholders})
                 RETURNING *`,
-                [
-                    sku,
-                    barcode || null,
-                    name_uz,
-                    name_ru || null,
-                    description_uz || null,
-                    description_ru || null,
-                    category_id || null,
-                    price,
-                    sale_price || null,
-                    cost_price,
-                    service_fee,
-                    image_url || null,
-                    is_active,
-                ]
+                values
             );
 
             logger.info('✅ Product created successfully:', {
@@ -457,57 +497,32 @@ router.post(
             const productId = rows[0].id;
 
             // Marketplace integratsiyasi (agar berilgan bo'lsa)
-            if (marketplace_id && marketplace_product_id) {
-                try {
-                    // Marketplace'dan tovar ma'lumotlarini olish
-                    const marketplaceProducts = await integrationService.fetchMarketplaceProducts(marketplace_id);
-                    const marketplaceProduct = marketplaceProducts.find(
-                        mp => mp.marketplace_product_id === marketplace_product_id
-                    );
-
-                    if (marketplaceProduct) {
-                        // Marketplace product bilan link qilish
-                        await integrationService.linkMarketplaceProduct(
-                            marketplace_id,
-                            productId,
-                            marketplace_product_id,
-                            {
-                                marketplace_sku: marketplaceProduct.marketplace_sku,
-                                marketplace_name: marketplaceProduct.marketplace_name,
-                                marketplace_price: marketplaceProduct.marketplace_price,
-                                marketplace_strikethrough_price: marketplaceProduct.marketplace_strikethrough_price,
-                                commission_rate: marketplaceProduct.commission_rate,
-                                status: 'active',
-                            }
-                        );
-
-                        logger.info('✅ Marketplace product linked:', {
-                            product_id: productId,
-                            marketplace_id,
-                            marketplace_product_id,
-                        });
-                    } else {
-                        logger.warn('⚠️ Marketplace product not found, linking with provided data:', {
-                            product_id: productId,
-                            marketplace_id,
-                            marketplace_product_id,
-                        });
-
-                        // Agar marketplace'dan topilmasa, berilgan ma'lumotlar bilan link qilish
-                        await integrationService.linkMarketplaceProduct(
-                            marketplace_id,
-                            productId,
-                            marketplace_product_id,
-                            {
-                                marketplace_name: name_uz,
-                                status: 'active',
-                            }
-                        );
+            // Yandex Market sync (background'da)
+            if (hasYandexColumns && yandex_api_token && yandex_campaign_id && yandex_product_id) {
+                // Background'da sync qilish (to'xtatmaslik uchun)
+                setImmediate(async () => {
+                    try {
+                        const marketplaceSync = require('../services/marketplace-sync');
+                        await marketplaceSync.syncYandexProduct(productId);
+                        logger.info('✅ Yandex Market product synced in background:', productId);
+                    } catch (error) {
+                        logger.error('⚠️ Yandex Market sync error (product still created):', error);
                     }
-                } catch (integrationError) {
-                    // Integratsiya xatosi tovar yaratilishiga ta'sir qilmasligi kerak
-                    logger.error('⚠️ Marketplace integration error (product still created):', integrationError);
-                }
+                });
+            }
+
+            // Uzum Market sync (background'da)
+            if (hasUzumColumns && uzum_api_token && uzum_product_id) {
+                // Background'da sync qilish (to'xtatmaslik uchun)
+                setImmediate(async () => {
+                    try {
+                        const marketplaceSync = require('../services/marketplace-sync');
+                        await marketplaceSync.syncUzumProduct(productId);
+                        logger.info('✅ Uzum Market product synced in background:', productId);
+                    } catch (error) {
+                        logger.error('⚠️ Uzum Market sync error (product still created):', error);
+                    }
+                });
             }
 
             res.status(201).json(rows[0]);
