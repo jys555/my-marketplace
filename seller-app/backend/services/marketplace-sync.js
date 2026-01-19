@@ -14,27 +14,29 @@ class MarketplaceSyncService {
      */
     async syncYandexProduct(productId) {
         try {
-            // Product ma'lumotlarini olish
-            const { rows: productRows } = await pool.query(
-                `SELECT id, yandex_api_token, yandex_campaign_id, yandex_product_id 
-                 FROM products WHERE id = $1`,
+            // Marketplace integration ma'lumotlarini olish
+            const { rows: integrationRows } = await pool.query(
+                `SELECT id, product_id, api_token, campaign_id, marketplace_product_id 
+                 FROM product_marketplace_integrations 
+                 WHERE product_id = $1 AND marketplace_type = 'yandex'`,
                 [productId]
             );
 
-            if (productRows.length === 0) {
-                throw new Error('Product not found');
-            }
-
-            const product = productRows[0];
-
-            if (!product.yandex_api_token || !product.yandex_campaign_id || !product.yandex_product_id) {
+            if (integrationRows.length === 0) {
                 logger.warn(`⚠️ Yandex Market integration not configured for product ${productId}`);
                 return null;
             }
 
+            const integration = integrationRows[0];
+
+            if (!integration.api_token || !integration.campaign_id || !integration.marketplace_product_id) {
+                logger.warn(`⚠️ Yandex Market integration incomplete for product ${productId}`);
+                return null;
+            }
+
             const baseUrl = 'https://api.partner.market.yandex.ru';
-            const campaignId = product.yandex_campaign_id;
-            const offerId = product.yandex_product_id;
+            const campaignId = integration.campaign_id;
+            const offerId = integration.marketplace_product_id;
 
             logger.info(`🔄 Syncing Yandex Market product: ${offerId} for campaign: ${campaignId}`);
 
@@ -93,13 +95,14 @@ class MarketplaceSyncService {
 
             // 3. Database'ga yangilash
             const { rows: updatedRows } = await pool.query(
-                `UPDATE products 
-                 SET yandex_price = $1,
-                     yandex_commission_rate = $2,
-                     yandex_stock = $3,
-                     yandex_last_synced_at = NOW()
-                 WHERE id = $4
-                 RETURNING id, yandex_price, yandex_commission_rate, yandex_stock, yandex_last_synced_at`,
+                `UPDATE product_marketplace_integrations 
+                 SET marketplace_price = $1,
+                     marketplace_commission_rate = $2,
+                     marketplace_stock = $3,
+                     last_synced_at = NOW(),
+                     updated_at = NOW()
+                 WHERE product_id = $4 AND marketplace_type = 'yandex'
+                 RETURNING id, marketplace_price, marketplace_commission_rate, marketplace_stock, last_synced_at`,
                 [price, commissionRate, stock, productId]
             );
 
@@ -124,25 +127,26 @@ class MarketplaceSyncService {
      */
     async updateYandexStock(productId, quantity) {
         try {
-            const { rows: productRows } = await pool.query(
-                `SELECT id, yandex_api_token, yandex_campaign_id, yandex_product_id 
-                 FROM products WHERE id = $1`,
+            const { rows: integrationRows } = await pool.query(
+                `SELECT id, api_token, campaign_id, marketplace_product_id 
+                 FROM product_marketplace_integrations 
+                 WHERE product_id = $1 AND marketplace_type = 'yandex'`,
                 [productId]
             );
 
-            if (productRows.length === 0) {
-                throw new Error('Product not found');
-            }
-
-            const product = productRows[0];
-
-            if (!product.yandex_api_token || !product.yandex_campaign_id || !product.yandex_product_id) {
+            if (integrationRows.length === 0) {
                 throw new Error('Yandex Market integration not configured');
             }
 
+            const integration = integrationRows[0];
+
+            if (!integration.api_token || !integration.campaign_id || !integration.marketplace_product_id) {
+                throw new Error('Yandex Market integration incomplete');
+            }
+
             const baseUrl = 'https://api.partner.market.yandex.ru';
-            const campaignId = product.yandex_campaign_id;
-            const offerId = product.yandex_product_id;
+            const campaignId = integration.campaign_id;
+            const offerId = integration.marketplace_product_id;
 
             // Yandex Market API'ga stock yangilash
             // TODO: Yandex Market API endpoint'ini qo'shish
@@ -157,11 +161,12 @@ class MarketplaceSyncService {
 
             // Database'ga yangilash
             const { rows: updatedRows } = await pool.query(
-                `UPDATE products 
-                 SET yandex_stock = $1,
-                     yandex_last_synced_at = NOW()
-                 WHERE id = $2
-                 RETURNING id, yandex_stock, yandex_last_synced_at`,
+                `UPDATE product_marketplace_integrations 
+                 SET marketplace_stock = $1,
+                     last_synced_at = NOW(),
+                     updated_at = NOW()
+                 WHERE product_id = $2 AND marketplace_type = 'yandex'
+                 RETURNING id, marketplace_stock, last_synced_at`,
                 [quantity, productId]
             );
 
@@ -181,20 +186,22 @@ class MarketplaceSyncService {
      */
     async syncUzumProduct(productId) {
         try {
-            const { rows: productRows } = await pool.query(
-                `SELECT id, uzum_api_token, uzum_product_id 
-                 FROM products WHERE id = $1`,
+            const { rows: integrationRows } = await pool.query(
+                `SELECT id, product_id, api_token, marketplace_product_id 
+                 FROM product_marketplace_integrations 
+                 WHERE product_id = $1 AND marketplace_type = 'uzum'`,
                 [productId]
             );
 
-            if (productRows.length === 0) {
-                throw new Error('Product not found');
+            if (integrationRows.length === 0) {
+                logger.warn(`⚠️ Uzum Market integration not configured for product ${productId}`);
+                return null;
             }
 
-            const product = productRows[0];
+            const integration = integrationRows[0];
 
-            if (!product.uzum_api_token || !product.uzum_product_id) {
-                logger.warn(`⚠️ Uzum Market integration not configured for product ${productId}`);
+            if (!integration.api_token || !integration.marketplace_product_id) {
+                logger.warn(`⚠️ Uzum Market integration incomplete for product ${productId}`);
                 return null;
             }
 
@@ -209,13 +216,14 @@ class MarketplaceSyncService {
 
             // Database'ga yangilash
             const { rows: updatedRows } = await pool.query(
-                `UPDATE products 
-                 SET uzum_price = $1,
-                     uzum_commission_rate = $2,
-                     uzum_stock = $3,
-                     uzum_last_synced_at = NOW()
-                 WHERE id = $4
-                 RETURNING id, uzum_price, uzum_commission_rate, uzum_stock, uzum_last_synced_at`,
+                `UPDATE product_marketplace_integrations 
+                 SET marketplace_price = $1,
+                     marketplace_commission_rate = $2,
+                     marketplace_stock = $3,
+                     last_synced_at = NOW(),
+                     updated_at = NOW()
+                 WHERE product_id = $4 AND marketplace_type = 'uzum'
+                 RETURNING id, marketplace_price, marketplace_commission_rate, marketplace_stock, last_synced_at`,
                 [null, null, 0, productId] // TODO: Uzum API'dan o'qilgan ma'lumotlar
             );
 
@@ -236,20 +244,21 @@ class MarketplaceSyncService {
      */
     async updateUzumStock(productId, quantity) {
         try {
-            const { rows: productRows } = await pool.query(
-                `SELECT id, uzum_api_token, uzum_product_id 
-                 FROM products WHERE id = $1`,
+            const { rows: integrationRows } = await pool.query(
+                `SELECT id, api_token, marketplace_product_id 
+                 FROM product_marketplace_integrations 
+                 WHERE product_id = $1 AND marketplace_type = 'uzum'`,
                 [productId]
             );
 
-            if (productRows.length === 0) {
-                throw new Error('Product not found');
+            if (integrationRows.length === 0) {
+                throw new Error('Uzum Market integration not configured');
             }
 
-            const product = productRows[0];
+            const integration = integrationRows[0];
 
-            if (!product.uzum_api_token || !product.uzum_product_id) {
-                throw new Error('Uzum Market integration not configured');
+            if (!integration.api_token || !integration.marketplace_product_id) {
+                throw new Error('Uzum Market integration incomplete');
             }
 
             // TODO: Uzum Market API'ga stock yangilash
@@ -265,11 +274,12 @@ class MarketplaceSyncService {
 
             // Database'ga yangilash
             const { rows: updatedRows } = await pool.query(
-                `UPDATE products 
-                 SET uzum_stock = $1,
-                     uzum_last_synced_at = NOW()
-                 WHERE id = $2
-                 RETURNING id, uzum_stock, uzum_last_synced_at`,
+                `UPDATE product_marketplace_integrations 
+                 SET marketplace_stock = $1,
+                     last_synced_at = NOW(),
+                     updated_at = NOW()
+                 WHERE product_id = $2 AND marketplace_type = 'uzum'
+                 RETURNING id, marketplace_stock, last_synced_at`,
                 [quantity, productId]
             );
 
@@ -289,10 +299,12 @@ class MarketplaceSyncService {
     async syncAllYandexProducts() {
         try {
             const { rows: products } = await pool.query(
-                `SELECT id FROM products 
-                 WHERE yandex_api_token IS NOT NULL 
-                   AND yandex_campaign_id IS NOT NULL 
-                   AND yandex_product_id IS NOT NULL`
+                `SELECT product_id as id 
+                 FROM product_marketplace_integrations 
+                 WHERE marketplace_type = 'yandex'
+                   AND api_token IS NOT NULL 
+                   AND campaign_id IS NOT NULL 
+                   AND marketplace_product_id IS NOT NULL`
             );
 
             let synced = 0;
@@ -326,9 +338,11 @@ class MarketplaceSyncService {
     async syncAllUzumProducts() {
         try {
             const { rows: products } = await pool.query(
-                `SELECT id FROM products 
-                 WHERE uzum_api_token IS NOT NULL 
-                   AND uzum_product_id IS NOT NULL`
+                `SELECT product_id as id 
+                 FROM product_marketplace_integrations 
+                 WHERE marketplace_type = 'uzum'
+                   AND api_token IS NOT NULL 
+                   AND marketplace_product_id IS NOT NULL`
             );
 
             let synced = 0;

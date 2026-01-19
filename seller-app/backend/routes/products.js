@@ -430,59 +430,29 @@ router.post(
                     .json({ error: 'Service fee majburiy (0 yoki undan yuqori)' });
             }
 
-            // Check if marketplace columns exist (for backward compatibility)
-            const { rows: columnCheck } = await pool.query(`
-                SELECT column_name FROM information_schema.columns 
-                WHERE table_name = 'products' AND column_name IN ('yandex_api_token', 'uzum_api_token')
-            `);
-            const hasYandexColumns = columnCheck.some(c => c.column_name === 'yandex_api_token');
-            const hasUzumColumns = columnCheck.some(c => c.column_name === 'uzum_api_token');
-
-            // Build dynamic INSERT query
-            let columns = [
-                'sku', 'barcode', 'name_uz', 'name_ru', 'description_uz', 'description_ru',
-                'category_id', 'price', 'sale_price', 'cost_price', 'service_fee', 'image_url', 'is_active'
-            ];
-            let values = [
-                sku,
-                barcode || null,
-                name_uz,
-                name_ru || null,
-                description_uz || null,
-                description_ru || null,
-                category_id || null,
-                price,
-                sale_price || null,
-                cost_price,
-                service_fee,
-                image_url || null,
-                is_active,
-            ];
-
-            if (hasYandexColumns) {
-                columns.push('yandex_api_token', 'yandex_campaign_id', 'yandex_product_id');
-                values.push(
-                    yandex_api_token || null,
-                    yandex_campaign_id || null,
-                    yandex_product_id || null
-                );
-            }
-
-            if (hasUzumColumns) {
-                columns.push('uzum_api_token', 'uzum_product_id');
-                values.push(
-                    uzum_api_token || null,
-                    uzum_product_id || null
-                );
-            }
-
-            const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
-
+            // Insert product (marketplace ma'lumotlari alohida table'ga yoziladi)
             const { rows } = await pool.query(
-                `INSERT INTO products (${columns.join(', ')})
-                VALUES (${placeholders})
+                `INSERT INTO products (
+                    sku, barcode, name_uz, name_ru, description_uz, description_ru,
+                    category_id, price, sale_price, cost_price, service_fee, image_url, is_active
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                 RETURNING *`,
-                values
+                [
+                    sku,
+                    barcode || null,
+                    name_uz,
+                    name_ru || null,
+                    description_uz || null,
+                    description_ru || null,
+                    category_id || null,
+                    price,
+                    sale_price || null,
+                    cost_price,
+                    service_fee,
+                    image_url || null,
+                    is_active,
+                ]
             );
 
             logger.info('✅ Product created successfully:', {
@@ -497,32 +467,65 @@ router.post(
             const productId = rows[0].id;
 
             // Marketplace integratsiyasi (agar berilgan bo'lsa)
-            // Yandex Market sync (background'da)
-            if (hasYandexColumns && yandex_api_token && yandex_campaign_id && yandex_product_id) {
-                // Background'da sync qilish (to'xtatmaslik uchun)
-                setImmediate(async () => {
-                    try {
-                        const marketplaceSync = require('../services/marketplace-sync');
-                        await marketplaceSync.syncYandexProduct(productId);
-                        logger.info('✅ Yandex Market product synced in background:', productId);
-                    } catch (error) {
-                        logger.error('⚠️ Yandex Market sync error (product still created):', error);
-                    }
-                });
+            // Yandex Market integration yaratish
+            if (yandex_api_token && yandex_campaign_id && yandex_product_id) {
+                try {
+                    await pool.query(
+                        `INSERT INTO product_marketplace_integrations (
+                            product_id, marketplace_type, api_token, campaign_id, marketplace_product_id
+                        )
+                        VALUES ($1, 'yandex', $2, $3, $4)
+                        ON CONFLICT (product_id, marketplace_type) DO UPDATE SET
+                            api_token = EXCLUDED.api_token,
+                            campaign_id = EXCLUDED.campaign_id,
+                            marketplace_product_id = EXCLUDED.marketplace_product_id,
+                            updated_at = NOW()`,
+                        [productId, yandex_api_token, yandex_campaign_id, yandex_product_id]
+                    );
+
+                    // Background'da sync qilish (to'xtatmaslik uchun)
+                    setImmediate(async () => {
+                        try {
+                            const marketplaceSync = require('../services/marketplace-sync');
+                            await marketplaceSync.syncYandexProduct(productId);
+                            logger.info('✅ Yandex Market product synced in background:', productId);
+                        } catch (error) {
+                            logger.error('⚠️ Yandex Market sync error (product still created):', error);
+                        }
+                    });
+                } catch (error) {
+                    logger.error('⚠️ Yandex Market integration error (product still created):', error);
+                }
             }
 
-            // Uzum Market sync (background'da)
-            if (hasUzumColumns && uzum_api_token && uzum_product_id) {
-                // Background'da sync qilish (to'xtatmaslik uchun)
-                setImmediate(async () => {
-                    try {
-                        const marketplaceSync = require('../services/marketplace-sync');
-                        await marketplaceSync.syncUzumProduct(productId);
-                        logger.info('✅ Uzum Market product synced in background:', productId);
-                    } catch (error) {
-                        logger.error('⚠️ Uzum Market sync error (product still created):', error);
-                    }
-                });
+            // Uzum Market integration yaratish
+            if (uzum_api_token && uzum_product_id) {
+                try {
+                    await pool.query(
+                        `INSERT INTO product_marketplace_integrations (
+                            product_id, marketplace_type, api_token, marketplace_product_id
+                        )
+                        VALUES ($1, 'uzum', $2, $3)
+                        ON CONFLICT (product_id, marketplace_type) DO UPDATE SET
+                            api_token = EXCLUDED.api_token,
+                            marketplace_product_id = EXCLUDED.marketplace_product_id,
+                            updated_at = NOW()`,
+                        [productId, uzum_api_token, uzum_product_id]
+                    );
+
+                    // Background'da sync qilish (to'xtatmaslik uchun)
+                    setImmediate(async () => {
+                        try {
+                            const marketplaceSync = require('../services/marketplace-sync');
+                            await marketplaceSync.syncUzumProduct(productId);
+                            logger.info('✅ Uzum Market product synced in background:', productId);
+                        } catch (error) {
+                            logger.error('⚠️ Uzum Market sync error (product still created):', error);
+                        }
+                    });
+                } catch (error) {
+                    logger.error('⚠️ Uzum Market integration error (product still created):', error);
+                }
             }
 
             res.status(201).json(rows[0]);
