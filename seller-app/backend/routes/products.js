@@ -15,6 +15,7 @@ const {
 } = require('../middleware/validate');
 const { NotFoundError, ConflictError } = require('../utils/errors');
 const logger = require('../utils/logger');
+const integrationService = require('../services/integrations');
 
 /**
  * @swagger
@@ -356,6 +357,8 @@ router.post(
         service_fee: optional(positive),
         image_url: optional(url),
         is_active: optional(boolean),
+        marketplace_id: optional(integer), // Marketplace integratsiyasi uchun
+        marketplace_product_id: optional(string), // Marketplace'dagi tovar ID
     }),
     async (req, res, next) => {
         try {
@@ -373,6 +376,8 @@ router.post(
                 service_fee,
                 image_url,
                 is_active = true,
+                marketplace_id, // Marketplace integratsiyasi
+                marketplace_product_id, // Marketplace'dagi tovar ID
             } = req.body;
 
             // Check if SKU already exists
@@ -448,6 +453,62 @@ router.post(
                 cost_price: rows[0].cost_price,
                 service_fee: rows[0].service_fee,
             });
+
+            const productId = rows[0].id;
+
+            // Marketplace integratsiyasi (agar berilgan bo'lsa)
+            if (marketplace_id && marketplace_product_id) {
+                try {
+                    // Marketplace'dan tovar ma'lumotlarini olish
+                    const marketplaceProducts = await integrationService.fetchMarketplaceProducts(marketplace_id);
+                    const marketplaceProduct = marketplaceProducts.find(
+                        mp => mp.marketplace_product_id === marketplace_product_id
+                    );
+
+                    if (marketplaceProduct) {
+                        // Marketplace product bilan link qilish
+                        await integrationService.linkMarketplaceProduct(
+                            marketplace_id,
+                            productId,
+                            marketplace_product_id,
+                            {
+                                marketplace_sku: marketplaceProduct.marketplace_sku,
+                                marketplace_name: marketplaceProduct.marketplace_name,
+                                marketplace_price: marketplaceProduct.marketplace_price,
+                                marketplace_strikethrough_price: marketplaceProduct.marketplace_strikethrough_price,
+                                commission_rate: marketplaceProduct.commission_rate,
+                                status: 'active',
+                            }
+                        );
+
+                        logger.info('✅ Marketplace product linked:', {
+                            product_id: productId,
+                            marketplace_id,
+                            marketplace_product_id,
+                        });
+                    } else {
+                        logger.warn('⚠️ Marketplace product not found, linking with provided data:', {
+                            product_id: productId,
+                            marketplace_id,
+                            marketplace_product_id,
+                        });
+
+                        // Agar marketplace'dan topilmasa, berilgan ma'lumotlar bilan link qilish
+                        await integrationService.linkMarketplaceProduct(
+                            marketplace_id,
+                            productId,
+                            marketplace_product_id,
+                            {
+                                marketplace_name: name_uz,
+                                status: 'active',
+                            }
+                        );
+                    }
+                } catch (integrationError) {
+                    // Integratsiya xatosi tovar yaratilishiga ta'sir qilmasligi kerak
+                    logger.error('⚠️ Marketplace integration error (product still created):', integrationError);
+                }
+            }
 
             res.status(201).json(rows[0]);
         } catch (error) {
