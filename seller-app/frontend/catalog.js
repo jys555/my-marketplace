@@ -369,7 +369,14 @@ function createProductRow(product) {
         <td class="warehouse-col">
             <div class="warehouse-info">
                 <div class="warehouse-quantity">${quantity}</div>
-                ${lastUpdateStr ? `<div class="warehouse-date">${lastUpdateStr}</div>` : ''}
+                ${isMarketplaceFilterActive && product.marketplace && product.marketplace.type === selectedMarketplaceType && product.marketplace.last_synced_at ? 
+                    `<div class="warehouse-date" style="font-size: 11px; color: #667eea;">Sync: ${formatDate(new Date(product.marketplace.last_synced_at))}</div>` : 
+                    (lastUpdateStr ? `<div class="warehouse-date">${lastUpdateStr}</div>` : '')
+                }
+                ${isMarketplaceFilterActive && product.marketplace && product.marketplace.type === selectedMarketplaceType ? 
+                    `<div style="margin-top: 4px; font-size: 11px; color: #667eea; font-weight: 500;">${selectedMarketplaceType === 'yandex' ? 'Yandex' : 'Uzum'}</div>` : 
+                    ''
+                }
             </div>
         </td>
         <td class="cost-col">
