@@ -712,7 +712,9 @@ async function loadMoreProducts() {
         if (tableBody) {
             newProducts.forEach(product => {
                 const row = createProductRow(product);
-                tableBody.appendChild(row);
+                if (row) {
+                    tableBody.appendChild(row);
+                }
             });
         }
 
@@ -998,7 +1000,9 @@ async function savePrice() {
                 rows.forEach(row => {
                     if (parseInt(row.dataset.productId) === productId) {
                         const newRow = createProductRow(products[productIndex]);
-                        row.replaceWith(newRow);
+                        if (newRow) {
+                            row.replaceWith(newRow);
+                        }
                     }
                 });
             }
