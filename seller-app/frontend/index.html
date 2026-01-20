@@ -234,8 +234,9 @@
                 item.addEventListener('click', function() {
                     const id = this.dataset.marketplaceId;
                     const name = this.dataset.marketplaceName;
+                    const type = this.dataset.marketplaceType;
                     if (typeof selectMarketplace === 'function') {
-                        selectMarketplace(id, name);
+                        selectMarketplace(id, name, type);
                     }
                     closeModal();
                 });
