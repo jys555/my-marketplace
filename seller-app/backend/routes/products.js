@@ -563,16 +563,9 @@ router.post(
                         [productId, yandex_api_token, yandex_campaign_id, yandex_product_id]
                     );
 
-                    // Background'da sync qilish (to'xtatmaslik uchun)
-                    setImmediate(async () => {
-                        try {
-                            const marketplaceSync = require('../services/marketplace-sync');
-                            await marketplaceSync.syncYandexProduct(productId);
-                            logger.info('✅ Yandex Market product synced in background:', productId);
-                        } catch (error) {
-                            logger.error('⚠️ Yandex Market sync error (product still created):', error);
-                        }
-                    });
+                    // Sync faqat manual endpoint orqali qilinadi
+                    // Integration ma'lumotlari saqlandi, sync keyinroq qilinadi
+                    logger.info('✅ Yandex Market integration saved for product:', productId);
                 } catch (error) {
                     logger.error('⚠️ Yandex Market integration error (product still created):', error);
                 }
@@ -593,16 +586,9 @@ router.post(
                         [productId, uzum_api_token, uzum_product_id]
                     );
 
-                    // Background'da sync qilish (to'xtatmaslik uchun)
-                    setImmediate(async () => {
-                        try {
-                            const marketplaceSync = require('../services/marketplace-sync');
-                            await marketplaceSync.syncUzumProduct(productId);
-                            logger.info('✅ Uzum Market product synced in background:', productId);
-                        } catch (error) {
-                            logger.error('⚠️ Uzum Market sync error (product still created):', error);
-                        }
-                    });
+                    // Sync faqat manual endpoint orqali qilinadi
+                    // Integration ma'lumotlari saqlandi, sync keyinroq qilinadi
+                    logger.info('✅ Uzum Market integration saved for product:', productId);
                 } catch (error) {
                     logger.error('⚠️ Uzum Market integration error (product still created):', error);
                 }
