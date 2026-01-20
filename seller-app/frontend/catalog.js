@@ -228,8 +228,13 @@ function createProductRow(product) {
         // Sotish narxi: marketplace narxi (majburiy)
         if (product.marketplace.price !== null && product.marketplace.price !== undefined) {
             sellingPrice = product.marketplace.price;
-            // Marketplace'da odatda faqat bitta narx bo'ladi, shuning uchun chizilgan narxni ham shu narxga tenglashtirish
-            strikethroughPrice = product.marketplace.price;
+            // Chizilgan narx: marketplace chizilgan narxi (agar mavjud bo'lsa)
+            if (product.marketplace.strikethrough_price !== null && product.marketplace.strikethrough_price !== undefined) {
+                strikethroughPrice = product.marketplace.strikethrough_price;
+            } else {
+                // Agar chizilgan narx mavjud bo'lmasa, sotish narxiga tenglashtirish
+                strikethroughPrice = product.marketplace.price;
+            }
         } else {
             // ERROR: Marketplace narxi mavjud bo'lmasa, error handling - tovarni ko'rsatmaslik
             console.error('❌ Marketplace price not available for product:', product.sku);
@@ -248,10 +253,9 @@ function createProductRow(product) {
             serviceFee = 0; // Agar komissiya mavjud bo'lmasa, 0 ko'rsatish
         }
         
-        // Tannarx: marketplace'dan o'qiladi (agar mavjud bo'lsa)
-        // Lekin marketplace'da odatda tannarx bo'lmaydi, shuning uchun bizning ichki tannarximizni ishlatamiz
-        // Yoki agar marketplace'da tannarx ma'lumoti bo'lsa, uni ishlatamiz
-        // Hozircha bizning ichki tannarximizni ishlatamiz, chunki marketplace'da tannarx odatda bo'lmaydi
+        // Tannarx: marketplace'dan o'qilmaydi - u Amazing Store bilan bir xil
+        // Tannarx bizning ichki ma'lumotimizdan olinadi (product.cost_price)
+        // Chunki tovar bir xil, faqat marketplace'da narx va komissiya o'zgaradi
         
         console.log('🛒 Using marketplace data:', {
             sku: product.sku,

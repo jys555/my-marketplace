@@ -166,6 +166,7 @@ router.get('/', async (req, res) => {
                 p.created_at,
                 pmi.marketplace_type,
                 pmi.marketplace_price,
+                pmi.marketplace_strikethrough_price,
                 pmi.marketplace_commission_rate,
                 pmi.marketplace_stock,
                 pmi.last_synced_at
@@ -184,7 +185,7 @@ router.get('/', async (req, res) => {
         // ID'ni yashirish (frontend uchun SKU asosiy identifier)
         // Marketplace ma'lumotlarini qo'shish
         const products = rows.map(row => {
-            const { id, marketplace_type, marketplace_price, marketplace_commission_rate, marketplace_stock, last_synced_at, ...rest } = row;
+            const { id, marketplace_type, marketplace_price, marketplace_strikethrough_price, marketplace_commission_rate, marketplace_stock, last_synced_at, ...rest } = row;
             const result = {
                 ...rest,
                 _id: id, // Yashirilgan ID (ichki ishlatish uchun)
@@ -195,6 +196,7 @@ router.get('/', async (req, res) => {
                 result.marketplace = {
                     type: marketplace_type,
                     price: marketplace_price,
+                    strikethrough_price: marketplace_strikethrough_price,
                     commission_rate: marketplace_commission_rate,
                     stock: marketplace_stock,
                     last_synced_at: last_synced_at

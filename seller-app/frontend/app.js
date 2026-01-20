@@ -483,11 +483,50 @@ function initializeApp() {
 }
 
 // ============================================
+// Initialize marketplace selector from localStorage
+// ============================================
+function initializeMarketplaceSelector() {
+    const savedMarketplace = localStorage.getItem('selectedMarketplace');
+    const selectedElement = document.getElementById('selected-marketplace');
+    
+    if (savedMarketplace && selectedElement) {
+        try {
+            const marketplace = JSON.parse(savedMarketplace);
+            selectedElement.textContent = marketplace.name || 'AMAZING_STORE';
+            
+            // Update active state in modal
+            const modal = document.getElementById('marketplace-modal');
+            if (modal) {
+                const items = modal.querySelectorAll('.marketplace-item');
+                items.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.dataset.marketplaceId === marketplace.id || 
+                        item.dataset.marketplaceType === marketplace.type) {
+                        item.classList.add('active');
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('Error parsing marketplace:', e);
+            if (selectedElement) {
+                selectedElement.textContent = 'AMAZING_STORE';
+            }
+        }
+    } else if (selectedElement) {
+        selectedElement.textContent = 'AMAZING_STORE';
+    }
+}
+
+// ============================================
 // Auto-initialize when DOM is ready
 // ============================================
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeApp);
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeMarketplaceSelector();
+        initializeApp();
+    });
 } else {
+    initializeMarketplaceSelector();
     initializeApp();
 }
 

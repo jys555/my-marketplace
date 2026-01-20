@@ -42,6 +42,7 @@ class MarketplaceSyncService {
 
             // 1. Price olish
             let price = null;
+            let strikethroughPrice = null;
             let commissionRate = null;
             try {
                 const priceResponse = await fetch(
@@ -59,6 +60,9 @@ class MarketplaceSyncService {
                     const offer = priceData.result?.offers?.[0];
                     if (offer) {
                         price = offer.price?.value ? parseFloat(offer.price.value) : null;
+                        // Chizilgan narx (oldPrice yoki old_price)
+                        strikethroughPrice = offer.oldPrice ? parseFloat(offer.oldPrice) : 
+                                           (offer.old_price ? parseFloat(offer.old_price) : null);
                         // Komissiya foizini hisoblash (agar mavjud bo'lsa)
                         if (offer.commission) {
                             commissionRate = parseFloat(offer.commission);
@@ -97,17 +101,19 @@ class MarketplaceSyncService {
             const { rows: updatedRows } = await pool.query(
                 `UPDATE product_marketplace_integrations 
                  SET marketplace_price = $1,
-                     marketplace_commission_rate = $2,
-                     marketplace_stock = $3,
+                     marketplace_strikethrough_price = $2,
+                     marketplace_commission_rate = $3,
+                     marketplace_stock = $4,
                      last_synced_at = NOW(),
                      updated_at = NOW()
-                 WHERE product_id = $4 AND marketplace_type = 'yandex'
-                 RETURNING id, marketplace_price, marketplace_commission_rate, marketplace_stock, last_synced_at`,
-                [price, commissionRate, stock, productId]
+                 WHERE product_id = $5 AND marketplace_type = 'yandex'
+                 RETURNING id, marketplace_price, marketplace_strikethrough_price, marketplace_commission_rate, marketplace_stock, last_synced_at`,
+                [price, strikethroughPrice, commissionRate, stock, productId]
             );
 
             logger.info(`✅ Yandex Market product synced: ${offerId}`, {
                 price,
+                strikethroughPrice,
                 commissionRate,
                 stock,
             });
