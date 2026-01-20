@@ -62,17 +62,21 @@ function closeMarketplaceSelector(event) {
     }
 }
 
-function selectMarketplace(id, name) {
-    AppState.selectedMarketplace = { id, name };
+function selectMarketplace(id, name, type) {
+    AppState.selectedMarketplace = { id, name, type };
     const selectedElement = document.getElementById('selected-marketplace');
     if (selectedElement) {
         selectedElement.textContent = name;
     }
     // Save to localStorage for other pages
-    localStorage.setItem('selectedMarketplace', JSON.stringify({ id, name }));
+    localStorage.setItem('selectedMarketplace', JSON.stringify({ id, name, type }));
     closeMarketplaceSelector();
     if (typeof loadDashboardData === 'function') {
         loadDashboardData();
+    }
+    // Reload page if on catalog or orders page to apply marketplace filter
+    if (window.location.pathname.includes('catalog.html') || window.location.pathname.includes('orders.html')) {
+        window.location.reload();
     }
 }
 

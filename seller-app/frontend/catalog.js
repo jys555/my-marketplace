@@ -17,62 +17,30 @@ let productsPagination = {
 document.addEventListener('DOMContentLoaded', async () => {
     // Get marketplace from localStorage (set by dashboard)
     const savedMarketplace = localStorage.getItem('selectedMarketplace');
+    let selectedMarketplaceType = null;
+    
     if (savedMarketplace) {
         try {
             const marketplace = JSON.parse(savedMarketplace);
-            // If marketplace id is string like 'amazing_store', get real ID from API
-            if (marketplace.id && typeof marketplace.id === 'string' && marketplace.id !== 'all') {
-                const marketplaces = await apiRequest('/marketplaces');
-                const foundMarketplace = marketplaces.find(m => 
-                    m.name === marketplace.name || 
-                    m.marketplace_code === marketplace.id ||
-                    m.id.toString() === marketplace.id
-                );
-                if (foundMarketplace) {
-                    currentMarketplaceId = foundMarketplace.id;
-                    currentMarketplaceName = foundMarketplace.name;
-                } else {
-                    // Default to Amazing Store
-                    const amazingStore = marketplaces.find(m => m.name === 'AMAZING_STORE');
-                    if (amazingStore) {
-                        currentMarketplaceId = amazingStore.id;
-                        currentMarketplaceName = 'AMAZING_STORE';
-                    }
-                }
-            } else if (marketplace.id === 'all') {
-                currentMarketplaceId = null;
-                currentMarketplaceName = "Barcha do'konlar";
+            currentMarketplaceName = marketplace.name || 'AMAZING_STORE';
+            selectedMarketplaceType = marketplace.type || null;
+            
+            // Set marketplace type for filtering
+            if (selectedMarketplaceType === 'yandex' || selectedMarketplaceType === 'uzum') {
+                // Marketplace filter active
+                console.log('🛒 Marketplace filter active:', selectedMarketplaceType);
             } else {
-                currentMarketplaceId = marketplace.id;
-                currentMarketplaceName = marketplace.name || 'AMAZING_STORE';
+                // Amazing Store or no filter
+                selectedMarketplaceType = null;
             }
         } catch (e) {
             console.error('Error parsing marketplace:', e);
-            // Default to Amazing Store
-            try {
-                const marketplaces = await apiRequest('/marketplaces');
-                const amazingStore = marketplaces.find(m => m.name === 'AMAZING_STORE');
-                if (amazingStore) {
-                    currentMarketplaceId = amazingStore.id;
-                    currentMarketplaceName = 'AMAZING_STORE';
-                }
-            } catch (err) {
-                console.error('Error loading marketplaces:', err);
-            }
-        }
-    } else {
-        // Default to Amazing Store
-        try {
-            const marketplaces = await apiRequest('/marketplaces');
-            const amazingStore = marketplaces.find(m => m.name === 'AMAZING_STORE');
-            if (amazingStore) {
-                currentMarketplaceId = amazingStore.id;
-                currentMarketplaceName = 'AMAZING_STORE';
-            }
-        } catch (err) {
-            console.error('Error loading marketplaces:', err);
+            selectedMarketplaceType = null;
         }
     }
+    
+    // Store marketplace type globally for use in createProductRow
+    window.currentMarketplaceType = selectedMarketplaceType;
     
     await loadProducts();
     setupEventListeners();
@@ -99,16 +67,20 @@ async function loadProducts() {
         // API response'da ID yashirilgan (_id), SKU asosiy identifier
         const searchParam = document.getElementById('search-input')?.value ? `&search=${encodeURIComponent(document.getElementById('search-input').value)}` : '';
         
-        // Marketplace filter
-        const yandexChecked = document.getElementById('filter-yandex')?.checked;
-        const uzumChecked = document.getElementById('filter-uzum')?.checked;
+        // Marketplace filter from localStorage (set by dashboard)
         let marketplaceParam = '';
-        if (yandexChecked && !uzumChecked) {
-            marketplaceParam = '&marketplace_type=yandex';
-        } else if (uzumChecked && !yandexChecked) {
-            marketplaceParam = '&marketplace_type=uzum';
+        const savedMarketplace = localStorage.getItem('selectedMarketplace');
+        if (savedMarketplace) {
+            try {
+                const marketplace = JSON.parse(savedMarketplace);
+                const marketplaceType = marketplace.type;
+                if (marketplaceType === 'yandex' || marketplaceType === 'uzum') {
+                    marketplaceParam = `&marketplace_type=${marketplaceType}`;
+                }
+            } catch (e) {
+                console.error('Error parsing marketplace:', e);
+            }
         }
-        // Agar ikkalasi ham tanlangan bo'lsa yoki hech biri tanlanmagan bo'lsa, filter qo'llanmaydi
         
         console.log('📦 Loading products from API:', `/products?limit=${productsPagination.limit}&offset=${productsPagination.currentOffset}${searchParam}${marketplaceParam}`);
         const productsResponse = await apiRequest(`/products?limit=${productsPagination.limit}&offset=${productsPagination.currentOffset}${searchParam}${marketplaceParam}`);
@@ -213,11 +185,18 @@ function createProductRow(product) {
     const productId = product._id || product.id;
     const invData = inventory.find(i => i.product_id === productId);
     
-    // Marketplace filter tanlanganda, marketplace ma'lumotlarini ishlatish
-    const yandexChecked = document.getElementById('filter-yandex')?.checked;
-    const uzumChecked = document.getElementById('filter-uzum')?.checked;
-    const isMarketplaceFilterActive = yandexChecked || uzumChecked;
-    const selectedMarketplaceType = yandexChecked ? 'yandex' : (uzumChecked ? 'uzum' : null);
+    // Marketplace filter from localStorage (set by dashboard)
+    const savedMarketplace = localStorage.getItem('selectedMarketplace');
+    let selectedMarketplaceType = null;
+    if (savedMarketplace) {
+        try {
+            const marketplace = JSON.parse(savedMarketplace);
+            selectedMarketplaceType = marketplace.type;
+        } catch (e) {
+            console.error('Error parsing marketplace:', e);
+        }
+    }
+    const isMarketplaceFilterActive = selectedMarketplaceType === 'yandex' || selectedMarketplaceType === 'uzum';
     
     // Marketplace filter tanlanganda, FAQAT marketplace ma'lumotlarini ishlatish
     let quantity = invData?.quantity || 0;
@@ -600,33 +579,6 @@ function updateSelectAllCheckbox() {
 
 // Setup Event Listeners
 function setupEventListeners() {
-    // Marketplace filter event listeners
-    const yandexCheckbox = document.getElementById('filter-yandex');
-    const uzumCheckbox = document.getElementById('filter-uzum');
-    
-    if (yandexCheckbox) {
-        yandexCheckbox.addEventListener('change', () => {
-            // Agar bitta tanlansa, ikkinchisini o'chirish
-            if (yandexCheckbox.checked && uzumCheckbox?.checked) {
-                uzumCheckbox.checked = false;
-            }
-            // Reset pagination va reload products
-            productsPagination.currentOffset = 0;
-            loadProducts();
-        });
-    }
-    
-    if (uzumCheckbox) {
-        uzumCheckbox.addEventListener('change', () => {
-            // Agar bitta tanlansa, ikkinchisini o'chirish
-            if (uzumCheckbox.checked && yandexCheckbox?.checked) {
-                yandexCheckbox.checked = false;
-            }
-            // Reset pagination va reload products
-            productsPagination.currentOffset = 0;
-            loadProducts();
-        });
-    }
     // PERFORMANCE: Search input - pagination'ni reset qilish
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
