@@ -169,12 +169,26 @@ router.get('/', async (req, res) => {
         const { rows } = await pool.query(query, params);
 
         // ID'ni yashirish (frontend uchun SKU asosiy identifier)
+        // Marketplace ma'lumotlarini qo'shish
         const products = rows.map(row => {
-            const { id, ...rest } = row;
-            return {
+            const { id, marketplace_type, marketplace_price, marketplace_commission_rate, marketplace_stock, last_synced_at, ...rest } = row;
+            const result = {
                 ...rest,
                 _id: id, // Yashirilgan ID (ichki ishlatish uchun)
             };
+            
+            // Agar marketplace_type bo'lsa, marketplace ma'lumotlarini qo'shish
+            if (marketplace_type) {
+                result.marketplace = {
+                    type: marketplace_type,
+                    price: marketplace_price,
+                    commission_rate: marketplace_commission_rate,
+                    stock: marketplace_stock,
+                    last_synced_at: last_synced_at
+                };
+            }
+            
+            return result;
         });
 
         // PERFORMANCE: Pagination ma'lumotlari bilan javob qaytarish
