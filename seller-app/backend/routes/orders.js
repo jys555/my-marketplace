@@ -277,7 +277,18 @@ router.get('/:id', async (req, res) => {
                 o.customer_name, o.customer_phone, o.customer_address,
                 o.order_date, o.delivery_date,
                 o.created_at, o.updated_at,
-                m.name as marketplace_name, m.api_type as marketplace_type
+                CASE 
+                    WHEN o.marketplace_id IS NULL THEN 'AMAZING_STORE'
+                    WHEN EXISTS (SELECT 1 FROM product_marketplace_integrations pmi WHERE pmi.product_id IN (SELECT product_id FROM order_items WHERE order_id = o.id) AND pmi.marketplace_type = 'yandex') THEN 'Yandex Market'
+                    WHEN EXISTS (SELECT 1 FROM product_marketplace_integrations pmi WHERE pmi.product_id IN (SELECT product_id FROM order_items WHERE order_id = o.id) AND pmi.marketplace_type = 'uzum') THEN 'Uzum Market'
+                    ELSE 'AMAZING_STORE'
+                END as marketplace_name,
+                CASE 
+                    WHEN o.marketplace_id IS NULL THEN 'amazing_store'
+                    WHEN EXISTS (SELECT 1 FROM product_marketplace_integrations pmi WHERE pmi.product_id IN (SELECT product_id FROM order_items WHERE order_id = o.id) AND pmi.marketplace_type = 'yandex') THEN 'yandex'
+                    WHEN EXISTS (SELECT 1 FROM product_marketplace_integrations pmi WHERE pmi.product_id IN (SELECT product_id FROM order_items WHERE order_id = o.id) AND pmi.marketplace_type = 'uzum') THEN 'uzum'
+                    ELSE 'amazing_store'
+                END as marketplace_type
             FROM orders o
             WHERE o.id = $1
         `,
