@@ -177,10 +177,25 @@ router.get('/', async (req, res) => {
             ORDER BY p.id, p.created_at DESC
             LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
         `;
+        
+        logger.info('📦 Products query:', { query, params, marketplace_type });
 
         params.push(validLimit, validOffset);
 
         const { rows } = await pool.query(query, params);
+        
+        logger.info('📦 Products query result:', { 
+            rowsCount: rows.length,
+            sampleRow: rows[0] ? {
+                id: rows[0].id,
+                sku: rows[0].sku,
+                marketplace_type: rows[0].marketplace_type,
+                marketplace_price: rows[0].marketplace_price,
+                marketplace_strikethrough_price: rows[0].marketplace_strikethrough_price,
+                marketplace_commission_rate: rows[0].marketplace_commission_rate,
+                marketplace_stock: rows[0].marketplace_stock
+            } : null
+        });
 
         // ID'ni yashirish (frontend uchun SKU asosiy identifier)
         // Marketplace ma'lumotlarini qo'shish
@@ -201,6 +216,16 @@ router.get('/', async (req, res) => {
                     stock: marketplace_stock,
                     last_synced_at: last_synced_at
                 };
+                
+                logger.info(`📦 Added marketplace data for product ${row.sku}:`, {
+                    type: marketplace_type,
+                    price: marketplace_price,
+                    strikethrough_price: marketplace_strikethrough_price,
+                    commission_rate: marketplace_commission_rate,
+                    stock: marketplace_stock
+                });
+            } else {
+                logger.warn(`⚠️ No marketplace data for product ${row.sku} (marketplace_type: ${marketplace_type})`);
             }
             
             return result;

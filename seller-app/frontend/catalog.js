@@ -154,10 +154,22 @@ async function loadProducts() {
 
         // PERFORMANCE: Render products as table rows (yangi yuklash - to'liq almashtirish)
         tableBody.innerHTML = '';
+        let renderedCount = 0;
         filteredProducts.forEach(product => {
             const row = createProductRow(product);
-            tableBody.appendChild(row);
+            if (row) { // Agar row null bo'lmasa (marketplace filter active bo'lsa va ma'lumotlar mavjud bo'lmasa, null qaytadi)
+                tableBody.appendChild(row);
+                renderedCount++;
+            }
         });
+        
+        // Agar hech qanday tovar ko'rsatilmagan bo'lsa, empty state ko'rsatish
+        if (renderedCount === 0) {
+            loadingState.style.display = 'none';
+            emptyState.style.display = 'block';
+            table.style.display = 'none';
+            return;
+        }
 
         // PERFORMANCE: Infinite scroll sozlash (DOM tayyor bo'lgandan keyin)
         setTimeout(() => setupInfiniteScroll(), 100);
