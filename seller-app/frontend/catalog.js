@@ -98,8 +98,20 @@ async function loadProducts() {
         // PERFORMANCE: Load products with pagination
         // API response'da ID yashirilgan (_id), SKU asosiy identifier
         const searchParam = document.getElementById('search-input')?.value ? `&search=${encodeURIComponent(document.getElementById('search-input').value)}` : '';
-        console.log('📦 Loading products from API:', `/products?limit=${productsPagination.limit}&offset=${productsPagination.currentOffset}${searchParam}`);
-        const productsResponse = await apiRequest(`/products?limit=${productsPagination.limit}&offset=${productsPagination.currentOffset}${searchParam}`);
+        
+        // Marketplace filter
+        const yandexChecked = document.getElementById('filter-yandex')?.checked;
+        const uzumChecked = document.getElementById('filter-uzum')?.checked;
+        let marketplaceParam = '';
+        if (yandexChecked && !uzumChecked) {
+            marketplaceParam = '&marketplace_type=yandex';
+        } else if (uzumChecked && !yandexChecked) {
+            marketplaceParam = '&marketplace_type=uzum';
+        }
+        // Agar ikkalasi ham tanlangan bo'lsa yoki hech biri tanlanmagan bo'lsa, filter qo'llanmaydi
+        
+        console.log('📦 Loading products from API:', `/products?limit=${productsPagination.limit}&offset=${productsPagination.currentOffset}${searchParam}${marketplaceParam}`);
+        const productsResponse = await apiRequest(`/products?limit=${productsPagination.limit}&offset=${productsPagination.currentOffset}${searchParam}${marketplaceParam}`);
         console.log('📦 Products API response:', productsResponse);
         
         // PERFORMANCE: Pagination response format: { products: [...], pagination: {...} }
@@ -516,6 +528,33 @@ function updateSelectAllCheckbox() {
 
 // Setup Event Listeners
 function setupEventListeners() {
+    // Marketplace filter event listeners
+    const yandexCheckbox = document.getElementById('filter-yandex');
+    const uzumCheckbox = document.getElementById('filter-uzum');
+    
+    if (yandexCheckbox) {
+        yandexCheckbox.addEventListener('change', () => {
+            // Agar bitta tanlansa, ikkinchisini o'chirish
+            if (yandexCheckbox.checked && uzumCheckbox?.checked) {
+                uzumCheckbox.checked = false;
+            }
+            // Reset pagination va reload products
+            productsPagination.currentOffset = 0;
+            loadProducts();
+        });
+    }
+    
+    if (uzumCheckbox) {
+        uzumCheckbox.addEventListener('change', () => {
+            // Agar bitta tanlansa, ikkinchisini o'chirish
+            if (uzumCheckbox.checked && yandexCheckbox?.checked) {
+                yandexCheckbox.checked = false;
+            }
+            // Reset pagination va reload products
+            productsPagination.currentOffset = 0;
+            loadProducts();
+        });
+    }
     // PERFORMANCE: Search input - pagination'ni reset qilish
     const searchInput = document.getElementById('search-input');
     if (searchInput) {

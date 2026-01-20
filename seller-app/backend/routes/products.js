@@ -82,7 +82,7 @@ const logger = require('../utils/logger');
 router.get('/', async (req, res) => {
     try {
         logger.info('📦 GET /api/seller/products - Request received', { query: req.query });
-        const { marketplace_id, search, category_id } = req.query;
+        const { marketplace_id, marketplace_type, search, category_id } = req.query;
 
         // PERFORMANCE: Pagination parametrlari
         const limit = parseInt(req.query.limit) || 50; // Seller App'da default 50 ta (ko'proq ko'rsatish uchun)
@@ -95,6 +95,26 @@ router.get('/', async (req, res) => {
         const whereConditions = ['1=1']; // Base condition
         const params = [];
         let paramIndex = 1;
+
+        // Marketplace type filter (yandex, uzum)
+        // Agar marketplace_type berilgan bo'lsa, faqat shu marketplace bilan integratsiya qilingan tovarlarni ko'rsatish
+        if (marketplace_type && (marketplace_type === 'yandex' || marketplace_type === 'uzum')) {
+            whereConditions.push(`EXISTS (
+                SELECT 1 FROM product_marketplace_integrations pmi
+                WHERE pmi.product_id = p.id 
+                AND pmi.marketplace_type = $${paramIndex}
+                AND pmi.api_token IS NOT NULL
+                AND pmi.marketplace_product_id IS NOT NULL
+            )`);
+            params.push(marketplace_type);
+            paramIndex++;
+        }
+
+        // Legacy marketplace_id support (backward compatibility)
+        if (marketplace_id && !marketplace_type) {
+            // Eski marketplace_id logikasi (agar kerak bo'lsa)
+            // Hozircha ignore qilamiz, chunki biz yangi product_marketplace_integrations table ishlatamiz
+        }
 
         if (category_id) {
             whereConditions.push(`p.category_id = $${paramIndex}`);
@@ -114,7 +134,7 @@ router.get('/', async (req, res) => {
 
         // PERFORMANCE: Total count olish (pagination uchun)
         const countQuery = `
-            SELECT COUNT(*) as total
+            SELECT COUNT(DISTINCT p.id) as total
             FROM products p
             WHERE ${whereClause}
         `;
@@ -122,19 +142,25 @@ router.get('/', async (req, res) => {
         const total = parseInt(countRows[0].total);
 
         // PERFORMANCE: Faqat kerakli qismni olish (LIMIT/OFFSET)
-        // Include ALL price fields from products (no separate product_prices table)
+        // Include marketplace integration data if marketplace_type is specified
         const query = `
-            SELECT 
+            SELECT DISTINCT ON (p.id)
                 p.id, p.name_uz, p.name_ru, p.description_uz, p.description_ru,
                 p.price, p.sale_price, p.cost_price, p.service_fee, 
                 p.image_url, p.category_id, p.is_active,
                 p.sku,
                 c.name_uz as category_name_uz, c.name_ru as category_name_ru,
-                p.created_at
+                p.created_at,
+                pmi.marketplace_type,
+                pmi.marketplace_price,
+                pmi.marketplace_commission_rate,
+                pmi.marketplace_stock,
+                pmi.last_synced_at
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
+            LEFT JOIN product_marketplace_integrations pmi ON pmi.product_id = p.id
             WHERE ${whereClause}
-            ORDER BY p.created_at DESC
+            ORDER BY p.id, p.created_at DESC
             LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
         `;
 
