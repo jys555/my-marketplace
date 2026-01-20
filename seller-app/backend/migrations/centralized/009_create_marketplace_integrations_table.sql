@@ -13,58 +13,70 @@
 -- Date: 2026-01-12
 -- ============================================
 
-DO $$
-DECLARE
-    column_exists BOOLEAN;
+-- 1. Yangi table yaratish: product_marketplace_integrations
+CREATE TABLE IF NOT EXISTS product_marketplace_integrations (
+    id SERIAL PRIMARY KEY,
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    
+    -- Marketplace type
+    marketplace_type VARCHAR(20) NOT NULL CHECK (marketplace_type IN ('yandex', 'uzum')),
+    
+    -- API credentials
+    api_token TEXT,
+    campaign_id VARCHAR(50), -- Faqat Yandex uchun
+    
+    -- Marketplace product info
+    marketplace_product_id VARCHAR(200),
+    
+    -- Marketplace data (READ only - API'dan o'qiladi)
+    marketplace_price DECIMAL(10, 2),
+    marketplace_commission_rate DECIMAL(5, 2),
+    
+    -- Stock (2-way: o'qish va yangilash)
+    marketplace_stock INTEGER DEFAULT 0,
+    
+    -- Sync tracking
+    last_synced_at TIMESTAMP,
+    
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    
+    -- Har bir product uchun faqat bitta Yandex va bitta Uzum bo'lishi kerak
+    UNIQUE(product_id, marketplace_type)
+);
+
+-- 2. Index'lar qo'shish
+CREATE INDEX IF NOT EXISTS idx_product_marketplace_integrations_product 
+    ON product_marketplace_integrations(product_id);
+
+CREATE INDEX IF NOT EXISTS idx_product_marketplace_integrations_type 
+    ON product_marketplace_integrations(marketplace_type);
+
+CREATE INDEX IF NOT EXISTS idx_product_marketplace_integrations_product_id 
+    ON product_marketplace_integrations(marketplace_product_id) 
+    WHERE marketplace_product_id IS NOT NULL;
+
+-- 3. Trigger function yaratish (updated_at avtomatik yangilash)
+CREATE OR REPLACE FUNCTION update_product_marketplace_integrations_updated_at()
+RETURNS TRIGGER AS $$
 BEGIN
-    -- 1. Yangi table yaratish: product_marketplace_integrations
-    CREATE TABLE IF NOT EXISTS product_marketplace_integrations (
-        id SERIAL PRIMARY KEY,
-        product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-        
-        -- Marketplace type
-        marketplace_type VARCHAR(20) NOT NULL CHECK (marketplace_type IN ('yandex', 'uzum')),
-        
-        -- API credentials
-        api_token TEXT,
-        campaign_id VARCHAR(50), -- Faqat Yandex uchun
-        
-        -- Marketplace product info
-        marketplace_product_id VARCHAR(200),
-        
-        -- Marketplace data (READ only - API'dan o'qiladi)
-        marketplace_price DECIMAL(10, 2),
-        marketplace_commission_rate DECIMAL(5, 2),
-        
-        -- Stock (2-way: o'qish va yangilash)
-        marketplace_stock INTEGER DEFAULT 0,
-        
-        -- Sync tracking
-        last_synced_at TIMESTAMP,
-        
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW(),
-        
-        -- Har bir product uchun faqat bitta Yandex va bitta Uzum bo'lishi kerak
-        UNIQUE(product_id, marketplace_type)
-    );
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-    RAISE NOTICE '✅ Created product_marketplace_integrations table';
+DROP TRIGGER IF EXISTS update_product_marketplace_integrations_updated_at_trigger 
+    ON product_marketplace_integrations;
 
-    -- 2. Index'lar qo'shish
-    CREATE INDEX IF NOT EXISTS idx_product_marketplace_integrations_product 
-        ON product_marketplace_integrations(product_id);
-    
-    CREATE INDEX IF NOT EXISTS idx_product_marketplace_integrations_type 
-        ON product_marketplace_integrations(marketplace_type);
-    
-    CREATE INDEX IF NOT EXISTS idx_product_marketplace_integrations_product_id 
-        ON product_marketplace_integrations(marketplace_product_id) 
-        WHERE marketplace_product_id IS NOT NULL;
+CREATE TRIGGER update_product_marketplace_integrations_updated_at_trigger
+    BEFORE UPDATE ON product_marketplace_integrations
+    FOR EACH ROW
+    EXECUTE FUNCTION update_product_marketplace_integrations_updated_at();
 
-    RAISE NOTICE '✅ Created indexes for product_marketplace_integrations';
-
-    -- 3. products table'dan Yandex columnlarini ko'chirish va o'chirish
+-- 4. Ma'lumotlarni ko'chirish va column'larni o'chirish (DO blokida)
+DO $$
+BEGIN
+    -- products table'dan Yandex columnlarini ko'chirish va o'chirish
     IF EXISTS (
         SELECT 1 FROM information_schema.columns 
         WHERE table_name = 'products' AND column_name = 'yandex_api_token'
@@ -108,7 +120,7 @@ BEGIN
         RAISE NOTICE '✅ Removed Yandex columns from products table';
     END IF;
 
-    -- 4. products table'dan Uzum columnlarini ko'chirish va o'chirish
+    -- products table'dan Uzum columnlarini ko'chirish va o'chirish
     IF EXISTS (
         SELECT 1 FROM information_schema.columns 
         WHERE table_name = 'products' AND column_name = 'uzum_api_token'
@@ -148,25 +160,6 @@ BEGIN
 
         RAISE NOTICE '✅ Removed Uzum columns from products table';
     END IF;
-
-    -- 5. Trigger qo'shish (updated_at avtomatik yangilash)
-    CREATE OR REPLACE FUNCTION update_product_marketplace_integrations_updated_at()
-    RETURNS TRIGGER AS $$
-    BEGIN
-        NEW.updated_at = NOW();
-        RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql;
-
-    DROP TRIGGER IF EXISTS update_product_marketplace_integrations_updated_at_trigger 
-        ON product_marketplace_integrations;
-    
-    CREATE TRIGGER update_product_marketplace_integrations_updated_at_trigger
-        BEFORE UPDATE ON product_marketplace_integrations
-        FOR EACH ROW
-        EXECUTE FUNCTION update_product_marketplace_integrations_updated_at();
-
-    RAISE NOTICE '✅ Created trigger for updated_at';
 
     RAISE NOTICE '🎉 Marketplace integrations table created successfully!';
     RAISE NOTICE '   - product_marketplace_integrations table created';
