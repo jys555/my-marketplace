@@ -219,7 +219,7 @@ function createProductRow(product) {
     const isMarketplaceFilterActive = yandexChecked || uzumChecked;
     const selectedMarketplaceType = yandexChecked ? 'yandex' : (uzumChecked ? 'uzum' : null);
     
-    // Agar marketplace filter tanlangan bo'lsa va product'da marketplace ma'lumotlari bo'lsa, ularni ishlatish
+    // Marketplace filter tanlanganda, FAQAT marketplace ma'lumotlarini ishlatish
     let quantity = invData?.quantity || 0;
     let costPrice = product.cost_price;
     let sellingPrice = product.sale_price;
@@ -227,27 +227,40 @@ function createProductRow(product) {
     let serviceFee = product.service_fee;
     
     if (isMarketplaceFilterActive && product.marketplace && product.marketplace.type === selectedMarketplaceType) {
-        // Marketplace ma'lumotlarini ishlatish
-        // Stock: marketplace stock (agar mavjud bo'lsa)
+        // BARCHA ma'lumotlar marketplace'dan o'qiladi
+        // Stock: marketplace stock
         if (product.marketplace.stock !== null && product.marketplace.stock !== undefined) {
             quantity = product.marketplace.stock;
+        } else {
+            quantity = 0; // Agar marketplace stock mavjud bo'lmasa, 0 ko'rsatish
         }
         
-        // Narx: marketplace narxi (agar mavjud bo'lsa)
+        // Sotish narxi: marketplace narxi (majburiy)
         if (product.marketplace.price !== null && product.marketplace.price !== undefined) {
             sellingPrice = product.marketplace.price;
-            // Marketplace'da odatda faqat bitta narx bo'ladi, shuning uchun strikethrough narxni ham shu narxga tenglashtirish mumkin
+            // Marketplace'da odatda faqat bitta narx bo'ladi, shuning uchun chizilgan narxni ham shu narxga tenglashtirish
             strikethroughPrice = product.marketplace.price;
+        } else {
+            // Agar marketplace narxi mavjud bo'lmasa, Amazing Store narxini ishlatish (fallback)
+            console.warn('⚠️ Marketplace price not available, using Amazing Store price:', product.sku);
         }
         
-        // Komissiya: marketplace komissiya foizi
+        // Xizmatlar narxi = marketplace komissiyasi (foizdan so'mga aylantiriladi)
         if (product.marketplace.commission_rate !== null && product.marketplace.commission_rate !== undefined) {
-            // Komissiya foizini so'mga aylantirish
             const commissionRate = product.marketplace.commission_rate;
             if (sellingPrice && commissionRate) {
                 serviceFee = (sellingPrice * commissionRate) / 100;
+            } else {
+                serviceFee = 0;
             }
+        } else {
+            serviceFee = 0; // Agar komissiya mavjud bo'lmasa, 0 ko'rsatish
         }
+        
+        // Tannarx: marketplace'dan o'qiladi (agar mavjud bo'lsa)
+        // Lekin marketplace'da odatda tannarx bo'lmaydi, shuning uchun bizning ichki tannarximizni ishlatamiz
+        // Yoki agar marketplace'da tannarx ma'lumoti bo'lsa, uni ishlatamiz
+        // Hozircha bizning ichki tannarximizni ishlatamiz, chunki marketplace'da tannarx odatda bo'lmaydi
         
         console.log('🛒 Using marketplace data:', {
             sku: product.sku,
@@ -255,7 +268,10 @@ function createProductRow(product) {
             marketplacePrice: product.marketplace.price,
             marketplaceStock: product.marketplace.stock,
             marketplaceCommissionRate: product.marketplace.commission_rate,
-            calculatedServiceFee: serviceFee
+            calculatedServiceFee: serviceFee,
+            sellingPrice,
+            strikethroughPrice,
+            quantity
         });
     } else {
         // Amazing Store ma'lumotlarini ishlatish (default)
@@ -263,7 +279,8 @@ function createProductRow(product) {
             sku: product.sku,
             costPrice,
             sellingPrice,
-            serviceFee
+            serviceFee,
+            quantity
         });
     }
     
