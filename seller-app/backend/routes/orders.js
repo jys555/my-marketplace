@@ -107,11 +107,6 @@ router.get('/', async (req, res) => {
                             type: marketplaceType
                         });
                     } else {
-                        logger.info('📋 Marketplace ID found:', {
-                            input: marketplace_id,
-                            found_id: finalMarketplaceId,
-                        });
-                    } else {
                         logger.warn('⚠️ Marketplace not found:', { input: marketplace_id });
                     }
                 }
