@@ -86,6 +86,21 @@ async function loadProducts() {
         const productsResponse = await apiRequest(`/products?limit=${productsPagination.limit}&offset=${productsPagination.currentOffset}${searchParam}${marketplaceParam}`);
         console.log('📦 Products API response:', productsResponse);
         
+        // Marketplace ma'lumotlarini tekshirish
+        if (productsResponse && productsResponse.products) {
+            productsResponse.products.forEach((product, index) => {
+                console.log(`📦 Product ${index + 1} (${product.sku}):`, {
+                    hasMarketplace: !!product.marketplace,
+                    marketplaceType: product.marketplace?.type,
+                    marketplacePrice: product.marketplace?.price,
+                    marketplaceStrikethroughPrice: product.marketplace?.strikethrough_price,
+                    marketplaceCommissionRate: product.marketplace?.commission_rate,
+                    marketplaceStock: product.marketplace?.stock,
+                    fullProduct: product
+                });
+            });
+        }
+        
         // PERFORMANCE: Pagination response format: { products: [...], pagination: {...} }
         let newProducts;
         if (productsResponse && productsResponse.products) {
