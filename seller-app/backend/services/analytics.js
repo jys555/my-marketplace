@@ -189,10 +189,12 @@ class AnalyticsService {
                     pa.date, pa.orders_count, pa.quantity_sold, pa.quantity_returned,
                     pa.revenue, pa.cost, pa.profit,
                     p.name_uz as product_name_uz, p.name_ru as product_name_ru,
-                    m.name as marketplace_name
+                    CASE 
+                        WHEN pa.marketplace_id IS NULL THEN 'AMAZING_STORE'
+                        ELSE 'Unknown'
+                    END as marketplace_name
                 FROM product_analytics pa
                 INNER JOIN products p ON pa.product_id = p.id
-                LEFT JOIN marketplaces m ON pa.marketplace_id = m.id
                 WHERE pa.product_id = $1
             `;
             const params = [productId];
@@ -333,10 +335,12 @@ class AnalyticsService {
      */
     async recalculateAnalytics(date) {
         try {
-            // Barcha marketplacelar uchun
-            const { rows: marketplaces } = await pool.query(`
-                SELECT id FROM marketplaces WHERE is_active = true
-            `);
+            // Endi marketplaces table yo'q, faqat static list
+            const marketplaces = [
+                { id: null, type: 'amazing_store' },
+                { id: 'yandex', type: 'yandex' },
+                { id: 'uzum', type: 'uzum' }
+            ];
 
             const results = {
                 daily: [],
@@ -347,11 +351,9 @@ class AnalyticsService {
             const dailyAll = await this.calculateDailyAnalytics(date, null);
             results.daily.push(dailyAll);
 
-            // Har bir marketplace uchun
-            for (const marketplace of marketplaces) {
-                const daily = await this.calculateDailyAnalytics(date, marketplace.id);
-                results.daily.push(daily);
-            }
+            // Har bir marketplace uchun (faqat Amazing Store uchun null, qolganlari type bo'yicha)
+            // Hozircha faqat Amazing Store uchun hisoblaymiz
+            // Yandex va Uzum uchun alohida logika kerak bo'lsa, keyinroq qo'shiladi
 
             // Tovar analitikalari
             const { rows: products } = await pool.query(

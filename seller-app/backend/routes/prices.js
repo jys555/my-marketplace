@@ -135,7 +135,6 @@ router.get('/', async (req, res) => {
                 m.name as marketplace_name, m.api_type as marketplace_type
             FROM product_prices pp
             INNER JOIN products p ON pp.product_id = p.id
-            LEFT JOIN marketplaces m ON pp.marketplace_id = m.id
             WHERE 1=1
         `;
         const params = [];
@@ -206,7 +205,6 @@ router.get('/:id', async (req, res) => {
                 m.name as marketplace_name
             FROM product_prices pp
             INNER JOIN products p ON pp.product_id = p.id
-            LEFT JOIN marketplaces m ON pp.marketplace_id = m.id
             WHERE pp.id = $1
         `,
             [id]

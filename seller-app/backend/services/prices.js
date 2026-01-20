@@ -13,26 +13,9 @@ class PriceService {
         try {
             logger.info('🔄 Syncing Amazing Store prices...');
 
-            // 1. Amazing Store marketplace ID'sini olish
-            const { rows: marketplaceRows } = await pool.query(`
-                SELECT id FROM marketplaces WHERE name = 'AMAZING_STORE' LIMIT 1
-            `);
-
-            let marketplaceId;
-            if (marketplaceRows.length === 0) {
-                logger.warn('⚠️  Amazing Store marketplace not found. Creating it...');
-                // Amazing Store marketplace yaratish
-                const { rows: newMarketplace } = await pool.query(`
-                    INSERT INTO marketplaces (name, api_type, marketplace_code, is_active)
-                    VALUES ('AMAZING_STORE', 'amazing_store', '202049831', true)
-                    RETURNING id
-                `);
-                marketplaceId = newMarketplace[0].id;
-                logger.info(`✅ Created Amazing Store marketplace with ID: ${marketplaceId}`);
-            } else {
-                marketplaceId = marketplaceRows[0].id;
-                logger.info(`✅ Found Amazing Store marketplace ID: ${marketplaceId}`);
-            }
+            // Endi marketplaces table yo'q, Amazing Store uchun marketplace_id = null
+            const marketplaceId = null;
+            logger.info('✅ Using Amazing Store (marketplace_id = null)');
 
             // 2. Amazing Store'dagi barcha tovarlarni olish
             const { rows: products } = await pool.query(`

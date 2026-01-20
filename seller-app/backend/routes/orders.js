@@ -89,13 +89,24 @@ router.get('/', async (req, res) => {
                 if (!isNaN(marketplaceIdInt)) {
                     finalMarketplaceId = marketplaceIdInt;
                 } else {
-                    // String slug/name - look up marketplace ID first
-                    const { rows: marketplaceRows } = await pool.query(
-                        `SELECT id FROM marketplaces WHERE name = $1 OR slug = $1 LIMIT 1`,
-                        [marketplace_id]
-                    );
-                    if (marketplaceRows.length > 0) {
-                        finalMarketplaceId = marketplaceRows[0].id;
+                    // String slug/name - convert to marketplace type
+                    // Endi marketplaces table yo'q, faqat type'lar ishlatiladi
+                    const marketplaceTypes = {
+                        'amazing_store': null, // Amazing Store uchun marketplace_id = null
+                        'yandex': 'yandex',
+                        'uzum': 'uzum'
+                    };
+                    
+                    const marketplaceType = marketplaceTypes[marketplace_id.toLowerCase()];
+                    if (marketplaceType) {
+                        // Marketplace type bo'yicha filter qilish
+                        // Lekin orders table'da marketplace_id bor, shuning uchun hozircha null qoldiramiz
+                        finalMarketplaceId = null;
+                        logger.info('📋 Marketplace type found:', {
+                            input: marketplace_id,
+                            type: marketplaceType
+                        });
+                    } else {
                         logger.info('📋 Marketplace ID found:', {
                             input: marketplace_id,
                             found_id: finalMarketplaceId,
@@ -126,7 +137,6 @@ router.get('/', async (req, res) => {
                 m.name as marketplace_name, m.api_type as marketplace_type,
                 (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as items_count
             FROM orders o
-            LEFT JOIN marketplaces m ON o.marketplace_id = m.id
             WHERE 1=1
         `;
         const params = [];
@@ -258,7 +268,6 @@ router.get('/:id', async (req, res) => {
                 o.created_at, o.updated_at,
                 m.name as marketplace_name, m.api_type as marketplace_type
             FROM orders o
-            LEFT JOIN marketplaces m ON o.marketplace_id = m.id
             WHERE o.id = $1
         `,
             [id]

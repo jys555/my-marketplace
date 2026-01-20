@@ -20,6 +20,7 @@ const CACHE_TTL = 10 * 60; // 600 soniya
 const CACHE_KEY = 'marketplaces:list';
 
 // GET /api/seller/marketplaces - Barcha marketplacelar
+// Endi marketplaces table yo'q, faqat static list qaytaramiz
 router.get('/', async (req, res) => {
     try {
         // PERFORMANCE: Avval cache'dan tekshirish
@@ -28,19 +29,35 @@ router.get('/', async (req, res) => {
             return res.json(cached);
         }
 
-        // Cache'da yo'q bo'lsa, database'dan olish
-        const { rows } = await pool.query(`
-            SELECT 
-                id, name, api_type, marketplace_code, is_active,
-                created_at, updated_at
-            FROM marketplaces
-            ORDER BY name ASC
-        `);
+        // Static marketplace list (marketplaces table o'chirilgan)
+        const marketplaces = [
+            {
+                id: 'amazing_store',
+                name: 'AMAZING_STORE',
+                api_type: 'amazing_store',
+                marketplace_code: '202049831',
+                is_active: true
+            },
+            {
+                id: 'yandex',
+                name: 'Yandex Market',
+                api_type: 'yandex',
+                marketplace_code: null,
+                is_active: true
+            },
+            {
+                id: 'uzum',
+                name: 'Uzum Market',
+                api_type: 'uzum',
+                marketplace_code: null,
+                is_active: true
+            }
+        ];
 
         // PERFORMANCE: Cache'ga saqlash
-        cache.set(CACHE_KEY, rows, CACHE_TTL);
+        cache.set(CACHE_KEY, marketplaces, CACHE_TTL);
 
-        res.json(rows);
+        res.json(marketplaces);
     } catch (error) {
         logger.error('Error fetching marketplaces:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -51,22 +68,38 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { rows } = await pool.query(
-            `
-            SELECT 
-                id, name, api_type, marketplace_code, is_active,
-                created_at, updated_at
-            FROM marketplaces
-            WHERE id = $1
-        `,
-            [id]
-        );
+        
+        // Static marketplace list
+        const marketplaces = {
+            'amazing_store': {
+                id: 'amazing_store',
+                name: 'AMAZING_STORE',
+                api_type: 'amazing_store',
+                marketplace_code: '202049831',
+                is_active: true
+            },
+            'yandex': {
+                id: 'yandex',
+                name: 'Yandex Market',
+                api_type: 'yandex',
+                marketplace_code: null,
+                is_active: true
+            },
+            'uzum': {
+                id: 'uzum',
+                name: 'Uzum Market',
+                api_type: 'uzum',
+                marketplace_code: null,
+                is_active: true
+            }
+        };
 
-        if (rows.length === 0) {
+        const marketplace = marketplaces[id] || marketplaces[id.toLowerCase()];
+        if (!marketplace) {
             return res.status(404).json({ error: 'Marketplace not found' });
         }
 
-        res.json(rows[0]);
+        res.json(marketplace);
     } catch (error) {
         logger.error('Error fetching marketplace:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -74,115 +107,21 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/seller/marketplaces - Yangi marketplace
-router.post(
-    '/',
-    validateBody({
-        name: required(string),
-        api_type: required(string),
-        marketplace_code: optional(string),
-        is_active: optional(boolean),
-    }),
-    async (req, res, next) => {
-        try {
-            const { name, api_type, marketplace_code, is_active = true } = req.body;
-
-            const { rows } = await pool.query(
-                `
-            INSERT INTO marketplaces (name, api_type, marketplace_code, is_active)
-            VALUES ($1, $2, $3, $4)
-            RETURNING id, name, api_type, marketplace_code, is_active, created_at, updated_at
-        `,
-                [name, api_type, marketplace_code || null, is_active]
-            );
-
-            // PERFORMANCE: Marketplaces cache'ni tozalash (yangi marketplace qo'shildi)
-            cache.delete(CACHE_KEY);
-
-            res.status(201).json(rows[0]);
-        } catch (error) {
-            if (error.code === '23505') {
-                return next(new ConflictError('Marketplace with this name already exists'));
-            }
-            next(error);
-        }
-    }
-);
+// Endi marketplaces table yo'q, faqat read-only
+router.post('/', async (req, res) => {
+    res.status(405).json({ error: 'Marketplace creation is not supported. Use product_marketplace_integrations table instead.' });
+});
 
 // PUT /api/seller/marketplaces/:id - Marketplace yangilash
-router.put(
-    '/:id',
-    validateParams({
-        id: required(integer),
-    }),
-    validateBody({
-        name: optional(string),
-        api_type: optional(string),
-        marketplace_code: optional(string),
-        is_active: optional(boolean),
-    }),
-    async (req, res, next) => {
-        try {
-            const { id } = req.params;
-            const { name, api_type, marketplace_code, is_active } = req.body;
-
-            const { rows } = await pool.query(
-                `
-            UPDATE marketplaces
-            SET 
-                name = COALESCE($1, name),
-                api_type = COALESCE($2, api_type),
-                marketplace_code = COALESCE($3, marketplace_code),
-                is_active = COALESCE($4, is_active),
-                updated_at = NOW()
-            WHERE id = $5
-            RETURNING id, name, api_type, marketplace_code, is_active, created_at, updated_at
-        `,
-                [name, api_type, marketplace_code, is_active, id]
-            );
-
-            if (rows.length === 0) {
-                return next(new NotFoundError('Marketplace'));
-            }
-
-            // PERFORMANCE: Marketplaces cache'ni tozalash (marketplace o'zgartirildi)
-            cache.delete(CACHE_KEY);
-
-            res.json(rows[0]);
-        } catch (error) {
-            if (error.code === '23505') {
-                return next(new ConflictError('Marketplace with this name already exists'));
-            }
-            next(error);
-        }
-    }
-);
+// Endi marketplaces table yo'q, faqat read-only
+router.put('/:id', async (req, res) => {
+    res.status(405).json({ error: 'Marketplace update is not supported. Use product_marketplace_integrations table instead.' });
+});
 
 // DELETE /api/seller/marketplaces/:id - Marketplace o'chirish
+// Endi marketplaces table yo'q, faqat read-only
 router.delete('/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        const { rows } = await pool.query(
-            `
-            DELETE FROM marketplaces
-            WHERE id = $1
-            RETURNING id
-        `,
-            [id]
-        );
-
-        if (rows.length === 0) {
-            return res.status(404).json({ error: 'Marketplace not found' });
-        }
-
-        // PERFORMANCE: Marketplaces cache'ni tozalash (marketplace o'chirildi)
-        cache.delete(CACHE_KEY);
-
-        res.json({ message: 'Marketplace deleted successfully' });
-    } catch (error) {
-        logger.error('Error deleting marketplace:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
+    res.status(405).json({ error: 'Marketplace deletion is not supported. Use product_marketplace_integrations table instead.' });
 });
 
 module.exports = router;
