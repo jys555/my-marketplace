@@ -85,8 +85,20 @@ function selectMarketplace(id, name, type) {
 // ============================================
 async function loadDashboardData() {
     try {
-        loadChartData();
-        loadMonthlyStats();
+        // Get marketplace from localStorage
+        const savedMarketplace = localStorage.getItem('selectedMarketplace');
+        let marketplaceType = null;
+        if (savedMarketplace) {
+            try {
+                const marketplace = JSON.parse(savedMarketplace);
+                marketplaceType = marketplace.type;
+            } catch (e) {
+                console.error('Error parsing marketplace:', e);
+            }
+        }
+        
+        loadChartData(marketplaceType);
+        loadMonthlyStats(marketplaceType);
     } catch (error) {
         console.error('Error loading dashboard data:', error);
     }
@@ -95,7 +107,7 @@ async function loadDashboardData() {
 // ============================================
 // Chart Data Loading
 // ============================================
-function loadChartData() {
+async function loadChartData(marketplaceType = null) {
     const ctx = document.getElementById('analytics-chart');
     if (!ctx) {
         console.warn('Chart canvas not found');
@@ -241,7 +253,7 @@ function loadChartData() {
 // ============================================
 // Monthly Stats Loading
 // ============================================
-function loadMonthlyStats() {
+async function loadMonthlyStats(marketplaceType = null) {
     const monthSelector = document.getElementById('month-selector');
     if (!monthSelector) return;
 
@@ -250,14 +262,56 @@ function loadMonthlyStats() {
     const ordersEl = document.getElementById('monthly-orders');
     const profitEl = document.getElementById('monthly-profit');
 
-    if (selectedMonth === 'current') {
-        if (revenueEl) revenueEl.textContent = '2.3 million so\'m';
-        if (ordersEl) ordersEl.textContent = '34';
-        if (profitEl) profitEl.textContent = '450,000 so\'m';
-    } else {
-        if (revenueEl) revenueEl.textContent = '2.1 million so\'m';
-        if (ordersEl) ordersEl.textContent = '31';
-        if (profitEl) profitEl.textContent = '420,000 so\'m';
+    // Load monthly stats from API
+    try {
+        const now = new Date();
+        let year, month;
+        
+        if (selectedMonth === 'current') {
+            year = now.getFullYear();
+            month = now.getMonth();
+        } else {
+            year = now.getFullYear();
+            month = now.getMonth() - 1;
+            if (month < 0) {
+                month = 11;
+                year--;
+            }
+        }
+        
+        const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+        const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(new Date(year, month + 1, 0).getDate()).padStart(2, '0')}`;
+        
+        // Build API endpoint with marketplace filter
+        let analyticsEndpoint = `/analytics?start_date=${startDate}&end_date=${endDate}`;
+        if (marketplaceType === 'yandex' || marketplaceType === 'uzum') {
+            analyticsEndpoint += `&marketplace_type=${marketplaceType}`;
+        }
+        
+        const response = await apiRequest(analyticsEndpoint);
+        const analyticsData = Array.isArray(response) ? response : [];
+        
+        // Calculate totals
+        const totalRevenue = analyticsData.reduce((sum, item) => sum + (parseFloat(item.revenue) || 0), 0);
+        const totalOrders = analyticsData.reduce((sum, item) => sum + (parseInt(item.orders_count) || 0), 0);
+        const totalProfit = analyticsData.reduce((sum, item) => sum + (parseFloat(item.profit) || 0), 0);
+        
+        // Format and display
+        if (revenueEl) revenueEl.textContent = `${(totalRevenue / 1000000).toFixed(1)} million so'm`;
+        if (ordersEl) ordersEl.textContent = totalOrders.toString();
+        if (profitEl) profitEl.textContent = `${totalProfit.toLocaleString()} so'm`;
+    } catch (error) {
+        console.error('Error loading monthly stats:', error);
+        // Fallback to default values
+        if (selectedMonth === 'current') {
+            if (revenueEl) revenueEl.textContent = '2.3 million so\'m';
+            if (ordersEl) ordersEl.textContent = '34';
+            if (profitEl) profitEl.textContent = '450,000 so\'m';
+        } else {
+            if (revenueEl) revenueEl.textContent = '2.1 million so\'m';
+            if (ordersEl) ordersEl.textContent = '31';
+            if (profitEl) profitEl.textContent = '420,000 so\'m';
+        }
     }
 }
 

@@ -142,7 +142,20 @@ router.get('/', async (req, res) => {
         const total = parseInt(countRows[0].total);
 
         // PERFORMANCE: Faqat kerakli qismni olish (LIMIT/OFFSET)
-        // Include marketplace integration data if marketplace_type is specified
+        // Include marketplace integration data
+        // Agar marketplace_type filter tanlangan bo'lsa, INNER JOIN ishlatish (faqat integratsiya qilingan tovarlar)
+        // Aks holda LEFT JOIN (barcha tovarlar, marketplace ma'lumotlari ixtiyoriy)
+        let joinClause = '';
+        if (marketplace_type && (marketplace_type === 'yandex' || marketplace_type === 'uzum')) {
+            // Marketplace filter tanlanganda, faqat shu marketplace bilan integratsiya qilingan tovarlarni ko'rsatish
+            joinClause = `INNER JOIN product_marketplace_integrations pmi ON pmi.product_id = p.id AND pmi.marketplace_type = $${paramIndex}`;
+            params.push(marketplace_type);
+            paramIndex++;
+        } else {
+            // Marketplace filter tanlanmagan bo'lsa, barcha tovarlarni ko'rsatish (marketplace ma'lumotlari ixtiyoriy)
+            joinClause = `LEFT JOIN product_marketplace_integrations pmi ON pmi.product_id = p.id`;
+        }
+        
         const query = `
             SELECT DISTINCT ON (p.id)
                 p.id, p.name_uz, p.name_ru, p.description_uz, p.description_ru,
@@ -158,7 +171,7 @@ router.get('/', async (req, res) => {
                 pmi.last_synced_at
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
-            LEFT JOIN product_marketplace_integrations pmi ON pmi.product_id = p.id
+            ${joinClause}
             WHERE ${whereClause}
             ORDER BY p.id, p.created_at DESC
             LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
