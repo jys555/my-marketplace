@@ -38,7 +38,7 @@ class AnalyticsService {
 
             const { rows: dailyRows } = await pool.query(dailyQuery, dailyParams);
 
-            // Monthly totals
+            // Monthly totals (faqat Amazing Store - marketplace_id IS NULL)
             let monthlyQuery = `
                 SELECT 
                     SUM(total_orders) as total_orders,
@@ -46,15 +46,9 @@ class AnalyticsService {
                     SUM(total_profit) as total_profit
                 FROM daily_analytics
                 WHERE EXTRACT(MONTH FROM date) = $1 AND EXTRACT(YEAR FROM date) = $2
+                AND marketplace_id IS NULL
             `;
             const monthlyParams = [targetMonth, targetYear];
-
-            if (marketplaceId) {
-                monthlyQuery += ` AND marketplace_id = $3`;
-                monthlyParams.push(marketplaceId);
-            } else {
-                monthlyQuery += ` AND marketplace_id IS NULL`;
-            }
 
             const { rows: monthlyRows } = await pool.query(monthlyQuery, monthlyParams);
 
@@ -78,19 +72,18 @@ class AnalyticsService {
     }
 
     /**
-     * Kunlik analitikani hisoblash va saqlash
+     * Kunlik analitikani hisoblash va saqlash (faqat Amazing Store)
      * @param {Date} date - Sana
-     * @param {number} marketplaceId - Marketplace ID (null = barcha)
      * @returns {Promise<Object>} - Daily analytics
      */
-    async calculateDailyAnalytics(date, marketplaceId = null) {
+    async calculateDailyAnalytics(date) {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
 
             const dateStr = date.toISOString().split('T')[0];
 
-            // Buyurtmalarni olish
+            // Buyurtmalarni olish (faqat Amazing Store - marketplace_id IS NULL)
             let ordersQuery = `
                 SELECT 
                     COUNT(*) as orders_count,
@@ -98,19 +91,14 @@ class AnalyticsService {
                     SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_count
                 FROM orders
                 WHERE DATE(order_date) = $1
+                AND marketplace_id IS NULL
             `;
             const ordersParams = [dateStr];
-
-            if (marketplaceId) {
-                ordersQuery += ` AND marketplace_id = $2`;
-                ordersParams.push(marketplaceId);
-            } else {
-                ordersQuery += ` AND marketplace_id IS NULL`;
-            }
 
             const { rows: ordersRows } = await client.query(ordersQuery, ordersParams);
 
             // Order items'ni olish (cost va profit hisoblash uchun)
+            // Order items olish (faqat Amazing Store - marketplace_id IS NULL)
             let itemsQuery = `
                 SELECT 
                     oi.product_id, oi.quantity, oi.price,
@@ -119,15 +107,9 @@ class AnalyticsService {
                 INNER JOIN orders o ON oi.order_id = o.id
                 LEFT JOIN products p ON oi.product_id = p.id
                 WHERE DATE(o.order_date) = $1 AND o.status != 'cancelled'
+                AND o.marketplace_id IS NULL
             `;
             const itemsParams = [dateStr];
-
-            if (marketplaceId) {
-                itemsQuery += ` AND o.marketplace_id = $2`;
-                itemsParams.push(marketplaceId);
-            } else {
-                itemsQuery += ` AND o.marketplace_id IS NULL`;
-            }
 
             const { rows: itemsRows } = await client.query(itemsQuery, itemsParams);
 
@@ -159,7 +141,7 @@ class AnalyticsService {
                     updated_at = NOW()
                 RETURNING *
             `,
-                [dateStr, marketplaceId, totalOrders, totalRevenue, totalCost, totalProfit]
+                [dateStr, null, totalOrders, totalRevenue, totalCost, totalProfit]
             );
 
             await client.query('COMMIT');
@@ -174,14 +156,13 @@ class AnalyticsService {
     }
 
     /**
-     * Tovar bo'yicha analitika
+     * Tovar bo'yicha analitika (faqat Amazing Store)
      * @param {number} productId - Product ID
-     * @param {number} marketplaceId - Marketplace ID (optional)
      * @param {Date} startDate - Boshlanish sanasi
      * @param {Date} endDate - Tugash sanasi
      * @returns {Promise<Array>} - Product analytics
      */
-    async getProductAnalytics(productId, marketplaceId = null, startDate = null, endDate = null) {
+    async getProductAnalytics(productId, startDate = null, endDate = null) {
         try {
             let query = `
                 SELECT 
@@ -200,11 +181,8 @@ class AnalyticsService {
             const params = [productId];
             let paramIndex = 2;
 
-            if (marketplaceId) {
-                query += ` AND pa.marketplace_id = $${paramIndex}`;
-                params.push(marketplaceId);
-                paramIndex++;
-            }
+            // Faqat Amazing Store (marketplace_id IS NULL)
+            query += ` AND pa.marketplace_id IS NULL`;
 
             if (startDate) {
                 query += ` AND pa.date >= $${paramIndex}`;
@@ -229,13 +207,12 @@ class AnalyticsService {
     }
 
     /**
-     * Tovar bo'yicha analitikani hisoblash va saqlash
+     * Tovar bo'yicha analitikani hisoblash va saqlash (faqat Amazing Store)
      * @param {number} productId - Product ID
-     * @param {number} marketplaceId - Marketplace ID (optional)
      * @param {Date} date - Sana
      * @returns {Promise<Object>} - Product analytics
      */
-    async calculateProductAnalytics(productId, marketplaceId, date) {
+    async calculateProductAnalytics(productId, date) {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
@@ -255,12 +232,8 @@ class AnalyticsService {
             `;
             const itemsParams = [productId, dateStr];
 
-            if (marketplaceId) {
-                itemsQuery += ` AND o.marketplace_id = $3`;
-                itemsParams.push(marketplaceId);
-            } else {
-                itemsQuery += ` AND o.marketplace_id IS NULL`;
-            }
+            // Faqat Amazing Store (marketplace_id IS NULL)
+            itemsQuery += ` AND o.marketplace_id IS NULL`;
 
             const { rows: itemsRows } = await client.query(itemsQuery, itemsParams);
 
@@ -306,7 +279,7 @@ class AnalyticsService {
             `,
                 [
                     productId,
-                    marketplaceId,
+                    null, // marketplace_id IS NULL (Amazing Store)
                     dateStr,
                     ordersCount,
                     quantitySold,
@@ -335,54 +308,32 @@ class AnalyticsService {
      */
     async recalculateAnalytics(date) {
         try {
-            // Endi marketplaces table yo'q, faqat static list
-            const marketplaces = [
-                { id: null, type: 'amazing_store' },
-                { id: 'yandex', type: 'yandex' },
-                { id: 'uzum', type: 'uzum' }
-            ];
-
             const results = {
                 daily: [],
                 products: [],
             };
 
-            // Umumiy analitika
-            const dailyAll = await this.calculateDailyAnalytics(date, null);
+            // Faqat Amazing Store analitikasi
+            const dailyAll = await this.calculateDailyAnalytics(date);
             results.daily.push(dailyAll);
 
-            // Har bir marketplace uchun (faqat Amazing Store uchun null, qolganlari type bo'yicha)
-            // Hozircha faqat Amazing Store uchun hisoblaymiz
-            // Yandex va Uzum uchun alohida logika kerak bo'lsa, keyinroq qo'shiladi
-
-            // Tovar analitikalari
+            // Tovar analitikalari (faqat Amazing Store)
             const { rows: products } = await pool.query(
                 `
                 SELECT DISTINCT product_id FROM order_items oi
                 INNER JOIN orders o ON oi.order_id = o.id
                 WHERE DATE(o.order_date) = $1
+                AND o.marketplace_id IS NULL
             `,
                 [date.toISOString().split('T')[0]]
             );
 
             for (const product of products) {
-                // Umumiy
-                const productAll = await this.calculateProductAnalytics(
+                const productAnalytics = await this.calculateProductAnalytics(
                     product.product_id,
-                    null,
                     date
                 );
-                results.products.push(productAll);
-
-                // Har bir marketplace uchun
-                for (const marketplace of marketplaces) {
-                    const productMarketplace = await this.calculateProductAnalytics(
-                        product.product_id,
-                        marketplace.id,
-                        date
-                    );
-                    results.products.push(productMarketplace);
-                }
+                results.products.push(productAnalytics);
             }
 
             return results;

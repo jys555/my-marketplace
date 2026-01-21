@@ -53,16 +53,6 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Marketplace Selector -->
-        <div class="marketplace-selector-container">
-            <button class="marketplace-selector-btn" id="marketplace-selector-btn" aria-label="Select marketplace">
-                <span id="selected-marketplace">AMAZING_STORE</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="6 9 12 15 18 9"/>
-                </svg>
-            </button>
-        </div>
-
         <!-- Page Title -->
         <h1 class="page-title">Xulosa</h1>
 
@@ -124,35 +114,6 @@
         </div>
     </main>
 
-    <!-- Marketplace Selector Modal -->
-    <div id="marketplace-modal" class="modal-overlay" role="dialog" aria-labelledby="modal-title" aria-hidden="true">
-        <div class="modal-content marketplace-modal" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <div class="modal-title-left" id="modal-title">Ofis va do'konlar</div>
-                <div class="modal-title-right">
-                    <a href="marketplaces.html" class="settings-link">Sozlamalar</a>
-                    <button class="modal-close" id="modal-close" aria-label="Close modal">×</button>
-                </div>
-            </div>
-            <div class="marketplace-list">
-                <!-- Amazing Store -->
-                <div class="marketplace-item active" data-marketplace-id="amazing_store" data-marketplace-name="Amazing Store" data-marketplace-type="amazing_store">
-                    <div class="marketplace-name">Amazing Store</div>
-                    <div class="marketplace-code">Own Sales Channel</div>
-                </div>
-                <!-- Yandex Market -->
-                <div class="marketplace-item" data-marketplace-id="yandex" data-marketplace-name="Yandex Market" data-marketplace-type="yandex">
-                    <div class="marketplace-name">Yandex Market</div>
-                    <div class="marketplace-code">Marketplace Integration</div>
-                </div>
-                <!-- Uzum Market -->
-                <div class="marketplace-item" data-marketplace-id="uzum" data-marketplace-name="Uzum Market" data-marketplace-type="uzum">
-                    <div class="marketplace-name">Uzum Market</div>
-                    <div class="marketplace-code">Marketplace Integration</div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script src="api.js"></script>
     <script>

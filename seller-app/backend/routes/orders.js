@@ -25,11 +25,6 @@ const logger = require('../utils/logger');
  *       - TelegramAuth: []
  *     parameters:
  *       - in: query
- *         name: marketplace_id
- *         schema:
- *           type: integer
- *         description: Filter by marketplace ID
- *       - in: query
  *         name: status
  *         schema:
  *           type: string
@@ -69,52 +64,16 @@ const logger = require('../utils/logger');
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-// GET /api/seller/orders - Barcha buyurtmalar
+// GET /api/seller/orders - Barcha buyurtmalar (faqat Amazing Store)
 router.get('/', async (req, res) => {
     try {
-        const { marketplace_id, status, start_date, end_date } = req.query;
+        const { status, start_date, end_date } = req.query;
 
         logger.info('📋 GET /api/seller/orders - Request', {
-            marketplace_id,
             status,
             start_date,
             end_date,
         });
-
-        // Handle marketplace_id - convert string to integer ID if needed
-        let finalMarketplaceId = null;
-        if (marketplace_id) {
-            try {
-                const marketplaceIdInt = parseInt(marketplace_id);
-                if (!isNaN(marketplaceIdInt)) {
-                    finalMarketplaceId = marketplaceIdInt;
-                } else {
-                    // String slug/name - convert to marketplace type
-                    // Endi marketplaces table yo'q, faqat type'lar ishlatiladi
-                    const marketplaceTypes = {
-                        'amazing_store': null, // Amazing Store uchun marketplace_id = null
-                        'yandex': 'yandex',
-                        'uzum': 'uzum'
-                    };
-                    
-                    const marketplaceType = marketplaceTypes[marketplace_id.toLowerCase()];
-                    if (marketplaceType) {
-                        // Marketplace type bo'yicha filter qilish
-                        // Lekin orders table'da marketplace_id bor, shuning uchun hozircha null qoldiramiz
-                        finalMarketplaceId = null;
-                        logger.info('📋 Marketplace type found:', {
-                            input: marketplace_id,
-                            type: marketplaceType
-                        });
-                    } else {
-                        logger.warn('⚠️ Marketplace not found:', { input: marketplace_id });
-                    }
-                }
-            } catch (marketplaceError) {
-                logger.error('❌ Error looking up marketplace:', marketplaceError);
-                // Continue without marketplace filter if lookup fails
-            }
-        }
 
         // Calculate total_amount from order_items (column doesn't exist in orders table)
         let query = `
@@ -129,18 +88,8 @@ router.get('/', async (req, res) => {
                 o.customer_name, o.customer_phone, o.customer_address,
                 o.order_date, o.delivery_date,
                 o.created_at, o.updated_at,
-                CASE 
-                    WHEN o.marketplace_id IS NULL THEN 'AMAZING_STORE'
-                    WHEN EXISTS (SELECT 1 FROM product_marketplace_integrations pmi WHERE pmi.product_id IN (SELECT product_id FROM order_items WHERE order_id = o.id) AND pmi.marketplace_type = 'yandex') THEN 'Yandex Market'
-                    WHEN EXISTS (SELECT 1 FROM product_marketplace_integrations pmi WHERE pmi.product_id IN (SELECT product_id FROM order_items WHERE order_id = o.id) AND pmi.marketplace_type = 'uzum') THEN 'Uzum Market'
-                    ELSE 'AMAZING_STORE'
-                END as marketplace_name,
-                CASE 
-                    WHEN o.marketplace_id IS NULL THEN 'amazing_store'
-                    WHEN EXISTS (SELECT 1 FROM product_marketplace_integrations pmi WHERE pmi.product_id IN (SELECT product_id FROM order_items WHERE order_id = o.id) AND pmi.marketplace_type = 'yandex') THEN 'yandex'
-                    WHEN EXISTS (SELECT 1 FROM product_marketplace_integrations pmi WHERE pmi.product_id IN (SELECT product_id FROM order_items WHERE order_id = o.id) AND pmi.marketplace_type = 'uzum') THEN 'uzum'
-                    ELSE 'amazing_store'
-                END as marketplace_type,
+                'AMAZING_STORE' as marketplace_name,
+                'amazing_store' as marketplace_type,
                 (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as items_count
             FROM orders o
             WHERE 1=1
@@ -148,11 +97,8 @@ router.get('/', async (req, res) => {
         const params = [];
         let paramIndex = 1;
 
-        if (finalMarketplaceId) {
-            query += ` AND o.marketplace_id = $${paramIndex}`;
-            params.push(finalMarketplaceId);
-            paramIndex++;
-        }
+        // Faqat Amazing Store buyurtmalari (marketplace_id IS NULL)
+        query += ` AND o.marketplace_id IS NULL`;
 
         if (status) {
             query += ` AND o.status = $${paramIndex}`;
@@ -272,18 +218,8 @@ router.get('/:id', async (req, res) => {
                 o.customer_name, o.customer_phone, o.customer_address,
                 o.order_date, o.delivery_date,
                 o.created_at, o.updated_at,
-                CASE 
-                    WHEN o.marketplace_id IS NULL THEN 'AMAZING_STORE'
-                    WHEN EXISTS (SELECT 1 FROM product_marketplace_integrations pmi WHERE pmi.product_id IN (SELECT product_id FROM order_items WHERE order_id = o.id) AND pmi.marketplace_type = 'yandex') THEN 'Yandex Market'
-                    WHEN EXISTS (SELECT 1 FROM product_marketplace_integrations pmi WHERE pmi.product_id IN (SELECT product_id FROM order_items WHERE order_id = o.id) AND pmi.marketplace_type = 'uzum') THEN 'Uzum Market'
-                    ELSE 'AMAZING_STORE'
-                END as marketplace_name,
-                CASE 
-                    WHEN o.marketplace_id IS NULL THEN 'amazing_store'
-                    WHEN EXISTS (SELECT 1 FROM product_marketplace_integrations pmi WHERE pmi.product_id IN (SELECT product_id FROM order_items WHERE order_id = o.id) AND pmi.marketplace_type = 'yandex') THEN 'yandex'
-                    WHEN EXISTS (SELECT 1 FROM product_marketplace_integrations pmi WHERE pmi.product_id IN (SELECT product_id FROM order_items WHERE order_id = o.id) AND pmi.marketplace_type = 'uzum') THEN 'uzum'
-                    ELSE 'amazing_store'
-                END as marketplace_type
+                'AMAZING_STORE' as marketplace_name,
+                'amazing_store' as marketplace_type
             FROM orders o
             WHERE o.id = $1
         `,

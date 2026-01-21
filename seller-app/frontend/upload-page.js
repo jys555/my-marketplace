@@ -116,13 +116,6 @@ async function handleProductUpload() {
             cost_price: parseFloat(document.getElementById('product-cost-price').value),
             service_fee: parseFloat(document.getElementById('product-service-fee').value),
             is_active: document.getElementById('product-is-active').checked,
-            // Yandex Market integratsiyasi (ixtiyoriy)
-            yandex_api_token: document.getElementById('product-yandex-api-token')?.value.trim() || null,
-            yandex_campaign_id: document.getElementById('product-yandex-campaign-id')?.value.trim() || null,
-            yandex_product_id: document.getElementById('product-yandex-product-id')?.value.trim() || null,
-            // Uzum Market integratsiyasi (ixtiyoriy)
-            uzum_api_token: document.getElementById('product-uzum-api-token')?.value.trim() || null,
-            uzum_product_id: document.getElementById('product-uzum-product-id')?.value.trim() || null,
         };
         
         // Clear all previous errors

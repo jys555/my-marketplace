@@ -82,7 +82,7 @@ const logger = require('../utils/logger');
 router.get('/', async (req, res) => {
     try {
         logger.info('📦 GET /api/seller/products - Request received', { query: req.query });
-        const { marketplace_id, marketplace_type, search, category_id } = req.query;
+        const { search, category_id } = req.query;
 
         // PERFORMANCE: Pagination parametrlari
         const limit = parseInt(req.query.limit) || 50; // Seller App'da default 50 ta (ko'proq ko'rsatish uchun)
@@ -95,26 +95,6 @@ router.get('/', async (req, res) => {
         const whereConditions = ['1=1']; // Base condition
         const params = [];
         let paramIndex = 1;
-
-        // Marketplace type filter (yandex, uzum)
-        // Agar marketplace_type berilgan bo'lsa, faqat shu marketplace bilan integratsiya qilingan tovarlarni ko'rsatish
-        if (marketplace_type && (marketplace_type === 'yandex' || marketplace_type === 'uzum')) {
-            whereConditions.push(`EXISTS (
-                SELECT 1 FROM product_marketplace_integrations pmi
-                WHERE pmi.product_id = p.id 
-                AND pmi.marketplace_type = $${paramIndex}
-                AND pmi.api_token IS NOT NULL
-                AND pmi.marketplace_product_id IS NOT NULL
-            )`);
-            params.push(marketplace_type);
-            paramIndex++;
-        }
-
-        // Legacy marketplace_id support (backward compatibility)
-        if (marketplace_id && !marketplace_type) {
-            // Eski marketplace_id logikasi (agar kerak bo'lsa)
-            // Hozircha ignore qilamiz, chunki biz yangi product_marketplace_integrations table ishlatamiz
-        }
 
         if (category_id) {
             whereConditions.push(`p.category_id = $${paramIndex}`);
@@ -142,93 +122,38 @@ router.get('/', async (req, res) => {
         const total = parseInt(countRows[0].total);
 
         // PERFORMANCE: Faqat kerakli qismni olish (LIMIT/OFFSET)
-        // Include marketplace integration data
-        // Agar marketplace_type filter tanlangan bo'lsa, INNER JOIN ishlatish (faqat integratsiya qilingan tovarlar)
-        // Aks holda LEFT JOIN (barcha tovarlar, marketplace ma'lumotlari ixtiyoriy)
-        let joinClause = '';
-        if (marketplace_type && (marketplace_type === 'yandex' || marketplace_type === 'uzum')) {
-            // Marketplace filter tanlanganda, faqat shu marketplace bilan integratsiya qilingan tovarlarni ko'rsatish
-            joinClause = `INNER JOIN product_marketplace_integrations pmi ON pmi.product_id = p.id AND pmi.marketplace_type = $${paramIndex}`;
-            params.push(marketplace_type);
-            paramIndex++;
-        } else {
-            // Marketplace filter tanlanmagan bo'lsa, barcha tovarlarni ko'rsatish (marketplace ma'lumotlari ixtiyoriy)
-            joinClause = `LEFT JOIN product_marketplace_integrations pmi ON pmi.product_id = p.id`;
-        }
-        
         const query = `
-            SELECT DISTINCT ON (p.id)
+            SELECT 
                 p.id, p.name_uz, p.name_ru, p.description_uz, p.description_ru,
                 p.price, p.sale_price, p.cost_price, p.service_fee, 
                 p.image_url, p.category_id, p.is_active,
                 p.sku,
                 c.name_uz as category_name_uz, c.name_ru as category_name_ru,
-                p.created_at,
-                pmi.marketplace_type,
-                pmi.marketplace_price,
-                pmi.marketplace_strikethrough_price,
-                pmi.marketplace_commission_rate,
-                pmi.marketplace_stock,
-                pmi.last_synced_at
+                p.created_at
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
-            ${joinClause}
             WHERE ${whereClause}
             ORDER BY p.id, p.created_at DESC
             LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
         `;
         
-        logger.info('📦 Products query:', { query, params, marketplace_type });
+        logger.info('📦 Products query:', { query, params });
 
         params.push(validLimit, validOffset);
 
         const { rows } = await pool.query(query, params);
         
         logger.info('📦 Products query result:', { 
-            rowsCount: rows.length,
-            sampleRow: rows[0] ? {
-                id: rows[0].id,
-                sku: rows[0].sku,
-                marketplace_type: rows[0].marketplace_type,
-                marketplace_price: rows[0].marketplace_price,
-                marketplace_strikethrough_price: rows[0].marketplace_strikethrough_price,
-                marketplace_commission_rate: rows[0].marketplace_commission_rate,
-                marketplace_stock: rows[0].marketplace_stock
-            } : null
+            rowsCount: rows.length
         });
 
         // ID'ni yashirish (frontend uchun SKU asosiy identifier)
-        // Marketplace ma'lumotlarini qo'shish
         const products = rows.map(row => {
-            const { id, marketplace_type, marketplace_price, marketplace_strikethrough_price, marketplace_commission_rate, marketplace_stock, last_synced_at, ...rest } = row;
-            const result = {
+            const { id, ...rest } = row;
+            return {
                 ...rest,
                 _id: id, // Yashirilgan ID (ichki ishlatish uchun)
             };
-            
-            // Agar marketplace_type bo'lsa, marketplace ma'lumotlarini qo'shish
-            if (marketplace_type) {
-                result.marketplace = {
-                    type: marketplace_type,
-                    price: marketplace_price,
-                    strikethrough_price: marketplace_strikethrough_price,
-                    commission_rate: marketplace_commission_rate,
-                    stock: marketplace_stock,
-                    last_synced_at: last_synced_at
-                };
-                
-                logger.info(`📦 Added marketplace data for product ${row.sku}:`, {
-                    type: marketplace_type,
-                    price: marketplace_price,
-                    strikethrough_price: marketplace_strikethrough_price,
-                    commission_rate: marketplace_commission_rate,
-                    stock: marketplace_stock
-                });
-            } else {
-                logger.warn(`⚠️ No marketplace data for product ${row.sku} (marketplace_type: ${marketplace_type})`);
-            }
-            
-            return result;
         });
 
         // PERFORMANCE: Pagination ma'lumotlari bilan javob qaytarish
@@ -436,13 +361,6 @@ router.post(
         service_fee: optional(positive),
         image_url: optional(url),
         is_active: optional(boolean),
-        // Yandex Market integratsiyasi (ixtiyoriy)
-        yandex_api_token: optional(string),
-        yandex_campaign_id: optional(string),
-        yandex_product_id: optional(string),
-        // Uzum Market integratsiyasi (ixtiyoriy)
-        uzum_api_token: optional(string),
-        uzum_product_id: optional(string),
     }),
     async (req, res, next) => {
         try {
@@ -460,13 +378,6 @@ router.post(
                 service_fee,
                 image_url,
                 is_active = true,
-                // Yandex Market integratsiyasi
-                yandex_api_token,
-                yandex_campaign_id,
-                yandex_product_id,
-                // Uzum Market integratsiyasi
-                uzum_api_token,
-                uzum_product_id,
             } = req.body;
 
             // Check if SKU already exists
@@ -543,56 +454,6 @@ router.post(
                 cost_price: rows[0].cost_price,
                 service_fee: rows[0].service_fee,
             });
-
-            const productId = rows[0].id;
-
-            // Marketplace integratsiyasi (agar berilgan bo'lsa)
-            // Yandex Market integration yaratish
-            if (yandex_api_token && yandex_campaign_id && yandex_product_id) {
-                try {
-                    await pool.query(
-                        `INSERT INTO product_marketplace_integrations (
-                            product_id, marketplace_type, api_token, campaign_id, marketplace_product_id
-                        )
-                        VALUES ($1, 'yandex', $2, $3, $4)
-                        ON CONFLICT (product_id, marketplace_type) DO UPDATE SET
-                            api_token = EXCLUDED.api_token,
-                            campaign_id = EXCLUDED.campaign_id,
-                            marketplace_product_id = EXCLUDED.marketplace_product_id,
-                            updated_at = NOW()`,
-                        [productId, yandex_api_token, yandex_campaign_id, yandex_product_id]
-                    );
-
-                    // Sync faqat manual endpoint orqali qilinadi
-                    // Integration ma'lumotlari saqlandi, sync keyinroq qilinadi
-                    logger.info('✅ Yandex Market integration saved for product:', productId);
-                } catch (error) {
-                    logger.error('⚠️ Yandex Market integration error (product still created):', error);
-                }
-            }
-
-            // Uzum Market integration yaratish
-            if (uzum_api_token && uzum_product_id) {
-                try {
-                    await pool.query(
-                        `INSERT INTO product_marketplace_integrations (
-                            product_id, marketplace_type, api_token, marketplace_product_id
-                        )
-                        VALUES ($1, 'uzum', $2, $3)
-                        ON CONFLICT (product_id, marketplace_type) DO UPDATE SET
-                            api_token = EXCLUDED.api_token,
-                            marketplace_product_id = EXCLUDED.marketplace_product_id,
-                            updated_at = NOW()`,
-                        [productId, uzum_api_token, uzum_product_id]
-                    );
-
-                    // Sync faqat manual endpoint orqali qilinadi
-                    // Integration ma'lumotlari saqlandi, sync keyinroq qilinadi
-                    logger.info('✅ Uzum Market integration saved for product:', productId);
-                } catch (error) {
-                    logger.error('⚠️ Uzum Market integration error (product still created):', error);
-                }
-            }
 
             res.status(201).json(rows[0]);
         } catch (error) {

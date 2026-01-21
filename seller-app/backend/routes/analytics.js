@@ -3,35 +3,28 @@ const pool = require('../db');
 const router = express.Router();
 const logger = require('../utils/logger');
 
-// GET /api/seller/analytics/dashboard - Dashboard ma'lumotlari
+// GET /api/seller/analytics/dashboard - Dashboard ma'lumotlari (faqat Amazing Store)
 router.get('/dashboard', async (req, res) => {
     try {
-        const { marketplace_id, month, year } = req.query;
+        const { month, year } = req.query;
 
         const targetMonth = month ? parseInt(month) : new Date().getMonth() + 1;
         const targetYear = year ? parseInt(year) : new Date().getFullYear();
 
-        // Daily analytics olish
+        // Daily analytics olish (faqat Amazing Store - marketplace_id IS NULL)
         let dailyQuery = `
             SELECT 
                 date, total_orders, total_revenue, total_profit
             FROM daily_analytics
             WHERE EXTRACT(MONTH FROM date) = $1 AND EXTRACT(YEAR FROM date) = $2
+            AND marketplace_id IS NULL
+            ORDER BY date ASC
         `;
         const dailyParams = [targetMonth, targetYear];
 
-        if (marketplace_id) {
-            dailyQuery += ` AND marketplace_id = $3`;
-            dailyParams.push(marketplace_id);
-        } else {
-            dailyQuery += ` AND marketplace_id IS NULL`;
-        }
-
-        dailyQuery += ` ORDER BY date ASC`;
-
         const { rows: dailyRows } = await pool.query(dailyQuery, dailyParams);
 
-        // Monthly totals
+        // Monthly totals (faqat Amazing Store - marketplace_id IS NULL)
         let monthlyQuery = `
             SELECT 
                 SUM(total_orders) as total_orders,
@@ -39,15 +32,9 @@ router.get('/dashboard', async (req, res) => {
                 SUM(total_profit) as total_profit
             FROM daily_analytics
             WHERE EXTRACT(MONTH FROM date) = $1 AND EXTRACT(YEAR FROM date) = $2
+            AND marketplace_id IS NULL
         `;
         const monthlyParams = [targetMonth, targetYear];
-
-        if (marketplace_id) {
-            monthlyQuery += ` AND marketplace_id = $3`;
-            monthlyParams.push(marketplace_id);
-        } else {
-            monthlyQuery += ` AND marketplace_id IS NULL`;
-        }
 
         const { rows: monthlyRows } = await pool.query(monthlyQuery, monthlyParams);
 
@@ -65,10 +52,10 @@ router.get('/dashboard', async (req, res) => {
     }
 });
 
-// GET /api/seller/analytics/daily - Kunlik analitika
+// GET /api/seller/analytics/daily - Kunlik analitika (faqat Amazing Store)
 router.get('/daily', async (req, res) => {
     try {
-        const { marketplace_id, start_date, end_date } = req.query;
+        const { start_date, end_date } = req.query;
 
         let query = `
             SELECT 
@@ -76,18 +63,10 @@ router.get('/daily', async (req, res) => {
                 total_orders, total_revenue, total_cost, total_profit,
                 created_at, updated_at
             FROM daily_analytics
-            WHERE 1=1
+            WHERE marketplace_id IS NULL
         `;
         const params = [];
         let paramIndex = 1;
-
-        if (marketplace_id) {
-            query += ` AND marketplace_id = $${paramIndex}`;
-            params.push(marketplace_id);
-            paramIndex++;
-        } else {
-            query += ` AND marketplace_id IS NULL`;
-        }
 
         if (start_date) {
             query += ` AND date >= $${paramIndex}`;
@@ -111,10 +90,10 @@ router.get('/daily', async (req, res) => {
     }
 });
 
-// GET /api/seller/analytics/products - Tovar bo'yicha analitika
+// GET /api/seller/analytics/products - Tovar bo'yicha analitika (faqat Amazing Store)
 router.get('/products', async (req, res) => {
     try {
-        const { marketplace_id, product_id, start_date, end_date } = req.query;
+        const { product_id, start_date, end_date } = req.query;
 
         let query = `
             SELECT 
@@ -122,11 +101,10 @@ router.get('/products', async (req, res) => {
                 pa.date, pa.orders_count, pa.quantity_sold, pa.quantity_returned,
                 pa.revenue, pa.cost, pa.profit,
                 p.name_uz as product_name_uz, p.name_ru as product_name_ru,
-                m.name as marketplace_name
+                'AMAZING_STORE' as marketplace_name
             FROM product_analytics pa
             INNER JOIN products p ON pa.product_id = p.id
-            LEFT JOIN marketplaces m ON pa.marketplace_id = m.id
-            WHERE 1=1
+            WHERE pa.marketplace_id IS NULL
         `;
         const params = [];
         let paramIndex = 1;
@@ -134,12 +112,6 @@ router.get('/products', async (req, res) => {
         if (product_id) {
             query += ` AND pa.product_id = $${paramIndex}`;
             params.push(product_id);
-            paramIndex++;
-        }
-
-        if (marketplace_id) {
-            query += ` AND pa.marketplace_id = $${paramIndex}`;
-            params.push(marketplace_id);
             paramIndex++;
         }
 

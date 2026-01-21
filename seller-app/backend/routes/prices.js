@@ -91,10 +91,10 @@ async function ensureProfitabilityPercentageColumn() {
     }
 }
 
-// GET /api/seller/prices - Barcha narxlar
+// GET /api/seller/prices - Barcha narxlar (faqat Amazing Store)
 router.get('/', async (req, res) => {
     try {
-        const { marketplace_id, product_id } = req.query;
+        const { product_id } = req.query;
 
         // Ensure profitability_percentage column exists
         const columnExists = await ensureProfitabilityPercentageColumn();
@@ -132,19 +132,14 @@ router.get('/', async (req, res) => {
                 ${selectFields},
                 p.name_uz as product_name_uz, p.name_ru as product_name_ru,
                 p.image_url as product_image_url,
-                m.name as marketplace_name, m.api_type as marketplace_type
+                'AMAZING_STORE' as marketplace_name,
+                'amazing_store' as marketplace_type
             FROM product_prices pp
             INNER JOIN products p ON pp.product_id = p.id
-            WHERE 1=1
+            WHERE pp.marketplace_id IS NULL
         `;
         const params = [];
         let paramIndex = 1;
-
-        if (marketplace_id) {
-            query += ` AND pp.marketplace_id = $${paramIndex}`;
-            params.push(marketplace_id);
-            paramIndex++;
-        }
 
         if (product_id) {
             query += ` AND pp.product_id = $${paramIndex}`;

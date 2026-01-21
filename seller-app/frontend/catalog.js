@@ -1,6 +1,4 @@
 // Catalog Page JavaScript
-let currentMarketplaceId = null;
-let currentMarketplaceName = 'AMAZING_STORE';
 let products = [];
 let inventory = [];
 let selectedProducts = new Set();
@@ -15,33 +13,6 @@ let productsPagination = {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    // Get marketplace from localStorage (set by dashboard)
-    const savedMarketplace = localStorage.getItem('selectedMarketplace');
-    let selectedMarketplaceType = null;
-    
-    if (savedMarketplace) {
-        try {
-            const marketplace = JSON.parse(savedMarketplace);
-            currentMarketplaceName = marketplace.name || 'AMAZING_STORE';
-            selectedMarketplaceType = marketplace.type || null;
-            
-            // Set marketplace type for filtering
-            if (selectedMarketplaceType === 'yandex' || selectedMarketplaceType === 'uzum') {
-                // Marketplace filter active
-                console.log('🛒 Marketplace filter active:', selectedMarketplaceType);
-            } else {
-                // Amazing Store or no filter
-                selectedMarketplaceType = null;
-            }
-        } catch (e) {
-            console.error('Error parsing marketplace:', e);
-            selectedMarketplaceType = null;
-        }
-    }
-    
-    // Store marketplace type globally for use in createProductRow
-    window.currentMarketplaceType = selectedMarketplaceType;
-    
     await loadProducts();
     setupEventListeners();
 });
@@ -67,39 +38,10 @@ async function loadProducts() {
         // API response'da ID yashirilgan (_id), SKU asosiy identifier
         const searchParam = document.getElementById('search-input')?.value ? `&search=${encodeURIComponent(document.getElementById('search-input').value)}` : '';
         
-        // Marketplace filter from localStorage (set by dashboard)
-        let marketplaceParam = '';
-        const savedMarketplace = localStorage.getItem('selectedMarketplace');
-        if (savedMarketplace) {
-            try {
-                const marketplace = JSON.parse(savedMarketplace);
-                const marketplaceType = marketplace.type;
-                if (marketplaceType === 'yandex' || marketplaceType === 'uzum') {
-                    marketplaceParam = `&marketplace_type=${marketplaceType}`;
-                }
-            } catch (e) {
-                console.error('Error parsing marketplace:', e);
-            }
-        }
-        
-        console.log('📦 Loading products from API:', `/products?limit=${productsPagination.limit}&offset=${productsPagination.currentOffset}${searchParam}${marketplaceParam}`);
-        const productsResponse = await apiRequest(`/products?limit=${productsPagination.limit}&offset=${productsPagination.currentOffset}${searchParam}${marketplaceParam}`);
+        console.log('📦 Loading products from API:', `/products?limit=${productsPagination.limit}&offset=${productsPagination.currentOffset}${searchParam}`);
+        const productsResponse = await apiRequest(`/products?limit=${productsPagination.limit}&offset=${productsPagination.currentOffset}${searchParam}`);
         console.log('📦 Products API response:', productsResponse);
         
-        // Marketplace ma'lumotlarini tekshirish
-        if (productsResponse && productsResponse.products) {
-            productsResponse.products.forEach((product, index) => {
-                console.log(`📦 Product ${index + 1} (${product.sku}):`, {
-                    hasMarketplace: !!product.marketplace,
-                    marketplaceType: product.marketplace?.type,
-                    marketplacePrice: product.marketplace?.price,
-                    marketplaceStrikethroughPrice: product.marketplace?.strikethrough_price,
-                    marketplaceCommissionRate: product.marketplace?.commission_rate,
-                    marketplaceStock: product.marketplace?.stock,
-                    fullProduct: product
-                });
-            });
-        }
         
         // PERFORMANCE: Pagination response format: { products: [...], pagination: {...} }
         let newProducts;
@@ -172,7 +114,7 @@ async function loadProducts() {
         let renderedCount = 0;
         filteredProducts.forEach(product => {
             const row = createProductRow(product);
-            if (row) { // Agar row null bo'lmasa (marketplace filter active bo'lsa va ma'lumotlar mavjud bo'lmasa, null qaytadi)
+            if (row) {
                 tableBody.appendChild(row);
                 renderedCount++;
             }
@@ -212,99 +154,20 @@ function createProductRow(product) {
     const productId = product._id || product.id;
     const invData = inventory.find(i => i.product_id === productId);
     
-    // Marketplace filter from localStorage (set by dashboard)
-    const savedMarketplace = localStorage.getItem('selectedMarketplace');
-    let selectedMarketplaceType = null;
-    if (savedMarketplace) {
-        try {
-            const marketplace = JSON.parse(savedMarketplace);
-            selectedMarketplaceType = marketplace.type;
-        } catch (e) {
-            console.error('Error parsing marketplace:', e);
-        }
-    }
-    const isMarketplaceFilterActive = selectedMarketplaceType === 'yandex' || selectedMarketplaceType === 'uzum';
-    
-    // Marketplace filter tanlanganda, FAQAT marketplace ma'lumotlarini ishlatish
+    // Faqat Amazing Store ma'lumotlarini ishlatish
     let quantity = invData?.quantity || 0;
     let costPrice = product.cost_price;
     let sellingPrice = product.sale_price;
     let strikethroughPrice = product.price;
     let serviceFee = product.service_fee;
     
-    if (isMarketplaceFilterActive) {
-        // Marketplace filter tanlanganda, FAQAT marketplace ma'lumotlari yuklanishi kerak
-        if (!product.marketplace || product.marketplace.type !== selectedMarketplaceType) {
-            // Agar marketplace ma'lumotlari mavjud bo'lmasa, error handling - tovarni ko'rsatmaslik
-            console.error('❌ Marketplace data not available for product:', {
-                sku: product.sku,
-                expectedMarketplace: selectedMarketplaceType,
-                actualMarketplace: product.marketplace?.type || 'none'
-            });
-            return null; // Tovarni ko'rsatmaslik
-        }
-        
-        // BARCHA ma'lumotlar marketplace'dan o'qiladi
-        // Stock: marketplace stock
-        if (product.marketplace.stock !== null && product.marketplace.stock !== undefined) {
-            quantity = product.marketplace.stock;
-        } else {
-            quantity = 0; // Agar marketplace stock mavjud bo'lmasa, 0 ko'rsatish
-        }
-        
-        // Sotish narxi: marketplace narxi (majburiy)
-        if (product.marketplace.price !== null && product.marketplace.price !== undefined) {
-            sellingPrice = product.marketplace.price;
-            // Chizilgan narx: marketplace chizilgan narxi (agar mavjud bo'lsa)
-            if (product.marketplace.strikethrough_price !== null && product.marketplace.strikethrough_price !== undefined) {
-                strikethroughPrice = product.marketplace.strikethrough_price;
-            } else {
-                // Agar chizilgan narx mavjud bo'lmasa, sotish narxiga tenglashtirish
-                strikethroughPrice = product.marketplace.price;
-            }
-        } else {
-            // ERROR: Marketplace narxi mavjud bo'lmasa, error handling - tovarni ko'rsatmaslik
-            console.error('❌ Marketplace price not available for product:', product.sku);
-            return null; // Tovarni ko'rsatmaslik
-        }
-        
-        // Xizmatlar narxi = marketplace komissiyasi (foizdan so'mga aylantiriladi)
-        if (product.marketplace.commission_rate !== null && product.marketplace.commission_rate !== undefined) {
-            const commissionRate = product.marketplace.commission_rate;
-            if (sellingPrice && commissionRate) {
-                serviceFee = (sellingPrice * commissionRate) / 100;
-            } else {
-                serviceFee = 0;
-            }
-        } else {
-            serviceFee = 0; // Agar komissiya mavjud bo'lmasa, 0 ko'rsatish
-        }
-        
-        // Tannarx: marketplace'dan o'qilmaydi - u Amazing Store bilan bir xil
-        // Tannarx bizning ichki ma'lumotimizdan olinadi (product.cost_price)
-        // Chunki tovar bir xil, faqat marketplace'da narx va komissiya o'zgaradi
-        
-        console.log('🛒 Using marketplace data:', {
-            sku: product.sku,
-            marketplaceType: selectedMarketplaceType,
-            marketplacePrice: product.marketplace.price,
-            marketplaceStock: product.marketplace.stock,
-            marketplaceCommissionRate: product.marketplace.commission_rate,
-            calculatedServiceFee: serviceFee,
-            sellingPrice,
-            strikethroughPrice,
-            quantity
-        });
-    } else {
-        // Amazing Store ma'lumotlarini ishlatish (default)
-        console.log('🏪 Using Amazing Store data:', {
-            sku: product.sku,
-            costPrice,
-            sellingPrice,
-            serviceFee,
-            quantity
-        });
-    }
+    console.log('🏪 Using Amazing Store data:', {
+        sku: product.sku,
+        costPrice,
+        sellingPrice,
+        serviceFee,
+        quantity
+    });
     
     // VALIDATION: Log if price data is missing
     if (!costPrice || !sellingPrice || serviceFee === undefined || serviceFee === null) {
@@ -408,14 +271,7 @@ function createProductRow(product) {
         <td class="warehouse-col">
             <div class="warehouse-info">
                 <div class="warehouse-quantity">${quantity}</div>
-                ${isMarketplaceFilterActive && product.marketplace && product.marketplace.type === selectedMarketplaceType && product.marketplace.last_synced_at ? 
-                    `<div class="warehouse-date" style="font-size: 11px; color: #667eea;">Sync: ${formatDate(new Date(product.marketplace.last_synced_at))}</div>` : 
-                    (lastUpdateStr ? `<div class="warehouse-date">${lastUpdateStr}</div>` : '')
-                }
-                ${isMarketplaceFilterActive && product.marketplace && product.marketplace.type === selectedMarketplaceType ? 
-                    `<div style="margin-top: 4px; font-size: 11px; color: #667eea; font-weight: 500;">${selectedMarketplaceType === 'yandex' ? 'Yandex' : 'Uzum'}</div>` : 
-                    ''
-                }
+                ${lastUpdateStr ? `<div class="warehouse-date">${lastUpdateStr}</div>` : ''}
             </div>
         </td>
         <td class="cost-col">
@@ -566,7 +422,6 @@ function openEditPriceModal(productSku) {
     
     // ID'ni yashirilgan holda saqlash (backend uchun)
     document.getElementById('edit-product-id').value = product._id || product.id;
-    document.getElementById('edit-marketplace-id').value = currentMarketplaceId || '';
     document.getElementById('edit-cost-price').value = product.cost_price || '';
     document.getElementById('edit-selling-price').value = product.sale_price || '';
     document.getElementById('edit-strikethrough-price').value = product.price || '';
@@ -977,7 +832,7 @@ async function savePrice() {
     }
 
     const productId = parseInt(document.getElementById('edit-product-id').value);
-    const marketplaceId = document.getElementById('edit-marketplace-id').value || null;
+    const marketplaceId = null; // Faqat Amazing Store
 
     const priceData = {
         product_id: productId,

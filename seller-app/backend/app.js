@@ -17,8 +17,6 @@ const requestLogger = require('./middleware/requestLogger');
 const metricsMiddleware = require('./middleware/metrics');
 
 // Routes
-const marketplaceRoutes = require('./routes/marketplaces');
-const marketplaceSyncRoutes = require('./routes/marketplace-sync');
 const productRoutes = require('./routes/products');
 const bannersRoutes = require('./routes/banners');
 const categoriesRoutes = require('./routes/categories');
@@ -105,8 +103,6 @@ app.use('/api/', apiLimiter);
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // API routes
-app.use('/api/seller/marketplaces', authenticate, isAdmin, marketplaceRoutes);
-app.use('/api/seller/marketplace-sync', authenticate, isAdmin, marketplaceSyncRoutes);
 app.use('/api/seller/products', authenticate, isAdmin, productRoutes);
 app.use('/api/seller/banners', authenticate, isAdmin, bannersRoutes);
 app.use('/api/seller/categories', authenticate, isAdmin, categoriesRoutes);

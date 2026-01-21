@@ -85,20 +85,9 @@ function selectMarketplace(id, name, type) {
 // ============================================
 async function loadDashboardData() {
     try {
-        // Get marketplace from localStorage
-        const savedMarketplace = localStorage.getItem('selectedMarketplace');
-        let marketplaceType = null;
-        if (savedMarketplace) {
-            try {
-                const marketplace = JSON.parse(savedMarketplace);
-                marketplaceType = marketplace.type;
-            } catch (e) {
-                console.error('Error parsing marketplace:', e);
-            }
-        }
-        
-        loadChartData(marketplaceType);
-        loadMonthlyStats(marketplaceType);
+        // Faqat Amazing Store uchun ma'lumotlar
+        loadChartData();
+        loadMonthlyStats();
     } catch (error) {
         console.error('Error loading dashboard data:', error);
     }
@@ -107,7 +96,7 @@ async function loadDashboardData() {
 // ============================================
 // Chart Data Loading
 // ============================================
-async function loadChartData(marketplaceType = null) {
+async function loadChartData() {
     const ctx = document.getElementById('analytics-chart');
     if (!ctx) {
         console.warn('Chart canvas not found');
@@ -282,11 +271,8 @@ async function loadMonthlyStats(marketplaceType = null) {
         const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
         const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(new Date(year, month + 1, 0).getDate()).padStart(2, '0')}`;
         
-        // Build API endpoint with marketplace filter
-        let analyticsEndpoint = `/analytics?start_date=${startDate}&end_date=${endDate}`;
-        if (marketplaceType === 'yandex' || marketplaceType === 'uzum') {
-            analyticsEndpoint += `&marketplace_type=${marketplaceType}`;
-        }
+        // Build API endpoint (faqat Amazing Store)
+        let analyticsEndpoint = `/analytics/dashboard?month=${month + 1}&year=${year}`;
         
         const response = await apiRequest(analyticsEndpoint);
         const analyticsData = Array.isArray(response) ? response : [];
@@ -522,7 +508,6 @@ function initializeMarketplaceSelector() {
 // ============================================
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        initializeMarketplaceSelector();
         initializeApp();
     });
 } else {
@@ -533,9 +518,6 @@ if (document.readyState === 'loading') {
 // ============================================
 // Export functions for global access
 // ============================================
-window.openMarketplaceSelector = openMarketplaceSelector;
-window.closeMarketplaceSelector = closeMarketplaceSelector;
-window.selectMarketplace = selectMarketplace;
 window.loadDashboardData = loadDashboardData;
 window.loadChartData = loadChartData;
 window.loadMonthlyStats = loadMonthlyStats;
