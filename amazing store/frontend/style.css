@@ -1028,13 +1028,16 @@ body::before {
 
 .floating-input input {
     width: 100%;
-    padding: 20px 16px 8px;
+    padding: 16px;
     font-size: 16px;
     border: 1.5px solid #e0e0e0;
     border-radius: 12px;
     background: #fff;
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
+    line-height: 20px;
+    height: 52px;
+    box-sizing: border-box;
 }
 
 .floating-input input:focus {
@@ -1053,11 +1056,13 @@ body::before {
     transition: all 0.2s ease;
     background: #fff;
     padding: 0 4px;
+    z-index: 1;
 }
 
 /* Label yuqoriga ko'tarilganda (qiymat mavjud yoki focus) */
 .floating-input input:focus + label,
-.floating-input input:not(:placeholder-shown) + label {
+.floating-input input:not(:placeholder-shown) + label,
+.floating-input input:not([value=""]) + label {
     top: 0;
     font-size: 13px;
 }
@@ -1855,7 +1860,8 @@ body::before {
     .cart-item-price {
         font-size: 16px;
     }
-} 
+}
+ 
  
 /* === CART MODAL (Bottom Sheet) === */
 .cart-modal-overlay {
