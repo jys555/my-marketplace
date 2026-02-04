@@ -768,6 +768,34 @@ async function addToCartAndCheckout(productId, quantity) {
     }
 }
 
+// ⭐ BEST PRACTICE: Faqat bitta button'ni yangilash funksiyasi
+function updateLikeButton(button, productId) {
+    if (!button || isNaN(productId)) return;
+    
+    const isLiked = state.isFavorite(productId);
+    const svg = button.querySelector('svg');
+    
+    // Class yangilash (toggle emas, to'g'ridan-to'g'ri set)
+    if (isLiked) {
+        button.classList.add('liked');
+    } else {
+        button.classList.remove('liked');
+    }
+    
+    // SVG rangini yangilash
+    if (svg) {
+        svg.setAttribute('fill', isLiked ? '#ff3b5c' : 'none');
+        svg.setAttribute('stroke', isLiked ? '#ff3b5c' : '#999');
+    }
+}
+
+// ⭐ BEST PRACTICE: Faqat o'zgargan product ID uchun barcha button'larni yangilash
+// (bir xil product bir necha joyda bo'lishi mumkin - home, favorites, cart)
+function updateLikeButtonsForProduct(productId) {
+    const buttons = document.querySelectorAll(`.like-btn[data-id="${productId}"]`);
+    buttons.forEach(btn => updateLikeButton(btn, productId));
+}
+
 async function handleToggleFavorite(event) {
     console.log('❤️ handleToggleFavorite called', event.target);
     event.stopPropagation();
@@ -779,26 +807,31 @@ async function handleToggleFavorite(event) {
     }
     
     const productId = parseInt(btn.dataset.id);
+    if (isNaN(productId)) {
+        console.error('❌ Invalid product ID:', btn.dataset.id);
+        return;
+    }
+    
     console.log('📦 Product ID:', productId, 'Button:', btn);
     
-    const svg = btn.querySelector('svg');
+    // ⭐ BEST PRACTICE: Oldingi holatni saqlash (revert uchun)
+    const previousState = state.isFavorite(productId);
     
     const action = async () => {
         const added = state.toggleFavorite(productId);
-        console.log('💾 Toggle favorite - added:', added);
-        btn.classList.toggle('liked', added);
+        console.log('💾 Toggle favorite - added:', added, 'Previous state:', previousState);
         
-        // SVG rangini o'zgartirish
-        if (svg) {
-            svg.setAttribute('fill', added ? '#ff3b5c' : 'none');
-            svg.setAttribute('stroke', added ? '#ff3b5c' : '#999');
-        }
+        // ⭐ BEST PRACTICE: Faqat o'zgargan product uchun button'larni yangilash
+        // (bir xil product bir necha joyda bo'lishi mumkin)
+        updateLikeButtonsForProduct(productId);
 
         try {
             console.log('🌐 Updating favorites on server...');
             console.log('📦 Sending favorites:', state.getFavorites());
             await api.updateFavorites(state.getFavorites());
             console.log('✅ Favorites updated successfully');
+            
+            // ⭐ BEST PRACTICE: Agar favorites sahifasida bo'lsa, qayta render qilish
             if (state.getCurrentPage() === 'favorites') {
                 navigateTo('favorites');
             }
@@ -818,13 +851,11 @@ async function handleToggleFavorite(event) {
                 userMessage = ui.t('error_server') + ': ' + err.message;
             }
             WebApp.showAlert(userMessage);
-            // Revert state change on failure
+            
+            // ⭐ BEST PRACTICE: Revert state change on failure
             state.toggleFavorite(productId);
-            btn.classList.toggle('liked', !added);
-            if (svg) {
-                svg.setAttribute('fill', !added ? '#ff3b5c' : 'none');
-                svg.setAttribute('stroke', !added ? '#ff3b5c' : '#999');
-            }
+            // ⭐ BEST PRACTICE: Revert qilganda ham faqat o'sha product uchun yangilash
+            updateLikeButtonsForProduct(productId);
         }
     };
 
