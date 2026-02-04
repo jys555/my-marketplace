@@ -770,10 +770,23 @@ async function addToCartAndCheckout(productId, quantity) {
 
 // ⭐ BEST PRACTICE: Faqat bitta button'ni yangilash funksiyasi
 function updateLikeButton(button, productId) {
-    if (!button || isNaN(productId)) return;
+    if (!button || isNaN(productId)) {
+        console.warn('⚠️ updateLikeButton: Invalid button or productId', { button, productId });
+        return;
+    }
     
     const isLiked = state.isFavorite(productId);
     const svg = button.querySelector('svg');
+    const buttonDataId = button.dataset.id;
+    
+    // ⭐ DEBUG: Button ma'lumotlarini tekshirish
+    console.log(`🔍 updateLikeButton: productId=${productId}, buttonDataId=${buttonDataId}, isLiked=${isLiked}`);
+    
+    // ⭐ CRITICAL FIX: Faqat to'g'ri product ID uchun yangilash
+    if (parseInt(buttonDataId) !== productId) {
+        console.warn(`⚠️ updateLikeButton: Product ID mismatch! Expected ${productId}, got ${buttonDataId}`);
+        return;
+    }
     
     // Class yangilash (toggle emas, to'g'ridan-to'g'ri set)
     if (isLiked) {
@@ -792,8 +805,27 @@ function updateLikeButton(button, productId) {
 // ⭐ BEST PRACTICE: Faqat o'zgargan product ID uchun barcha button'larni yangilash
 // (bir xil product bir necha joyda bo'lishi mumkin - home, favorites, cart)
 function updateLikeButtonsForProduct(productId) {
+    console.log(`🔄 updateLikeButtonsForProduct: Looking for buttons with productId=${productId}`);
+    
+    // ⭐ CRITICAL FIX: To'g'ri selector - faqat aniq productId uchun
     const buttons = document.querySelectorAll(`.like-btn[data-id="${productId}"]`);
-    buttons.forEach(btn => updateLikeButton(btn, productId));
+    console.log(`🔍 Found ${buttons.length} button(s) for productId=${productId}`);
+    
+    // ⭐ DEBUG: Barcha button'larni tekshirish
+    buttons.forEach((btn, index) => {
+        const btnDataId = btn.dataset.id;
+        console.log(`  Button ${index + 1}: data-id="${btnDataId}", matches=${parseInt(btnDataId) === productId}`);
+    });
+    
+    buttons.forEach(btn => {
+        const btnDataId = btn.dataset.id;
+        // ⭐ CRITICAL FIX: Qo'shimcha tekshiruv
+        if (parseInt(btnDataId) === productId) {
+            updateLikeButton(btn, productId);
+        } else {
+            console.warn(`⚠️ Skipping button with mismatched data-id: ${btnDataId} (expected ${productId})`);
+        }
+    });
 }
 
 async function handleToggleFavorite(event) {
@@ -818,10 +850,19 @@ async function handleToggleFavorite(event) {
     const previousState = state.isFavorite(productId);
     
     const action = async () => {
-        const added = state.toggleFavorite(productId);
-        console.log('💾 Toggle favorite - added:', added, 'Previous state:', previousState);
+        // ⭐ DEBUG: Oldingi favorites holatini ko'rsatish
+        const favoritesBefore = [...state.getFavorites()];
+        console.log('📋 Favorites BEFORE toggle:', favoritesBefore);
         
-        // ⭐ BEST PRACTICE: Faqat o'zgargan product uchun button'larni yangilash
+        const added = state.toggleFavorite(productId);
+        
+        // ⭐ DEBUG: Keyingi favorites holatini ko'rsatish
+        const favoritesAfter = [...state.getFavorites()];
+        console.log('📋 Favorites AFTER toggle:', favoritesAfter);
+        console.log('💾 Toggle favorite - added:', added, 'Previous state:', previousState);
+        console.log('🔍 Product ID that was toggled:', productId);
+        
+        // ⭐ CRITICAL FIX: Faqat o'zgargan product uchun button'larni yangilash
         // (bir xil product bir necha joyda bo'lishi mumkin)
         updateLikeButtonsForProduct(productId);
 

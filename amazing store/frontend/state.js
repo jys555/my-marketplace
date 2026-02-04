@@ -259,13 +259,35 @@ export function clearCart() {
 
 // --- Favorites Logic (Sevimlilar mantig'i) ---
 export function toggleFavorite(productId) {
-    const index = state.favorites.indexOf(productId);
-    if (index > -1) {
-        state.favorites.splice(index, 1);
-    } else {
-        state.favorites.push(productId);
+    // ⭐ DEBUG: ProductId va favorites holatini tekshirish
+    console.log('🔄 toggleFavorite called:', {
+        productId,
+        productIdType: typeof productId,
+        favoritesBefore: [...state.favorites],
+        favoritesLength: state.favorites.length
+    });
+    
+    // ⭐ CRITICAL FIX: ProductId ni number ga o'tkazish
+    const numProductId = Number(productId);
+    if (isNaN(numProductId)) {
+        console.error('❌ toggleFavorite: Invalid productId', productId);
+        return false;
     }
-    return index === -1; // true if added, false if removed
+    
+    const index = state.favorites.indexOf(numProductId);
+    console.log('🔍 toggleFavorite: index found:', index);
+    
+    if (index > -1) {
+        // Remove from favorites
+        state.favorites.splice(index, 1);
+        console.log('✅ toggleFavorite: Removed from favorites. New favorites:', [...state.favorites]);
+        return false; // removed
+    } else {
+        // Add to favorites
+        state.favorites.push(numProductId);
+        console.log('✅ toggleFavorite: Added to favorites. New favorites:', [...state.favorites]);
+        return true; // added
+    }
 }
 
 export function isFavorite(productId) {
