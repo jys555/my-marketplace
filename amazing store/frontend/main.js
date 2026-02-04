@@ -481,7 +481,9 @@ function attachPageEventListeners(pageName) {
             });
             break;
         case 'favorites':
-            ui.renderProducts();
+            // ⭐ CRITICAL FIX: Favorites sahifasida renderProducts() chaqirilmasligi kerak
+            // chunki getFavoritesContent() allaqachon to'g'ri mahsulotlarni render qilgan
+            // ui.renderProducts() barcha mahsulotlarni qayta render qiladi va bu muammoga olib keladi
             break;
     }
     
