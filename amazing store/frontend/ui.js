@@ -665,8 +665,26 @@ function getFavoritesContent() {
     if (favorites.length === 0) {
         return `${pageHeader}<div class="empty-state"><p>${t('favorites_empty')}</p></div>`;
     }
+    
     const products = getProducts();
-    const favoriteProducts = products.filter(p => favorites.includes(p.id));
+    
+    // ⭐ CRITICAL FIX: Type-safe comparison - faqat number ID'larni solishtirish
+    // favorites array'ida number'lar, p.id ham number bo'lishi kerak
+    const favoriteProducts = products.filter(p => {
+        const productId = Number(p.id);
+        const isFavorite = favorites.some(favId => Number(favId) === productId);
+        
+        // ⭐ DEBUG: Filter tekshiruvi
+        console.log(`🔍 Filter check: productId=${productId} (${typeof productId}), favorites=${JSON.stringify(favorites)}, isFavorite=${isFavorite}`);
+        
+        return isFavorite;
+    });
+    
+    // ⭐ DEBUG: Filter natijasi
+    console.log(`📋 getFavoritesContent: favorites=${JSON.stringify(favorites)}, totalProducts=${products.length}, favoriteProducts=${favoriteProducts.length}`);
+    favoriteProducts.forEach(p => {
+        console.log(`  ✅ Favorite product: id=${p.id}, name=${p.name}`);
+    });
 
     return `
         ${pageHeader}
