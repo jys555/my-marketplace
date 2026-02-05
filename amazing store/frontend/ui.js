@@ -571,7 +571,7 @@ export function renderOrders(filter = 'active') {
 // YANGI: Cart sahifasi - User screenshot style (server-based)
 function getCartContent() {
     const cartItems = getCartItems();
-    const summary = getCartSummary();
+    const summary = getCartSummary() || {};
 
     if (cartItems.length === 0) {
         return `
@@ -605,16 +605,18 @@ function getCartContent() {
                     <h4 class="cart-item-name">${safeName}</h4>
                     <p class="cart-item-price">${Number(price).toLocaleString()} so'm</p>
                     <div class="cart-item-actions">
-                        <button class="cart-item-like-btn ${item.is_liked ? 'liked' : ''}" data-cart-id="${item.id}">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="${item.is_liked ? '#ff3b5c' : 'none'}" stroke="${item.is_liked ? '#ff3b5c' : '#999'}" stroke-width="2">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                            </svg>
-                        </button>
-                        <button class="cart-item-delete-btn" data-cart-id="${item.id}">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2">
-                                <path d="M18 6L6 18M6 6l12 12"/>
-                            </svg>
-                        </button>
+                        <div class="cart-item-actions-left">
+                            <button class="cart-item-like-btn ${item.is_liked ? 'liked' : ''}" data-cart-id="${item.id}">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="${item.is_liked ? '#ff3b5c' : 'none'}" stroke="${item.is_liked ? '#ff3b5c' : '#999'}" stroke-width="2">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                </svg>
+                            </button>
+                            <button class="cart-item-delete-btn" data-cart-id="${item.id}">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2">
+                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
                         <div class="cart-item-quantity">
                             <button class="cart-item-qty-btn" data-cart-id="${item.id}" data-action="decrease" ${item.quantity <= 1 ? 'disabled' : ''}>−</button>
                             <span class="cart-item-qty-value">${item.quantity}</span>
@@ -628,27 +630,20 @@ function getCartContent() {
 
     return `
         <div class="cart-page">
-            <div class="cart-page-header">
-                <h2 class="cart-page-title">Savat</h2>
-                <p class="cart-page-subtitle">${summary.totalItems} ta mahsulot</p>
-            </div>
-            
             <div class="cart-items-list">
                 ${itemsHtml}
             </div>
             
             <div class="cart-bottom-bar">
-                <div class="cart-summary">
-                    <div class="cart-summary-left">
-                        Tanlangan: ${summary.totalSelectedItems} ta
-                    </div>
-                    <div class="cart-summary-right">
-                        ${Number(summary.totalAmount).toLocaleString()} so'm
-                    </div>
+                <div class="cart-bottom-left">
+                    ${(summary.totalItems || cartItems.length) || 0} ta tovar
                 </div>
-                <button class="cart-checkout-btn" id="confirm-order-btn" ${summary.totalSelectedItems === 0 ? 'disabled' : ''}>
-                    Rasmiylashtirish
+                <button class="cart-checkout-btn" id="confirm-order-btn" ${(summary.totalItems || cartItems.length) === 0 ? 'disabled' : ''}>
+                    Rasmiylashtirishga o'tish
                 </button>
+                <div class="cart-bottom-right">
+                    ${Number(summary.totalAmount || 0).toLocaleString()} so'm
+                </div>
             </div>
         </div>
     `;
