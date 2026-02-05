@@ -533,19 +533,29 @@ body::before {
 .cart-item-checkbox {
   position: absolute;
   top: 16px; /* rasmning yuqori qismi bilan teng */
-  right: 0;
+  right: 16px;
   width: 20px;
   height: 20px;
   cursor: pointer;
   z-index: 10;
-  appearance: none;
-  -webkit-appearance: none;
+  opacity: 0; /* yashirish, label orqali ko'rsatamiz */
+}
+
+.cart-checkbox-label {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  z-index: 11;
   border: 2px solid #ddd;
   border-radius: 4px;
   background: #fff;
+  display: block;
 }
 
-.cart-item-checkbox:checked {
+.cart-item-checkbox:checked + .cart-checkbox-label {
   background: rgb(109, 175, 247); /* ko'k rang - rasmdagidek */
   border-color: rgb(109, 175, 247);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23fff' d='M10 3L4.5 8.5 2 6l1.5-1.5L4.5 6l4-4z'/%3E%3C/svg%3E");
@@ -610,21 +620,25 @@ body::before {
   display: flex !important;
   flex-direction: row !important; /* ANIQ gorizontal - YONMA-YON */
   align-items: center;
-  gap: 12px;
+  gap: 12px; /* birxil joy - like, X, count orasida */
   margin-top: auto; /* pastki qismga itarish */
   flex-shrink: 0;
   width: 100%;
+  justify-content: flex-start; /* chapdan boshlash */
 }
 
 .cart-item-like-btn,
 .cart-item-delete-btn {
   background: none;
   border: none;
-  padding: 4px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  width: 36px; /* count bilan birxil o'lcham */
+  height: 36px; /* count bilan birxil o'lcham */
+  flex-shrink: 0;
 }
 
 .cart-item-like-btn svg,
@@ -639,15 +653,15 @@ body::before {
   stroke: #ff3b5c;
 }
 
-/* Count stepper: pill shakli - o'ngda */
+/* Count stepper: pill shakli - o'ngda, o'ng borderga yaqin */
 .cart-item-quantity {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
   background: #f5f5f7;
-  height: 36px;
+  height: 36px; /* like va X bilan birxil */
   overflow: hidden;
-  margin-left: auto; /* o'ngga itarish */
+  margin-left: auto; /* o'ngga itarish - o'ng borderga yaqin */
   flex-shrink: 0;
 }
 
@@ -722,22 +736,36 @@ body::before {
   cursor: pointer;
 }
 
-/* Pastki "Rasmiylashtirish" tugmasi: sticky, navbar ustida - SARIQ FON, ICHIDA KO'K TUGMA */
+/* Pastki "Rasmiylashtirish" tugmasi: sticky, navbar ustida - OQ FON, AYLANA QIRRALI MODAL */
 .cart-bottom-bar {
   position: fixed;
   bottom: 56px; /* navbar balandligi - navbar ustida, yopilmaydi */
   left: 0;
   right: 0;
-  padding: 12px 16px;
-  padding-bottom: calc(12px + var(--content-safe-area-bottom, 0px));
+  padding: 0 16px;
+  padding-top: 16px;
+  padding-bottom: calc(16px + var(--content-safe-area-bottom, 0px));
   z-index: 950;
-  background: #ffd600 !important; /* SARIQ FON - rasmdagidek */
+  background: transparent; /* fon yo'q */
+}
+
+.cart-bottom-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff; /* OQ FON */
+  border-radius: 24px 24px 0 0; /* yuqorida aylana qirrali - modal shaklida */
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+  z-index: -1;
 }
 
 .cart-checkout-btn {
   width: 100%; /* to'liq kenglik */
   border: none;
-  border-radius: 999px; /* to'liq aylana pill */
+  border-radius: 18px; /* yumaloq qirrali - aylana emas */
   padding: 16px 20px;
   height: 56px;
   background: rgb(109, 175, 247); /* ko'k brend rangi */
@@ -751,6 +779,8 @@ body::before {
   align-items: center;
   justify-content: space-between; /* chap, o'rta, o'ng */
   gap: 8px;
+  position: relative;
+  z-index: 1;
 }
 
 .cart-checkout-left {

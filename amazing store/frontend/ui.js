@@ -621,7 +621,8 @@ function getCartContent() {
                         </div>
                     </div>
                 </div>
-                <input type="checkbox" class="cart-item-checkbox" ${item.is_selected ? 'checked' : ''}>
+                <input type="checkbox" class="cart-item-checkbox" id="cart-item-checkbox-${item.id}" data-cart-id="${item.id}" ${item.is_selected ? 'checked' : ''}>
+                <label for="cart-item-checkbox-${item.id}" class="cart-checkbox-label"></label>
             </div>
         `;
     }).join('');
