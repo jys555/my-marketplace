@@ -573,14 +573,14 @@ function getCartContent() {
     const cartItems = getCartItems();
     const summary = getCartSummary() || {};
 
+    // Bo'sh holat
     if (cartItems.length === 0) {
         return `
             <div class="cart-page">
-                <div class="cart-page-header">
+                <div class="cart-page-header-fixed">
                     <h2 class="cart-page-title">Savat</h2>
-                    <p class="cart-page-subtitle">Savatda hech narsa yo'q</p>
                 </div>
-                <div class="cart-empty">
+                <div class="cart-empty-state">
                     <div class="cart-empty-icon">🛒</div>
                     <p class="cart-empty-text">Savatingiz bo'sh</p>
                     <p class="cart-empty-subtext">Mahsulotlarni qo'shing</p>
@@ -604,18 +604,16 @@ function getCartContent() {
                     <h4 class="cart-item-name">${safeName}</h4>
                     <p class="cart-item-price">${Number(price).toLocaleString()} so'm</p>
                     <div class="cart-item-actions">
-                        <div class="cart-item-actions-left">
-                            <button class="cart-item-like-btn ${item.is_liked ? 'liked' : ''}" data-cart-id="${item.id}">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="${item.is_liked ? '#ff3b5c' : 'none'}" stroke="${item.is_liked ? '#ff3b5c' : '#999'}" stroke-width="2">
-                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                                </svg>
-                            </button>
-                            <button class="cart-item-delete-btn" data-cart-id="${item.id}">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2">
-                                    <path d="M18 6L6 18M6 6l12 12"/>
-                                </svg>
-                            </button>
-                        </div>
+                        <button class="cart-item-like-btn ${item.is_liked ? 'liked' : ''}" data-cart-id="${item.id}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="${item.is_liked ? '#ff3b5c' : 'none'}" stroke="${item.is_liked ? '#ff3b5c' : '#999'}" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            </svg>
+                        </button>
+                        <button class="cart-item-delete-btn" data-cart-id="${item.id}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
                         <div class="cart-item-quantity">
                             <button class="cart-item-qty-btn" data-cart-id="${item.id}" data-action="decrease" ${item.quantity <= 1 ? 'disabled' : ''}>−</button>
                             <span class="cart-item-qty-value">${item.quantity}</span>
@@ -630,34 +628,35 @@ function getCartContent() {
 
     return `
         <div class="cart-page">
-            <div class="cart-page-header">
-                <div class="cart-page-header-left">
-                    <span class="cart-back-text">Back</span>
-                </div>
-                <div class="cart-page-header-center">
-                    ${(summary.totalItems || cartItems.length) || 0} ta tovar
-                </div>
-                <div class="cart-page-header-right">
-                    <button class="cart-header-delete-btn">🗑</button>
-                    <input type="checkbox" class="cart-header-checkbox">
-                </div>
+            <!-- Top header: "Savat" markazda, back YO'Q -->
+            <div class="cart-page-header-fixed">
+                <h2 class="cart-page-title">Savat</h2>
             </div>
 
-            <div class="cart-items-list">
-                ${itemsHtml}
-            </div>
-
-            <div class="cart-address-row">
+            <!-- Manzil paneli: header ostida, fixed -->
+            <div class="cart-address-panel">
                 <div class="cart-address-info">
                     <div class="cart-address-title">Mijoz manzili</div>
                     <div class="cart-address-subtitle">Manzil keyinroq aniqlanadi</div>
                 </div>
                 <div class="cart-address-actions">
-                    <input type="checkbox" class="cart-address-checkbox">
-                    <button class="cart-address-delete-btn">✕</button>
+                    <button class="cart-address-delete-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2">
+                            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </button>
+                    <input type="checkbox" class="cart-address-checkbox" id="cart-select-all">
+                </div>
+            </div>
+
+            <!-- Tovarlar ro'yxati: bitta katta yumaloq konteyner -->
+            <div class="cart-items-container">
+                <div class="cart-items-list">
+                    ${itemsHtml}
                 </div>
             </div>
             
+            <!-- Pastki "Rasmiylashtirish" tugmasi: sticky, navbar ustida -->
             <div class="cart-bottom-bar">
                 <div class="cart-bottom-left">
                     ${(summary.totalItems || cartItems.length) || 0} ta tovar

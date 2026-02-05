@@ -403,92 +403,150 @@ body::before {
   margin-bottom: 12px;
 }
 
-/* === Savat sahifasi (Uzum uslubida) === */
+/* === Savat sahifasi (Namuna rasm asosida to'liq qayta yozilgan) === */
 .cart-page {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #f5f5f8;
+  background: #F5F6F7; /* juda och kulrang fon */
+  padding-bottom: calc(56px + 72px); /* navbar + bottom bar uchun joy */
 }
 
-.cart-page-header {
+/* Top header: "Savat" markazda, back YO'Q */
+.cart-page-header-fixed {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 56px;
+  background: #ffffff;
+  border-bottom: 0.5px solid rgba(0,0,0,0.1);
+}
+
+.cart-page-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #000;
+  margin: 0;
+  text-align: center;
+}
+
+/* Manzil paneli: header ostida, fixed */
+.cart-address-panel {
+  position: sticky;
+  top: 56px;
+  left: 0;
+  right: 0;
+  z-index: 99;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
-  margin: 8px 8px 4px;
+  padding: 12px 16px;
+  margin: 0 12px 12px;
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-.cart-page-header-left .cart-back-text {
-  font-size: 13px;
-  color: #555;
-}
-
-.cart-page-header-center {
+.cart-address-info {
   flex: 1;
-  text-align: center;
+  min-width: 0;
+}
+
+.cart-address-title {
   font-size: 14px;
   font-weight: 600;
   color: #000;
+  margin-bottom: 2px;
 }
 
-.cart-page-header-right {
+.cart-address-subtitle {
+  font-size: 12px;
+  color: #8e8e93;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cart-address-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  margin-left: 12px;
 }
 
-.cart-header-delete-btn {
+.cart-address-delete-btn {
   background: none;
   border: none;
-  font-size: 18px;
-  color: #999;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
-.cart-header-checkbox {
+.cart-address-delete-btn svg {
   width: 20px;
   height: 20px;
+  stroke: #999;
 }
 
-.cart-page-title-text {
-  font-size: 15px;
-  font-weight: 600;
-  color: #000;
+.cart-address-checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+/* Tovarlar ro'yxati: bitta katta yumaloq konteyner */
+.cart-items-container {
+  padding: 0 12px;
+  margin-bottom: 12px;
 }
 
 .cart-items-list {
-  padding: 4px 8px 88px;
-  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
 
 .cart-item {
   position: relative;
   display: flex;
   align-items: flex-start;
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 10px 12px 12px;
-  margin-bottom: 8px;
+  padding: 12px 0;
+  border-bottom: 0.5px solid rgba(0,0,0,0.06);
 }
 
+.cart-item:last-child {
+  border-bottom: none;
+}
+
+/* Checkbox: o'ng yuqorida, rasm balandligiga mos */
 .cart-item-checkbox {
   position: absolute;
-  top: 50%;
-  right: 10px;
-  transform: translateY(-50%);
+  top: 12px;
+  right: 0;
   width: 20px;
   height: 20px;
+  cursor: pointer;
 }
 
+/* Rasm: 3x4 format */
 .cart-item-image-wrapper {
-  width: 80px;
-  aspect-ratio: 3 / 4;
-  border-radius: 12px;
+  width: 72px;
+  height: 96px; /* 3x4 aspect ratio */
+  border-radius: 14px;
   overflow: hidden;
   flex-shrink: 0;
-  margin-right: 10px;
+  margin-right: 12px;
+  background: #f5f5f5;
 }
 
 .cart-item-image {
@@ -501,30 +559,32 @@ body::before {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  padding-right: 32px; /* checkbox uchun joy */
 }
 
 .cart-item-name {
   font-size: 14px;
-  line-height: 1.3;
+  line-height: 1.4;
   font-weight: 500;
-  color: #111;
-  margin-bottom: 4px;
+  color: #000;
+  margin-bottom: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cart-item-price {
   font-size: 16px;
   font-weight: 600;
-  color: #e53935;
-  margin-bottom: 8px;
+  color: #000; /* qizil emas, neytral */
+  margin-bottom: 12px;
 }
 
+/* Pastki boshqaruvlar: gorizontal qator */
 .cart-item-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.cart-item-actions-left {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -534,98 +594,121 @@ body::before {
 .cart-item-delete-btn {
   background: none;
   border: none;
-  padding: 0;
+  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 }
 
-.cart-item-like-btn svg {
+.cart-item-like-btn svg,
+.cart-item-delete-btn svg {
+  width: 20px;
+  height: 20px;
   transition: fill 0.15s ease, stroke 0.15s ease;
 }
 
+.cart-item-like-btn.liked svg {
+  fill: #ff3b5c;
+  stroke: #ff3b5c;
+}
+
+/* Count stepper: pill shakli */
 .cart-item-quantity {
   display: inline-flex;
   align-items: center;
-  border-radius: 18px;
+  border-radius: 999px;
   background: #f5f5f7;
+  height: 36px;
   overflow: hidden;
+  margin-left: auto;
 }
 
 .cart-item-qty-btn {
   border: none;
   background: transparent;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  color: #111;
+  font-weight: 500;
+  color: #000;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.cart-item-qty-btn:hover {
+  background: rgba(0,0,0,0.05);
 }
 
 .cart-item-qty-btn[disabled] {
   opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .cart-item-qty-value {
-  min-width: 24px;
+  min-width: 28px;
   text-align: center;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.cart-address-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  margin: 0 8px 8px;
-  background: #ffffff;
-  border-radius: 16px;
-}
-
-.cart-address-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: #000;
 }
 
-.cart-address-subtitle {
-  font-size: 12px;
-  color: #8e8e93;
-}
-
-.cart-address-actions {
+/* Bo'sh holat */
+.cart-empty-state {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
 }
 
-.cart-address-checkbox {
-  width: 20px;
-  height: 20px;
+.cart-empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
 }
 
-.cart-address-delete-btn {
-  background: none;
-  border: none;
+.cart-empty-text {
   font-size: 18px;
-  color: #999;
+  font-weight: 600;
+  color: #000;
+  margin-bottom: 8px;
 }
 
+.cart-empty-subtext {
+  font-size: 14px;
+  color: #8e8e93;
+  margin-bottom: 24px;
+}
+
+.cart-empty-btn {
+  padding: 12px 24px;
+  background: rgb(109, 175, 247);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Pastki "Rasmiylashtirish" tugmasi: sticky, navbar ustida */
 .cart-bottom-bar {
   position: fixed;
-  bottom: 56px; /* navbar ustida, uni yopmaydi */
+  bottom: 56px; /* navbar balandligi */
   left: 0;
   right: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 10px 12px;
-  background: #ffd600;
-  box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+  gap: 12px;
+  padding: 12px 16px;
+  padding-bottom: calc(12px + var(--content-safe-area-bottom, 0px));
+  background: #ffffff;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
   z-index: 950;
 }
 
@@ -637,7 +720,7 @@ body::before {
 }
 
 .cart-bottom-right {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: #000;
   white-space: nowrap;
@@ -646,58 +729,25 @@ body::before {
 .cart-checkout-btn {
   flex: 1;
   border: none;
-  border-radius: 999px;
-  padding: 10px 12px;
-  background: rgb(109, 175, 247); /* brend ko'k */
-  color: #111; /* matn oq emas */
-  font-size: 14px;
+  border-radius: 22px; /* yumaloq pill */
+  padding: 14px 20px;
+  height: 52px;
+  background: rgb(109, 175, 247); /* ko'k brend rangi */
+  color: #ffffff; /* oq tekst */
+  font-size: 15px;
   font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+  box-shadow: 0 2px 8px rgba(109, 175, 247, 0.3);
+}
+
+.cart-checkout-btn:active {
+  transform: scale(0.98);
 }
 
 .cart-checkout-btn:disabled {
   opacity: 0.5;
-}
-
-.cart-bottom-bar {
-  position: sticky;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 10px 12px calc(10px + var(--content-safe-area-bottom, 0px));
-  background: #ffd600;
-}
-
-.cart-bottom-left {
-  font-size: 13px;
-  font-weight: 500;
-  color: #000;
-  white-space: nowrap;
-}
-
-.cart-bottom-right {
-  font-size: 14px;
-  font-weight: 600;
-  color: #000;
-  white-space: nowrap;
-}
-
-.cart-checkout-btn {
-  flex: 1;
-  border: none;
-  border-radius: 18px;
-  padding: 10px 12px;
-  background: #ffffff;
-  color: #000;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.cart-checkout-btn:disabled {
-  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @keyframes spin {
