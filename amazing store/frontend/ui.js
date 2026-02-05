@@ -597,7 +597,6 @@ function getCartContent() {
         
         return `
             <div class="cart-item" data-cart-id="${item.id}" data-product-id="${item.product_id}">
-                <input type="checkbox" class="cart-item-checkbox" ${item.is_selected ? 'checked' : ''}>
                 <div class="cart-item-image-wrapper">
                     <img src="${safeImage}" alt="${safeName}" class="cart-item-image">
                 </div>
@@ -624,14 +623,39 @@ function getCartContent() {
                         </div>
                     </div>
                 </div>
+                <input type="checkbox" class="cart-item-checkbox" ${item.is_selected ? 'checked' : ''}>
             </div>
         `;
     }).join('');
 
     return `
         <div class="cart-page">
+            <div class="cart-page-header">
+                <div class="cart-page-header-left">
+                    <span class="cart-back-text">Back</span>
+                </div>
+                <div class="cart-page-header-center">
+                    ${(summary.totalItems || cartItems.length) || 0} ta tovar
+                </div>
+                <div class="cart-page-header-right">
+                    <button class="cart-header-delete-btn">🗑</button>
+                    <input type="checkbox" class="cart-header-checkbox">
+                </div>
+            </div>
+
             <div class="cart-items-list">
                 ${itemsHtml}
+            </div>
+
+            <div class="cart-address-row">
+                <div class="cart-address-info">
+                    <div class="cart-address-title">Mijoz manzili</div>
+                    <div class="cart-address-subtitle">Manzil keyinroq aniqlanadi</div>
+                </div>
+                <div class="cart-address-actions">
+                    <input type="checkbox" class="cart-address-checkbox">
+                    <button class="cart-address-delete-btn">✕</button>
+                </div>
             </div>
             
             <div class="cart-bottom-bar">
