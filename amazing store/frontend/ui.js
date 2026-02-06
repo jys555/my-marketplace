@@ -930,6 +930,11 @@ export function openCartModal(productId) {
         ? product.sale_price 
         : product.price;
     
+    // CRITICAL FIX: Modal counter savatdagi quantity bilan bir xil bo'lishi kerak
+    const cartItems = getCartItems();
+    const existingCartItem = cartItems.find(item => item.product_id === productId);
+    const initialQuantity = existingCartItem ? existingCartItem.quantity : 1;
+    
     // CRITICAL FIX: Modal HTML - Modal birinchi, overlay keyin (DOM tartibida)
     // Bu z-index'ning to'g'ri ishlashini ta'minlaydi
     const modalHtml = `
@@ -944,7 +949,7 @@ export function openCartModal(productId) {
         
         <div class="cart-modal-quantity">
           <button class="cart-modal-qty-btn" data-id="${productId}" data-change="-1">−</button>
-          <span class="cart-modal-qty-value" id="qty-value-${productId}">1</span>
+          <span class="cart-modal-qty-value" id="qty-value-${productId}">${initialQuantity}</span>
           <button class="cart-modal-qty-btn" data-id="${productId}" data-change="1">+</button>
         </div>
         

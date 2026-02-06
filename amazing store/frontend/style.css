@@ -1094,17 +1094,17 @@ body::before {
     color: #000;
 }
 
-/* Cart badge - chap yuqori burchakda, rasmning o'ng borderiga mos */
+/* Cart badge - dastlabki o'lcham, chap tomondan add to cart button bilan bir xil pozitsiyada */
 .cart-badge {
     position: absolute;
-    top: -8px; /* Yuqoridan biroz pastroq */
-    left: -8px; /* Chapdan biroz tashqarida - rasmning o'ng borderiga mos */
-    min-width: 20px;
-    height: 20px;
-    padding: 0 6px;
+    top: -6px; /* Dastlabki o'lcham */
+    left: -6px; /* Chap tomondan - add to cart button bilan bir xil pozitsiyada (rasm borderiga mos) */
+    min-width: 18px; /* Dastlabki o'lcham */
+    height: 18px; /* Dastlabki o'lcham */
+    padding: 0 5px; /* Dastlabki o'lcham */
     background: #ff3b5c;
     color: #fff;
-    border-radius: 10px;
+    border-radius: 9px; /* Dastlabki o'lcham */
     font-size: 11px;
     font-weight: 700;
     display: flex;
@@ -1117,7 +1117,6 @@ body::before {
     transform: scale(0);
     transition: opacity 0.2s ease, transform 0.2s ease;
     z-index: 10; /* Rasm va button ustida ko'rinishi uchun */
-    white-space: nowrap; /* Matn qatorga sig'masligi uchun */
 }
 
 .cart-badge:not(:empty) {
