@@ -98,15 +98,15 @@ router.post('/', authenticate, async (req, res, next) => {
 
         // Upsert (insert or update)
         const result = await db.query(
-            `INSERT INTO cart_items (user_id, product_id, quantity, price_snapshot)
-            VALUES ($1, $2, $3, $4)
+            `INSERT INTO cart_items (user_id, product_id, quantity, price_snapshot, is_selected, is_liked)
+            VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT (user_id, product_id)
             DO UPDATE SET 
                 quantity = EXCLUDED.quantity,
                 price_snapshot = EXCLUDED.price_snapshot,
                 updated_at = NOW()
             RETURNING *`,
-            [userId, product_id, quantity, priceSnapshot]
+            [userId, product_id, quantity, priceSnapshot, true, false]
         );
 
         logger.info('Product added to cart', {

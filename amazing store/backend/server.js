@@ -208,7 +208,8 @@ async function startServer() {
                     logger.info('✅ is_selected column added');
                 } catch (alterError) {
                     // Column may already exist (race condition)
-                    if (alterError.code !== '42701') { // duplicate_column
+                    if (alterError.code !== '42701') {
+                        // duplicate_column
                         logger.error('Error adding is_selected column:', alterError.message);
                         throw alterError;
                     }
@@ -226,7 +227,8 @@ async function startServer() {
                     logger.info('✅ is_liked column added');
                 } catch (alterError) {
                     // Column may already exist (race condition)
-                    if (alterError.code !== '42701') { // duplicate_column
+                    if (alterError.code !== '42701') {
+                        // duplicate_column
                         logger.error('Error adding is_liked column:', alterError.message);
                         throw alterError;
                     }
