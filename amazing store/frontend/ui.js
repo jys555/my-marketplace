@@ -599,6 +599,10 @@ function getCartContent() {
             <div class="cart-item" data-cart-id="${item.id}" data-product-id="${item.product_id}">
                 <div class="cart-item-image-wrapper">
                     <img src="${safeImage}" alt="${safeName}" class="cart-item-image">
+                    <div class="cart-item-checkbox-wrapper">
+                        <input type="checkbox" class="cart-item-checkbox" id="cart-checkbox-${item.id}" data-cart-id="${item.id}" ${item.is_selected ? 'checked' : ''}>
+                        <label for="cart-checkbox-${item.id}" class="cart-item-checkbox-label"></label>
+                    </div>
                 </div>
                 <div class="cart-item-info">
                     <h4 class="cart-item-name">${safeName}</h4>
@@ -620,10 +624,6 @@ function getCartContent() {
                             <button class="cart-item-qty-btn" data-cart-id="${item.id}" data-action="increase">+</button>
                         </div>
                     </div>
-                </div>
-                <div class="cart-item-checkbox-wrapper">
-                    <input type="checkbox" class="cart-item-checkbox" id="cart-checkbox-${item.id}" data-cart-id="${item.id}" ${item.is_selected ? 'checked' : ''}>
-                    <label for="cart-checkbox-${item.id}" class="cart-item-checkbox-label"></label>
                 </div>
             </div>
         `;

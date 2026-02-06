@@ -566,6 +566,7 @@ body::before {
 
 /* Rasm: 3x4 format, yirikroq - ANIQ 3x4 - RASMDAGIDEK */
 .cart-item-image-wrapper {
+  position: relative;
   width: 100px !important;
   height: 133px !important; /* 3x4 aspect ratio - 100x133 = 3:4 */
   border-radius: 14px;
@@ -593,11 +594,15 @@ body::before {
   padding-right: 40px;
 }
 
-/* Professional checkbox - tovar kartasining o'ng yuqori qismida */
+/* Professional checkbox - rasmning o'ng yuqori burchagida (like button o'rnida) */
+.cart-item-image-wrapper {
+  position: relative;
+}
+
 .cart-item-checkbox-wrapper {
   position: absolute;
-  top: 0;
-  right: 16px;
+  top: 8px;
+  right: 8px;
   z-index: 10;
 }
 
