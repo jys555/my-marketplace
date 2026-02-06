@@ -25,7 +25,7 @@ router.get('/', async (req, res, next) => {
         // Get language from query (default: uz)
         const allowedLangs = ['uz', 'ru'];
         const lang = allowedLangs.includes(req.query.lang) ? req.query.lang : 'uz';
-        
+
         // PERFORMANCE: Cache key includes language
         const CACHE_KEY = `banners:active:${lang}`;
 
@@ -34,7 +34,7 @@ router.get('/', async (req, res, next) => {
         if (cached !== null) {
             return res.json(cached);
         }
-        
+
         // Cache'da yo'q bo'lsa, database'dan olish
         const { rows } = await pool.query(
             `SELECT 

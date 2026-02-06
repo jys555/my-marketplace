@@ -18,17 +18,17 @@ router.post('/validate', authenticate, async (req, res, next) => {
         if (userResult.rows.length > 0) {
             // User exists, send back their data
             const user = userResult.rows[0];
-            
+
             // Get favorites from favorites table
             const favoritesResult = await pool.query(
                 'SELECT product_id FROM favorites WHERE user_id = $1 ORDER BY created_at DESC',
                 [user.id]
             );
             user.favorites = favoritesResult.rows.map(row => row.product_id);
-            
+
             // Deprecated cart JSONB - will be removed
             user.cart = {};
-            
+
             res.json({ status: 'existing_user', user });
         } else {
             res.json({ status: 'guest', telegramUser: req.telegramUser });
@@ -104,17 +104,17 @@ router.get('/profile', authenticate, async (req, res, next) => {
         );
         if (user.rows.length > 0) {
             const userProfile = user.rows[0];
-            
+
             // REFACTORED: Get favorites from favorites table
             const favoritesResult = await pool.query(
                 'SELECT product_id FROM favorites WHERE user_id = $1 ORDER BY created_at DESC',
                 [req.userId]
             );
             userProfile.favorites = favoritesResult.rows.map(row => row.product_id);
-            
+
             // Deprecated cart JSONB - will be removed
             userProfile.cart = {};
-            
+
             res.json(userProfile);
         } else {
             // This case should not be hit if req.userId is correctly set for existing users.
@@ -227,7 +227,7 @@ router.put('/profile', authenticate, async (req, res, next) => {
                 [first_name, last_name, phone, req.userId]
             );
             const user = updatedUser.rows[0];
-            
+
             // Get favorites from favorites table
             const favoritesResult = await pool.query(
                 'SELECT product_id FROM favorites WHERE user_id = $1 ORDER BY created_at DESC',
@@ -235,7 +235,7 @@ router.put('/profile', authenticate, async (req, res, next) => {
             );
             user.favorites = favoritesResult.rows.map(row => row.product_id);
             user.cart = {};
-            
+
             res.json(user);
         } else {
             // Create new user
@@ -244,11 +244,11 @@ router.put('/profile', authenticate, async (req, res, next) => {
                 [telegram_id, first_name, last_name, phone, username || null]
             );
             const user = newUser.rows[0];
-            
+
             // New users have empty favorites and cart
             user.favorites = [];
             user.cart = {};
-            
+
             res.status(201).json(user);
         }
     } catch (error) {
@@ -320,7 +320,7 @@ router.get('/favorites', authenticate, async (req, res, next) => {
              ORDER BY created_at DESC`,
             [req.userId]
         );
-        
+
         // Return array of product IDs (for backward compatibility)
         const favorites = result.rows.map(row => row.product_id);
         res.json({ favorites });
@@ -335,7 +335,7 @@ router.put('/favorites', authenticate, async (req, res, next) => {
     if (!req.userId) {
         return res.status(403).json({ error: 'User not registered' });
     }
-    
+
     const { favorites } = req.body;
     if (!Array.isArray(favorites)) {
         return res.status(400).json({ error: 'Invalid favorites data: must be an array' });
@@ -346,8 +346,8 @@ router.put('/favorites', authenticate, async (req, res, next) => {
     for (let i = 0; i < favorites.length; i++) {
         const productId = parseInt(favorites[i]);
         if (isNaN(productId) || productId <= 0) {
-            return res.status(400).json({ 
-                error: `Invalid product ID at index ${i}: must be a positive integer` 
+            return res.status(400).json({
+                error: `Invalid product ID at index ${i}: must be a positive integer`,
             });
         }
         if (seen.has(productId)) {
@@ -359,19 +359,17 @@ router.put('/favorites', authenticate, async (req, res, next) => {
     try {
         // Delete all current favorites
         await pool.query('DELETE FROM favorites WHERE user_id = $1', [req.userId]);
-        
+
         // Insert new favorites
         if (favorites.length > 0) {
-            const values = favorites.map((productId, i) => 
-                `($1, $${i + 2})`
-            ).join(', ');
-            
-            await pool.query(
-                `INSERT INTO favorites (user_id, product_id) VALUES ${values}`,
-                [req.userId, ...favorites]
-            );
+            const values = favorites.map((productId, i) => `($1, $${i + 2})`).join(', ');
+
+            await pool.query(`INSERT INTO favorites (user_id, product_id) VALUES ${values}`, [
+                req.userId,
+                ...favorites,
+            ]);
         }
-        
+
         logger.info('✅ Favorites synced:', { userId: req.userId, count: favorites.length });
         res.json({ message: 'Favorites updated successfully', count: favorites.length });
     } catch (error) {
@@ -385,7 +383,7 @@ router.post('/favorites/:productId', authenticate, async (req, res, next) => {
     if (!req.userId) {
         return res.status(403).json({ error: 'User not registered' });
     }
-    
+
     const productId = parseInt(req.params.productId);
     if (isNaN(productId) || productId <= 0) {
         return res.status(400).json({ error: 'Invalid product ID' });
@@ -398,7 +396,7 @@ router.post('/favorites/:productId', authenticate, async (req, res, next) => {
              ON CONFLICT (user_id, product_id) DO NOTHING`,
             [req.userId, productId]
         );
-        
+
         logger.info('✅ Added to favorites:', { userId: req.userId, productId });
         res.status(201).json({ message: 'Added to favorites' });
     } catch (error) {
@@ -412,18 +410,18 @@ router.delete('/favorites/:productId', authenticate, async (req, res, next) => {
     if (!req.userId) {
         return res.status(403).json({ error: 'User not registered' });
     }
-    
+
     const productId = parseInt(req.params.productId);
     if (isNaN(productId) || productId <= 0) {
         return res.status(400).json({ error: 'Invalid product ID' });
     }
 
     try {
-        await pool.query(
-            'DELETE FROM favorites WHERE user_id = $1 AND product_id = $2',
-            [req.userId, productId]
-        );
-        
+        await pool.query('DELETE FROM favorites WHERE user_id = $1 AND product_id = $2', [
+            req.userId,
+            productId,
+        ]);
+
         logger.info('✅ Removed from favorites:', { userId: req.userId, productId });
         res.json({ message: 'Removed from favorites' });
     } catch (error) {

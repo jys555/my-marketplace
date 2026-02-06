@@ -284,21 +284,21 @@ router.post(
                 'SELECT first_name, last_name, phone FROM users WHERE id = $1',
                 [userId]
             );
-            
+
             if (userRows.length === 0) {
                 throw new Error('User not found');
             }
-            
+
             const user = userRows[0];
             const customerName = `${user.first_name} ${user.last_name || ''}`.trim();
             const customerPhone = user.phone || '';
-            
+
             // Get or create Amazing Store marketplace
             let { rows: marketplaceRows } = await client.query(
                 'SELECT id FROM marketplaces WHERE name_en = $1',
                 ['Amazing Store']
             );
-            
+
             let marketplaceId;
             if (marketplaceRows.length === 0) {
                 // Create Amazing Store marketplace
@@ -312,7 +312,7 @@ router.post(
             } else {
                 marketplaceId = marketplaceRows[0].id;
             }
-            
+
             // Calculate delivery fee (you can make this dynamic later)
             const deliveryFee = 0; // Free delivery for now
             const subtotal = totalAmount;
@@ -337,7 +337,7 @@ router.post(
                     total.toFixed(2),
                     'pending',
                     'unpaid',
-                    payment_method || 'cash'
+                    payment_method || 'cash',
                 ]
             );
             const orderId = orderRows[0].id;
@@ -382,14 +382,14 @@ router.post(
                     );
 
                     if (userTgRows.length > 0 && userTgRows[0].telegram_id) {
-                            await botService.notifyCustomerOrderStatus(
-                                {
-                                    order_number: orderNumber,
+                        await botService.notifyCustomerOrderStatus(
+                            {
+                                order_number: orderNumber,
                                 status: 'pending',
                                 total_amount: total.toFixed(2),
-                                },
+                            },
                             userTgRows[0].telegram_id
-                            );
+                        );
                     }
                 } catch (botError) {
                     logger.error('Bot notification error (non-critical):', botError);

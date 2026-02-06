@@ -41,7 +41,7 @@ router.get('/', authenticate, async (req, res, next) => {
         const items = result.rows;
         const totalAmount = items.reduce((sum, item) => {
             const price = item.price_snapshot || item.sale_price || item.price;
-            return sum + (price * item.quantity);
+            return sum + price * item.quantity;
         }, 0);
 
         logger.info('Cart retrieved successfully', {
@@ -81,9 +81,7 @@ router.post('/', authenticate, async (req, res, next) => {
         }
 
         // Check if product exists
-        const productCheck = await db.query('SELECT id FROM products WHERE id = $1', [
-            product_id,
-        ]);
+        const productCheck = await db.query('SELECT id FROM products WHERE id = $1', [product_id]);
 
         if (productCheck.rows.length === 0) {
             return res.status(404).json({ error: 'Product not found' });
@@ -142,7 +140,11 @@ router.patch('/:id', authenticate, async (req, res, next) => {
 
         // Hech bo'lmaganda bitta field bo'lishi kerak
         if (quantity === undefined && is_selected === undefined && is_liked === undefined) {
-            return res.status(400).json({ error: 'At least one field (quantity, is_selected, or is_liked) is required' });
+            return res
+                .status(400)
+                .json({
+                    error: 'At least one field (quantity, is_selected, or is_liked) is required',
+                });
         }
 
         // Quantity validatsiyasi (agar yuborilgan bo'lsa)
@@ -320,4 +322,3 @@ router.delete('/', authenticate, async (req, res, next) => {
 });
 
 module.exports = router;
-
