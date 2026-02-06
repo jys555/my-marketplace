@@ -474,10 +474,8 @@ function attachPageEventListeners(pageName) {
                 btn.addEventListener('click', handleDeleteCartItem);
             });
             
-            // Like buttons
-            document.querySelectorAll('.cart-item-like-btn').forEach(btn => {
-                btn.addEventListener('click', handleCartItemLike);
-            });
+            // Like buttons - umumiy like button ishlatiladi (cart-item-image-wrapper ichida)
+            // handleToggleFavorite umumiy funksiya ishlatiladi
             
             // Checkboxes
             document.querySelectorAll('.cart-item-checkbox').forEach(checkbox => {
@@ -1000,52 +998,7 @@ async function handleDeleteCartItem(event) {
     }
 }
 
-// YANGI: Cart item like handler
-async function handleCartItemLike(event) {
-    const btn = event.currentTarget;
-    const cartItemId = parseInt(btn.dataset.cartId);
-    
-    const cartItem = state.getCartItems().find(item => item.id === cartItemId);
-    if (!cartItem) return;
-    
-    const productId = cartItem.product_id;
-    const newLikedState = !cartItem.is_liked;
-    
-    try {
-        // Update cart item like state on server (quantity yuborilmaydi - faqat is_liked)
-        await api.updateCartItem(cartItemId, { is_liked: newLikedState });
-        
-        // Update cart item in state
-        state.updateCartItemInState(cartItemId, { is_liked: newLikedState });
-        
-        // Update favorites state (product-level)
-        if (newLikedState) {
-            if (!state.isFavorite(productId)) {
-                state.toggleFavorite(productId);
-                await api.updateFavorites(state.getFavorites());
-            }
-        } else {
-            if (state.isFavorite(productId)) {
-                state.toggleFavorite(productId);
-                await api.updateFavorites(state.getFavorites());
-            }
-        }
-        
-        // Update UI - cart item like button
-        btn.classList.toggle('liked', newLikedState);
-        const svg = btn.querySelector('svg');
-        if (svg) {
-            svg.setAttribute('fill', newLikedState ? '#ff3b5c' : 'none');
-            svg.setAttribute('stroke', newLikedState ? '#ff3b5c' : '#999');
-        }
-        
-        // Update all like buttons for this product (if visible on other pages)
-        updateLikeButtonsForProduct(productId);
-    } catch (err) {
-        console.error('Update cart item like error:', err);
-        WebApp.showAlert('Xatolik yuz berdi');
-    }
-}
+// handleCartItemLike olib tashlandi - endi umumiy handleToggleFavorite ishlatiladi
 
 // YANGI: Cart item checkbox handler
 async function handleCartItemCheckbox(event) {

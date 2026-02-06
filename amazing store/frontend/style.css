@@ -564,10 +564,10 @@ body::before {
   border-bottom: none;
 }
 
-/* Checkbox: o'ng tomonda, rasm balandligi pozitsiyasiga mos - HAR BIR TOVARGA */
+/* Checkbox: o'ng tomonda, rasmning tepa borderi pozitsiyasiga mos - HAR BIR TOVARGA */
 .cart-item-checkbox {
   position: absolute;
-  top: 0; /* rasmning yuqorisi bilan teng - rasm balandligi pozitsiyasiga mos */
+  top: 0; /* rasmning tepa borderi bilan teng - rasm balandligi pozitsiyasiga mos */
   right: 16px;
   width: 20px;
   height: 20px;
@@ -579,7 +579,7 @@ body::before {
 
 .cart-checkbox-label {
   position: absolute;
-  top: 0; /* rasmning yuqorisi bilan teng - rasm balandligi pozitsiyasiga mos */
+  top: 0; /* rasmning tepa borderi bilan teng - rasm balandligi pozitsiyasiga mos */
   right: 16px;
   width: 20px;
   height: 20px;
@@ -669,7 +669,26 @@ body::before {
   justify-content: flex-start; /* chapdan boshlash */
 }
 
-.cart-item-like-btn,
+/* Cart item actions: like button umumiy .like-btn ishlatiladi */
+.cart-item-actions .like-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  width: 36px; /* count bilan birxil o'lcham */
+  height: 36px; /* count bilan birxil o'lcham */
+  flex-shrink: 0;
+}
+
+.cart-item-actions .like-btn svg {
+  width: 20px;
+  height: 20px;
+  transition: fill 0.15s ease, stroke 0.15s ease;
+}
+
 .cart-item-delete-btn {
   background: none;
   border: none;
@@ -683,16 +702,10 @@ body::before {
   flex-shrink: 0;
 }
 
-.cart-item-like-btn svg,
 .cart-item-delete-btn svg {
   width: 20px;
   height: 20px;
   transition: fill 0.15s ease, stroke 0.15s ease;
-}
-
-.cart-item-like-btn.liked svg {
-  fill: #ff3b5c;
-  stroke: #ff3b5c;
 }
 
 /* Count stepper: pill shakli - o'ngda, o'ng borderga yaqin */
