@@ -960,6 +960,7 @@ body::before {
   font-weight: 500;
   white-space: nowrap;
   flex-shrink: 0;
+  color: #000 !important; /* Qora rang */
 }
 
 .cart-checkout-center {
@@ -967,6 +968,7 @@ body::before {
   text-align: center;
   font-size: 16px;
   font-weight: 600;
+  color: #000 !important; /* Qora rang */
 }
 
 .cart-checkout-right {
@@ -974,6 +976,7 @@ body::before {
   font-weight: 600;
   white-space: nowrap;
   flex-shrink: 0;
+  color: #000 !important; /* Qora rang */
 }
 
 .cart-checkout-btn:active {
@@ -1209,11 +1212,17 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.5); /* Qoraroq kulrang rang - noaktivligi bilinib turishi uchun */
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    z-index: 1100;
+    z-index: 1000; /* Modal'dan pastroq, lekin boshqa elementlardan yuqorida */
+    backdrop-filter: none; /* Blur yo'q */
+    -webkit-backdrop-filter: none; /* Safari uchun blur yo'q */
+}
+
+.cart-modal-overlay.active {
+    display: flex;
 }
 
 .cart-modal-content {
@@ -2440,11 +2449,13 @@ body::before {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: 9998;
+    background: rgba(0, 0, 0, 0.5); /* Qoraroq kulrang rang - noaktivligi bilinib turishi uchun */
+    z-index: 9998; /* Modal'dan pastroq */
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
+    backdrop-filter: none !important; /* Blur yo'q */
+    -webkit-backdrop-filter: none !important; /* Safari uchun blur yo'q */
 }
 
 .cart-modal-overlay.active {
