@@ -197,6 +197,7 @@ export function clearHistory() {
 // --- NEW Cart Logic (Server-based) ---
 export function setCartItems(items) {
     state.cartItems = items || [];
+    calculateCartSummary();
 }
 
 export function setCartSummary(summary) {
@@ -219,15 +220,39 @@ export function getCartItemsCount() {
     return state.cartItems.length;
 }
 
+// Calculate summary based on selected items only
+function calculateCartSummary() {
+    const selectedItems = state.cartItems.filter(item => item.is_selected === true);
+    
+    let totalItems = 0; // Quantity yig'indisi (kartochkalar soni emas)
+    let totalAmount = 0;
+    
+    selectedItems.forEach(item => {
+        const quantity = item.quantity || 1;
+        const price = item.price_snapshot || item.sale_price || item.price || 0;
+        
+        totalItems += quantity;
+        totalAmount += price * quantity;
+    });
+    
+    state.cartSummary = {
+        totalItems: totalItems,
+        totalSelectedItems: selectedItems.length, // Tanlangan kartochkalar soni
+        totalAmount: totalAmount,
+    };
+}
+
 export function updateCartItemInState(cartItemId, updates) {
     const index = state.cartItems.findIndex(item => item.id === cartItemId);
     if (index !== -1) {
         state.cartItems[index] = { ...state.cartItems[index], ...updates };
+        calculateCartSummary(); // Summary'ni yangilash
     }
 }
 
 export function removeCartItemFromState(cartItemId) {
     state.cartItems = state.cartItems.filter(item => item.id !== cartItemId);
+    calculateCartSummary(); // Summary'ni yangilash
 }
 
 export function clearCartState() {

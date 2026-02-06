@@ -971,12 +971,33 @@ async function handleCartQuantityChange(event) {
         // Update state
         state.updateCartItemInState(cartItemId, { quantity: newQuantity });
         
-        // Re-render cart
-        navigateTo('cart', false);
+        // Real-time yangilash
+        updateCartCheckoutButton();
     } catch (err) {
         console.error('Update cart item error:', err);
         WebApp.showAlert('Xatolik yuz berdi');
     }
+}
+
+// Real-time checkout button yangilash
+function updateCartCheckoutButton() {
+    const summary = state.getCartSummary();
+    const checkoutBtn = document.getElementById('confirm-order-btn');
+    if (!checkoutBtn) return;
+    
+    const leftSpan = checkoutBtn.querySelector('.cart-checkout-left');
+    const rightSpan = checkoutBtn.querySelector('.cart-checkout-right');
+    
+    if (leftSpan) {
+        leftSpan.textContent = `${summary.totalItems || 0} ta tovar`;
+    }
+    
+    if (rightSpan) {
+        rightSpan.textContent = `${Number(summary.totalAmount || 0).toLocaleString()} so'm`;
+    }
+    
+    // Disable/enable button
+    checkoutBtn.disabled = (summary.totalItems || 0) === 0;
 }
 
 // YANGI: Cart item delete handler
@@ -1008,7 +1029,7 @@ async function handleCartItemCheckbox(event) {
         await api.updateCartItem(cartItemId, { is_selected: isSelected });
         state.updateCartItemInState(cartItemId, { is_selected: isSelected });
         updateSelectAllCheckboxState();
-        navigateTo('cart', false);
+        updateCartCheckoutButton(); // Real-time yangilash
     } catch (err) {
         console.error('Cart item checkbox error:', err);
         checkbox.checked = !isSelected;
@@ -1034,7 +1055,7 @@ async function handleSelectAllCartItems(event) {
             checkbox.checked = isSelected;
         });
         
-        navigateTo('cart', false);
+        updateCartCheckoutButton(); // Real-time yangilash
     } catch (err) {
         console.error('Select all cart items error:', err);
         selectAllCheckbox.checked = !isSelected;

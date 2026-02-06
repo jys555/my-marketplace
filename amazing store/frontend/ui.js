@@ -666,8 +666,8 @@ function getCartContent() {
             
             <!-- Pastki "Rasmiylashtirish" tugmasi: sticky, navbar ustida - bitta uzun ko'k tugma -->
             <div class="cart-bottom-bar">
-                <button class="cart-checkout-btn" id="confirm-order-btn" ${(summary.totalItems || cartItems.length) === 0 ? 'disabled' : ''}>
-                    <span class="cart-checkout-left">${(summary.totalItems || cartItems.length) || 0} ta tovar</span>
+                <button class="cart-checkout-btn" id="confirm-order-btn" ${(summary.totalItems || 0) === 0 ? 'disabled' : ''}>
+                    <span class="cart-checkout-left">${(summary.totalItems || 0)} ta tovar</span>
                     <span class="cart-checkout-center">Rasmiylashtirishga o'tish</span>
                     <span class="cart-checkout-right">${Number(summary.totalAmount || 0).toLocaleString()} so'm</span>
                 </button>
