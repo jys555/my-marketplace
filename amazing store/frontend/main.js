@@ -479,7 +479,7 @@ function attachPageEventListeners(pageName) {
                 btn.addEventListener('click', handleToggleFavorite);
             });
             
-            // Checkboxes
+            // Checkboxes - yangi funksiyalar
             document.querySelectorAll('.cart-item-checkbox').forEach(checkbox => {
                 checkbox.addEventListener('change', handleCartItemCheckbox);
             });
@@ -488,7 +488,6 @@ function attachPageEventListeners(pageName) {
             const selectAllCheckbox = document.getElementById('cart-select-all');
             if (selectAllCheckbox) {
                 selectAllCheckbox.addEventListener('change', handleSelectAllCartItems);
-                // Initial state ni tekshirish
                 updateSelectAllCheckboxState();
             }
             
@@ -1002,61 +1001,43 @@ async function handleDeleteCartItem(event) {
 
 // handleCartItemLike olib tashlandi - endi umumiy handleToggleFavorite ishlatiladi
 
-// YANGI: Cart item checkbox handler
+// Checkbox funksiyalari - 0 dan qaytadan yozilgan
 async function handleCartItemCheckbox(event) {
     const checkbox = event.currentTarget;
-    const cartItem = checkbox.closest('.cart-item');
-    const cartItemId = parseInt(cartItem.dataset.cartId);
-    
+    const cartItemId = parseInt(checkbox.dataset.cartId);
     const isSelected = checkbox.checked;
     
     try {
         await api.updateCartItem(cartItemId, { is_selected: isSelected });
-        
-        // Update state
         state.updateCartItemInState(cartItemId, { is_selected: isSelected });
-        
-        // Update select all checkbox state
         updateSelectAllCheckboxState();
-        
-        // Re-render to update summary
         navigateTo('cart', false);
     } catch (err) {
-        console.error('Update cart item selection error:', err);
-        // Revert checkbox
+        console.error('Cart item checkbox error:', err);
         checkbox.checked = !isSelected;
     }
 }
 
-// YANGI: Select all cart items handler
 async function handleSelectAllCartItems(event) {
     const selectAllCheckbox = event.currentTarget;
     const isSelected = selectAllCheckbox.checked;
     
     try {
         await api.selectAllCartItems(isSelected);
-        
-        // Update all cart items in state
         const cartItems = state.getCartItems();
         cartItems.forEach(item => {
             state.updateCartItemInState(item.id, { is_selected: isSelected });
         });
-        
-        // Update all checkboxes in UI
         document.querySelectorAll('.cart-item-checkbox').forEach(checkbox => {
             checkbox.checked = isSelected;
         });
-        
-        // Re-render to update summary
         navigateTo('cart', false);
     } catch (err) {
         console.error('Select all cart items error:', err);
-        // Revert checkbox
         selectAllCheckbox.checked = !isSelected;
     }
 }
 
-// YANGI: Update select all checkbox state
 function updateSelectAllCheckboxState() {
     const selectAllCheckbox = document.getElementById('cart-select-all');
     if (!selectAllCheckbox) return;

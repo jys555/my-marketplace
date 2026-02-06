@@ -621,7 +621,7 @@ function getCartContent() {
                         </div>
                     </div>
                 </div>
-                <input type="checkbox" class="cart-item-checkbox" id="cart-item-checkbox-${item.id}" data-cart-id="${item.id}" ${item.is_selected ? 'checked' : ''}>
+                <input type="checkbox" class="cart-item-checkbox" id="cart-item-checkbox-${item.id}" data-cart-id="${item.id}">
                 <label for="cart-item-checkbox-${item.id}" class="cart-checkbox-label"></label>
             </div>
         `;
@@ -646,8 +646,8 @@ function getCartContent() {
                             <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                         </svg>
                     </button>
-                    <input type="checkbox" class="cart-address-checkbox" id="cart-select-all">
-                    <label for="cart-select-all" class="cart-checkbox-label"></label>
+                    <input type="checkbox" class="cart-select-all-checkbox" id="cart-select-all">
+                    <label for="cart-select-all" class="cart-select-all-label"></label>
                 </div>
             </div>
 
