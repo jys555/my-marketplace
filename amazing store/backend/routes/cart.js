@@ -140,11 +140,9 @@ router.patch('/:id', authenticate, async (req, res, next) => {
 
         // Hech bo'lmaganda bitta field bo'lishi kerak
         if (quantity === undefined && is_selected === undefined && is_liked === undefined) {
-            return res
-                .status(400)
-                .json({
-                    error: 'At least one field (quantity, is_selected, or is_liked) is required',
-                });
+            return res.status(400).json({
+                error: 'At least one field (quantity, is_selected, or is_liked) is required',
+            });
         }
 
         // Quantity validatsiyasi (agar yuborilgan bo'lsa)
