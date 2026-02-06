@@ -181,12 +181,40 @@ async function startServer() {
         await initializeDatabase();
         logger.info('✅ Database initialized successfully');
 
-        // CRITICAL FIX: Ensure cart_items table exists
+        // CRITICAL FIX: Ensure cart_items table exists and has required columns
         // This is a workaround for migration tracking bug
         logger.info('🔄 Verifying cart_items table...');
         try {
             await pool.query('SELECT 1 FROM cart_items LIMIT 1');
             logger.info('✅ cart_items table exists');
+
+            // Check if is_selected and is_liked columns exist
+            const columnCheck = await pool.query(`
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'cart_items' 
+                AND column_name IN ('is_selected', 'is_liked')
+            `);
+
+            const existingColumns = columnCheck.rows.map(row => row.column_name);
+
+            if (!existingColumns.includes('is_selected')) {
+                logger.warn('⚠️  Adding is_selected column to cart_items...');
+                await pool.query(`
+                    ALTER TABLE cart_items 
+                    ADD COLUMN IF NOT EXISTS is_selected BOOLEAN DEFAULT TRUE
+                `);
+                logger.info('✅ is_selected column added');
+            }
+
+            if (!existingColumns.includes('is_liked')) {
+                logger.warn('⚠️  Adding is_liked column to cart_items...');
+                await pool.query(`
+                    ALTER TABLE cart_items 
+                    ADD COLUMN IF NOT EXISTS is_liked BOOLEAN DEFAULT FALSE
+                `);
+                logger.info('✅ is_liked column added');
+            }
         } catch (error) {
             if (error.code === '42P01') {
                 // relation does not exist
@@ -197,6 +225,7 @@ async function startServer() {
                         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                         product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
                         quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+                        price_snapshot NUMERIC(10,2) NOT NULL,
                         is_selected BOOLEAN DEFAULT TRUE,
                         is_liked BOOLEAN DEFAULT FALSE,
                         created_at TIMESTAMP DEFAULT NOW(),

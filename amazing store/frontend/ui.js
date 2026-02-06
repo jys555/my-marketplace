@@ -584,7 +584,7 @@ function getCartContent() {
                     <div class="cart-empty-icon">🛒</div>
                     <p class="cart-empty-text">Savatingiz bo'sh</p>
                     <p class="cart-empty-subtext">Mahsulotlarni qo'shing</p>
-                    <button class="cart-empty-btn" onclick="navigateTo('home')">Bosh sahifaga</button>
+                    <button class="cart-empty-btn" data-page="home">Bosh sahifaga</button>
                 </div>
             </div>
         `;
@@ -602,6 +602,8 @@ function getCartContent() {
                 </div>
                 <div class="cart-item-info">
                     <h4 class="cart-item-name">${safeName}</h4>
+                    <input type="checkbox" class="cart-item-checkbox" id="cart-item-checkbox-${item.id}" data-cart-id="${item.id}" ${item.is_selected ? 'checked' : ''}>
+                    <label for="cart-item-checkbox-${item.id}" class="cart-checkbox-label"></label>
                     <p class="cart-item-price">${Number(price).toLocaleString()} so'm</p>
                     <div class="cart-item-actions">
                         <button class="cart-item-like-btn ${item.is_liked ? 'liked' : ''}" data-cart-id="${item.id}">
@@ -621,8 +623,6 @@ function getCartContent() {
                         </div>
                     </div>
                 </div>
-                <input type="checkbox" class="cart-item-checkbox" id="cart-item-checkbox-${item.id}" data-cart-id="${item.id}" ${item.is_selected ? 'checked' : ''}>
-                <label for="cart-item-checkbox-${item.id}" class="cart-checkbox-label"></label>
             </div>
         `;
     }).join('');

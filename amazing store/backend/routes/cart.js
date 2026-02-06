@@ -23,6 +23,8 @@ router.get('/', authenticate, async (req, res, next) => {
                 ci.product_id,
                 ci.quantity,
                 ci.price_snapshot,
+                COALESCE(ci.is_selected, true) as is_selected,
+                COALESCE(ci.is_liked, false) as is_liked,
                 ci.created_at,
                 p.name_uz,
                 p.name_ru,
@@ -173,6 +175,13 @@ router.patch('/:id', authenticate, async (req, res, next) => {
             updates.push(`is_liked = $${paramIndex}`);
             values.push(is_liked);
             paramIndex++;
+        }
+
+        // Hech bo'lmaganda bitta update bo'lishi kerak (yuqorida tekshirilgan)
+        if (updates.length === 0) {
+            return res.status(400).json({
+                error: 'At least one field (quantity, is_selected, or is_liked) is required',
+            });
         }
 
         // user_id va cartItemId ni qo'shish

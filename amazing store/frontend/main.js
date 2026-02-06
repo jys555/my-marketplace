@@ -498,6 +498,14 @@ function attachPageEventListeners(pageName) {
             // Checkout button
             document.getElementById('confirm-order-btn')?.addEventListener('click', handleConfirmOrder);
             
+            // Empty cart button (bo'sh savat holatida)
+            document.querySelector('.cart-empty-btn[data-page]')?.addEventListener('click', (e) => {
+                const page = e.target.dataset.page;
+                if (page) {
+                    navigateTo(page);
+                }
+            });
+            
             // Cart bottom bar pozitsiyasini yangilash
             updateCartBottomBarPosition();
             break;
