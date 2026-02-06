@@ -774,6 +774,7 @@ async function addToCartSilently(productId, quantity) {
         const cartData = await api.getCartItems();
         state.setCartItems(cartData.items);
         state.setCartSummary(cartData.summary);
+        updateCartBadges(); // Cart badge'larni yangilash
     } catch (err) {
         console.error('Add to cart error:', err);
         // Xato bo'lsa ham davom etadi (modal yopiladi)
