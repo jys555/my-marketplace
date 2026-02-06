@@ -200,20 +200,38 @@ async function startServer() {
 
             if (!existingColumns.includes('is_selected')) {
                 logger.warn('⚠️  Adding is_selected column to cart_items...');
-                await pool.query(`
-                    ALTER TABLE cart_items 
-                    ADD COLUMN IF NOT EXISTS is_selected BOOLEAN DEFAULT TRUE
-                `);
-                logger.info('✅ is_selected column added');
+                try {
+                    await pool.query(`
+                        ALTER TABLE cart_items 
+                        ADD COLUMN is_selected BOOLEAN DEFAULT TRUE
+                    `);
+                    logger.info('✅ is_selected column added');
+                } catch (alterError) {
+                    // Column may already exist (race condition)
+                    if (alterError.code !== '42701') { // duplicate_column
+                        logger.error('Error adding is_selected column:', alterError.message);
+                        throw alterError;
+                    }
+                    logger.info('✅ is_selected column already exists');
+                }
             }
 
             if (!existingColumns.includes('is_liked')) {
                 logger.warn('⚠️  Adding is_liked column to cart_items...');
-                await pool.query(`
-                    ALTER TABLE cart_items 
-                    ADD COLUMN IF NOT EXISTS is_liked BOOLEAN DEFAULT FALSE
-                `);
-                logger.info('✅ is_liked column added');
+                try {
+                    await pool.query(`
+                        ALTER TABLE cart_items 
+                        ADD COLUMN is_liked BOOLEAN DEFAULT FALSE
+                    `);
+                    logger.info('✅ is_liked column added');
+                } catch (alterError) {
+                    // Column may already exist (race condition)
+                    if (alterError.code !== '42701') { // duplicate_column
+                        logger.error('Error adding is_liked column:', alterError.message);
+                        throw alterError;
+                    }
+                    logger.info('✅ is_liked column already exists');
+                }
             }
         } catch (error) {
             if (error.code === '42P01') {

@@ -474,8 +474,10 @@ function attachPageEventListeners(pageName) {
                 btn.addEventListener('click', handleDeleteCartItem);
             });
             
-            // Like buttons - umumiy like button ishlatiladi (cart-item-image-wrapper ichida)
-            // handleToggleFavorite umumiy funksiya ishlatiladi
+            // Like buttons - umumiy like button ishlatiladi
+            document.querySelectorAll('.cart-item-actions .like-btn').forEach(btn => {
+                btn.addEventListener('click', handleToggleFavorite);
+            });
             
             // Checkboxes
             document.querySelectorAll('.cart-item-checkbox').forEach(checkbox => {

@@ -604,8 +604,8 @@ function getCartContent() {
                     <h4 class="cart-item-name">${safeName}</h4>
                     <p class="cart-item-price">${Number(price).toLocaleString()} so'm</p>
                     <div class="cart-item-actions">
-                        <button class="like-btn ${state.isFavorite(item.product_id) ? 'liked' : ''}" data-id="${item.product_id}">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="${state.isFavorite(item.product_id) ? '#ff3b5c' : 'none'}" stroke="${state.isFavorite(item.product_id) ? '#ff3b5c' : '#999'}" stroke-width="2">
+                        <button class="like-btn ${isFavorite(item.product_id) ? 'liked' : ''}" data-id="${item.product_id}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="${isFavorite(item.product_id) ? '#ff3b5c' : 'none'}" stroke="${isFavorite(item.product_id) ? '#ff3b5c' : '#999'}" stroke-width="2">
                                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                             </svg>
                         </button>
