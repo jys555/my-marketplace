@@ -1094,6 +1094,35 @@ body::before {
     color: #000;
 }
 
+/* Cart badge - o'ng yuqori burchakda */
+.cart-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    background: #ff3b5c;
+    color: #fff;
+    border-radius: 9px;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #fff;
+    box-sizing: border-box;
+    line-height: 1;
+    opacity: 0;
+    transform: scale(0);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.cart-badge:not(:empty) {
+    opacity: 1;
+    transform: scale(1);
+}
+
 .product-card-info {
     padding: 0 4px;
     display: flex;
@@ -2432,8 +2461,8 @@ body::before {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.35); /* Yengil qoraroq kulrang rang - noaktivligi bilinib turishi uchun */
-    z-index: 9998; /* Modal'dan pastroq (modal z-index: 9999) */
+    background: rgba(0, 0, 0, 0.3); /* Yengil qoraroq kulrang rang - noaktivligi bilinib turishi uchun */
+    z-index: 9998 !important; /* Modal'dan pastroq (modal z-index: 9999) - !important bilan */
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
@@ -2441,6 +2470,7 @@ body::before {
     -webkit-backdrop-filter: none !important; /* Safari uchun blur yo'q */
     filter: none !important; /* Barcha filter'lar yo'q */
     will-change: opacity; /* Performance optimization */
+    transform: none !important; /* Transform yo'q */
 }
 
 .cart-modal-overlay.active {
@@ -2455,7 +2485,7 @@ body::before {
     bottom: 0;
     background: #fff;
     border-radius: 20px 20px 0 0;
-    z-index: 9999;
+    z-index: 9999 !important; /* Overlay'dan yuqorida - !important bilan */
     padding: 20px;
     padding-bottom: calc(20px + var(--safe-area-bottom, 0px));
     transform: translateY(100%);

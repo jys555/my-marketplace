@@ -333,6 +333,7 @@ export function renderProducts(append = false) {
               ${hasSale ? `<div class="sale-badge">-${salePercentage}%</div>` : ''}
               <button class="add-to-cart-btn" data-id="${p.id}">
                 <i class="fas fa-shopping-cart"></i>
+                <span class="cart-badge" id="cart-badge-${p.id}"></span>
               </button>
             </div>
             <div class="product-card-info">
@@ -929,9 +930,9 @@ export function openCartModal(productId) {
         ? product.sale_price 
         : product.price;
     
-    // Modal HTML - User screenshot style
+    // CRITICAL FIX: Modal HTML - Modal birinchi, overlay keyin (DOM tartibida)
+    // Bu z-index'ning to'g'ri ishlashini ta'minlaydi
     const modalHtml = `
-      <div class="cart-modal-overlay active" id="cart-modal-overlay"></div>
       <div class="cart-modal active" id="cart-modal">
         <div class="cart-modal-header">
           <img src="${safeImage}" alt="${safeName}" class="cart-modal-image">
@@ -953,9 +954,12 @@ export function openCartModal(productId) {
       </div>
     `;
     
-    // Body ga qo'shish
+    const overlayHtml = `<div class="cart-modal-overlay active" id="cart-modal-overlay"></div>`;
+    
+    // Body ga qo'shish - Modal birinchi, overlay keyin
     console.log('📝 Inserting modal HTML');
     document.body.insertAdjacentHTML('beforeend', modalHtml);
+    document.body.insertAdjacentHTML('beforeend', overlayHtml);
     console.log('✅ Modal HTML inserted');
 }
 

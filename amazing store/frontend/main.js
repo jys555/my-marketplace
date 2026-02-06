@@ -790,6 +790,9 @@ async function addToCartAndCheckout(productId, quantity) {
         state.setCartItems(cartData.items);
         state.setCartSummary(cartData.summary);
         
+        // Cart badge'larni yangilash
+        updateCartBadges();
+        
         ui.closeCartModal();
         
         // Cart sahifasiga o'tish
@@ -970,6 +973,7 @@ async function handleCartQuantityChange(event) {
     updateCartItemQuantityUI(cartItemId, newQuantity);
     state.updateCartItemInState(cartItemId, { quantity: newQuantity });
     updateCartCheckoutButton();
+    updateCartBadges(); // Cart badge'larni yangilash
     
     try {
         // Keyin serverga yuboriladi (background)
@@ -1037,6 +1041,38 @@ function updateCartItemQuantityUI(cartItemId, quantity) {
  *    - Xavfsiz (xatolik bo'lsa, eski qiymatga qaytariladi)
  *    - Offline-friendly (state local'da saqlanadi)
  */
+// YANGI: Cart badge'larni yangilash (barcha product kartochkalarida)
+function updateCartBadges() {
+    const cartItems = state.getCartItems();
+    
+    // Har bir product ID uchun umumiy quantity hisoblash
+    const productQuantities = {};
+    cartItems.forEach(item => {
+        const productId = item.product_id;
+        if (!productQuantities[productId]) {
+            productQuantities[productId] = 0;
+        }
+        productQuantities[productId] += item.quantity || 1;
+    });
+    
+    // Barcha badge'larni yangilash
+    Object.keys(productQuantities).forEach(productId => {
+        const badge = document.getElementById(`cart-badge-${productId}`);
+        if (badge) {
+            const quantity = productQuantities[productId];
+            badge.textContent = quantity > 99 ? '99+' : quantity.toString();
+        }
+    });
+    
+    // Cart'da bo'lmagan productlar uchun badge'ni tozalash
+    document.querySelectorAll('.cart-badge').forEach(badge => {
+        const productId = badge.id.replace('cart-badge-', '');
+        if (!productQuantities[productId]) {
+            badge.textContent = '';
+        }
+    });
+}
+
 function updateCartCheckoutButton() {
     const summary = state.getCartSummary();
     const checkoutBtn = document.getElementById('confirm-order-btn');
@@ -1067,6 +1103,9 @@ async function handleDeleteCartItem(event) {
         
         // Update state
         state.removeCartItemFromState(cartItemId);
+        
+        // Cart badge'larni yangilash
+        updateCartBadges();
         
         // Re-render cart
         navigateTo('cart', false);
