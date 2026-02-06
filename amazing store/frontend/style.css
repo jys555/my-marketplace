@@ -555,97 +555,14 @@ body::before {
   display: flex;
   align-items: flex-start;
   padding: 16px 0;
-  padding-top: 0; /* yuqorida padding yo'q - checkbox rasmning yuqorisida */
   border-bottom: 0.5px solid rgba(0,0,0,0.06);
-  min-height: 133px !important; /* rasm balandligiga teng - 133px */
+  min-height: 133px !important;
 }
 
 .cart-item:last-child {
   border-bottom: none;
 }
 
-/* Checkbox: tovar kartasining o'ng yuqori qismida */
-.cart-item-checkbox {
-  position: absolute;
-  top: 0;
-  right: 16px;
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  z-index: 10;
-  opacity: 0;
-  margin: 0;
-}
-
-.cart-checkbox-label {
-  position: absolute;
-  top: 0;
-  right: 16px;
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  z-index: 11;
-  border: 2px solid #ddd;
-  border-radius: 4px;
-  background: #fff;
-  display: block;
-  margin: 0;
-  box-sizing: border-box;
-  transition: all 0.2s ease;
-}
-
-.cart-item-checkbox:checked + .cart-checkbox-label {
-  background: rgb(109, 175, 247);
-  border-color: rgb(109, 175, 247);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23fff' d='M10 3L4.5 8.5 2 6l1.5-1.5L4.5 6l4-4z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 12px;
-}
-
-/* Select all checkbox */
-.cart-select-all-checkbox {
-  position: absolute;
-  opacity: 0;
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  z-index: 10;
-  margin: 0;
-}
-
-.cart-select-all-label {
-  position: relative;
-  display: block;
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  z-index: 11;
-  border: 2px solid #ddd;
-  border-radius: 4px;
-  background: #fff;
-  margin: 0;
-  box-sizing: border-box;
-  transition: all 0.2s ease;
-}
-
-.cart-select-all-checkbox:checked + .cart-select-all-label {
-  background: rgb(109, 175, 247);
-  border-color: rgb(109, 175, 247);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23fff' d='M10 3L4.5 8.5 2 6l1.5-1.5L4.5 6l4-4z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 12px;
-}
-
-.cart-select-all-checkbox:indeterminate + .cart-select-all-label {
-  background: rgb(109, 175, 247);
-  border-color: rgb(109, 175, 247);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23fff' d='M2 5h8v2H2z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 12px;
-}
 
 /* Rasm: 3x4 format, yirikroq - ANIQ 3x4 - RASMDAGIDEK */
 .cart-item-image-wrapper {
@@ -672,9 +589,90 @@ body::before {
   flex-direction: column;
   justify-content: space-between;
   min-width: 0;
-  padding-right: 40px; /* checkbox uchun joy */
   height: 133px !important;
+  padding-right: 40px;
+}
+
+/* Professional checkbox - tovar kartasining o'ng yuqori qismida */
+.cart-item-checkbox-wrapper {
+  position: absolute;
+  top: 0;
+  right: 16px;
+  z-index: 10;
+}
+
+.cart-item-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.cart-item-checkbox-label {
+  display: block;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.cart-item-checkbox:checked + .cart-item-checkbox-label {
+  background: rgb(109, 175, 247);
+  border-color: rgb(109, 175, 247);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23fff' d='M10 3L4.5 8.5 2 6l1.5-1.5L4.5 6l4-4z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 12px;
+}
+
+/* Professional select-all checkbox */
+.cart-select-all-wrapper {
   position: relative;
+}
+
+.cart-select-all-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.cart-select-all-label {
+  display: block;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.cart-select-all-checkbox:checked + .cart-select-all-label {
+  background: rgb(109, 175, 247);
+  border-color: rgb(109, 175, 247);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23fff' d='M10 3L4.5 8.5 2 6l1.5-1.5L4.5 6l4-4z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 12px;
+}
+
+.cart-select-all-checkbox:indeterminate + .cart-select-all-label {
+  background: rgb(109, 175, 247);
+  border-color: rgb(109, 175, 247);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23fff' d='M2 5h8v2H2z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 12px;
 }
 
 .cart-item-name {

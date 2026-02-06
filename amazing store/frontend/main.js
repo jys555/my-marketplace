@@ -479,12 +479,11 @@ function attachPageEventListeners(pageName) {
                 btn.addEventListener('click', handleToggleFavorite);
             });
             
-            // Checkboxes - yangi funksiyalar
+            // Professional checkbox handlers
             document.querySelectorAll('.cart-item-checkbox').forEach(checkbox => {
                 checkbox.addEventListener('change', handleCartItemCheckbox);
             });
             
-            // Select all checkbox
             const selectAllCheckbox = document.getElementById('cart-select-all');
             if (selectAllCheckbox) {
                 selectAllCheckbox.addEventListener('change', handleSelectAllCartItems);
@@ -999,9 +998,7 @@ async function handleDeleteCartItem(event) {
     }
 }
 
-// handleCartItemLike olib tashlandi - endi umumiy handleToggleFavorite ishlatiladi
-
-// Checkbox funksiyalari - 0 dan qaytadan yozilgan
+// Professional checkbox functionality
 async function handleCartItemCheckbox(event) {
     const checkbox = event.currentTarget;
     const cartItemId = parseInt(checkbox.dataset.cartId);
@@ -1023,14 +1020,20 @@ async function handleSelectAllCartItems(event) {
     const isSelected = selectAllCheckbox.checked;
     
     try {
-        await api.selectAllCartItems(isSelected);
         const cartItems = state.getCartItems();
+        const updatePromises = cartItems.map(item => 
+            api.updateCartItem(item.id, { is_selected: isSelected })
+        );
+        await Promise.all(updatePromises);
+        
         cartItems.forEach(item => {
             state.updateCartItemInState(item.id, { is_selected: isSelected });
         });
+        
         document.querySelectorAll('.cart-item-checkbox').forEach(checkbox => {
             checkbox.checked = isSelected;
         });
+        
         navigateTo('cart', false);
     } catch (err) {
         console.error('Select all cart items error:', err);
@@ -1062,6 +1065,7 @@ function updateSelectAllCheckboxState() {
         selectAllCheckbox.indeterminate = true;
     }
 }
+
 
 // YANGI: Delete all cart items handler
 async function handleDeleteAllCartItems() {

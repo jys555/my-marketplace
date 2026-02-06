@@ -131,17 +131,6 @@ export function clearCartAPI() {
     });
 }
 
-/**
- * Select/deselect all cart items
- * @param {boolean} isSelected - true to select all, false to deselect all
- * @returns {Promise<Object>}
- */
-export function selectAllCartItems(isSelected) {
-    return apiFetch('/cart/select-all', {
-        method: 'PATCH',
-        body: JSON.stringify({ is_selected: isSelected }),
-    });
-}
 
 // O'ZGARTIRILDI: Funksiya nomi va yo'li backendga moslashtirildi.
 export async function validateUser() {
