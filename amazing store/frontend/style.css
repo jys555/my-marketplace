@@ -64,7 +64,7 @@ body::before {
   mask-repeat: no-repeat;
   mask-composite: add;
   -webkit-mask-composite: source-over;
-  z-index: 9999;
+  z-index: 100; /* Qora lenta - pastroq z-index (modal va overlay'dan past) */
 }
 
 /* === ASOSIY KONTENT (yuqori burchaklari yumaloq - quloqchalarga mos) === */
@@ -1206,24 +1206,7 @@ body::before {
 }
 
 /* === Savatga qo'shish modali (pastdan chiqadi) === */
-.cart-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5); /* Qoraroq kulrang rang - noaktivligi bilinib turishi uchun */
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    z-index: 1000; /* Modal'dan pastroq, lekin boshqa elementlardan yuqorida */
-    backdrop-filter: none; /* Blur yo'q */
-    -webkit-backdrop-filter: none; /* Safari uchun blur yo'q */
-}
-
-.cart-modal-overlay.active {
-    display: flex;
-}
+/* Duplicate overlay olib tashlandi - faqat pastdagi ishlatiladi */
 
 .cart-modal-content {
     background: #fff;
@@ -2449,13 +2432,15 @@ body::before {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5); /* Qoraroq kulrang rang - noaktivligi bilinib turishi uchun */
-    z-index: 9998; /* Modal'dan pastroq */
+    background: rgba(0, 0, 0, 0.35); /* Yengil qoraroq kulrang rang - noaktivligi bilinib turishi uchun */
+    z-index: 9998; /* Modal'dan pastroq (modal z-index: 9999) */
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
     backdrop-filter: none !important; /* Blur yo'q */
     -webkit-backdrop-filter: none !important; /* Safari uchun blur yo'q */
+    filter: none !important; /* Barcha filter'lar yo'q */
+    will-change: opacity; /* Performance optimization */
 }
 
 .cart-modal-overlay.active {
