@@ -767,7 +767,7 @@ function attachCartModalEventListeners(productId) {
         });
     });
     
-    // CRITICAL FIX: "Savatga qo'shish" tugmasi - modal'dagi counter bilan bir xil
+    // CRITICAL FIX: "Savatga qo'shish" tugmasi - faqat shu yerda quantity saqlanadi
     if (addBtn) {
         addBtn.addEventListener('click', async function addClickHandler(e) {
             e.stopPropagation();
@@ -782,7 +782,28 @@ function attachCartModalEventListeners(productId) {
                 return;
             }
             
-            await addToCartAndCheckout(productId, quantity);
+            // CRITICAL: Faqat "Savatga qo'shish" tugmasi bosilganda quantity saqlanadi
+            // Agar tovar savatda bo'lsa, quantity'ni yangilash
+            const cartItems = state.getCartItems();
+            const cartItem = cartItems.find(item => item.product_id === productId);
+            
+            if (cartItem) {
+                // Tovar savatda bor - quantity'ni yangilash
+                try {
+                    await api.updateCartItem(cartItem.id, { quantity: quantity });
+                    state.updateCartItemInState(cartItem.id, { quantity: quantity });
+                    updateCartBadges(); // Badge'larni yangilash
+                } catch (err) {
+                    console.error('Update cart item error:', err);
+                    WebApp.showAlert('Xatolik yuz berdi');
+                    return;
+                }
+            } else {
+                // Tovar savatda yo'q - yangi qo'shish
+                await addToCartAndCheckout(productId, quantity);
+            }
+            
+            ui.closeCartModal();
         });
     }
 }
