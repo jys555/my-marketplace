@@ -1082,14 +1082,21 @@ async function handleCartItemCheckbox(event) {
     const cartItemId = parseInt(checkbox.dataset.cartId);
     const isSelected = checkbox.checked;
     
+    // OPTIMISTIC UPDATE: Avval UI yangilanadi
+    state.updateCartItemInState(cartItemId, { is_selected: isSelected });
+    updateSelectAllCheckboxState();
+    updateCartCheckoutButton();
+    
     try {
+        // Keyin serverga yuboriladi
         await api.updateCartItem(cartItemId, { is_selected: isSelected });
-        state.updateCartItemInState(cartItemId, { is_selected: isSelected });
-        updateSelectAllCheckboxState();
-        updateCartCheckoutButton(); // Real-time yangilash
     } catch (err) {
+        // Xatolik bo'lsa, eski holatga qaytariladi
         console.error('Cart item checkbox error:', err);
         checkbox.checked = !isSelected;
+        state.updateCartItemInState(cartItemId, { is_selected: !isSelected });
+        updateSelectAllCheckboxState();
+        updateCartCheckoutButton();
     }
 }
 
