@@ -303,6 +303,7 @@ async function loadInitialData() {
                 state.setOrders(orders);
                 state.setCartItems(cartData.items);
                 state.setCartSummary(cartData.summary);
+                updateCartBadges(); // Cart badge'larni yangilash
             } catch (orderError) {
                 console.error("Could not load user data:", orderError);
             }
