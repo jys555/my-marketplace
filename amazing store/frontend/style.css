@@ -540,6 +540,7 @@ body::before {
   cursor: pointer;
   z-index: 10;
   opacity: 0; /* yashirish, label orqali ko'rsatamiz */
+  margin: 0; /* margin yo'q */
 }
 
 .cart-checkbox-label {
@@ -554,6 +555,8 @@ body::before {
   border-radius: 4px;
   background: #fff;
   display: block;
+  margin: 0; /* margin yo'q */
+  box-sizing: border-box; /* border ichida */
 }
 
 .cart-item-checkbox:checked + .cart-checkbox-label {
@@ -2205,20 +2208,8 @@ body::before {
     color: #000;
 }
 
-/* Bottom bar (sariq) */
-.cart-bottom-bar {
-    position: fixed;
-    bottom: 56px; /* Navbar uchun joy */
-    left: 0;
-    right: 0;
-    background: #ffd700;
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    z-index: 1000;
-    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
-}
+/* Bottom bar (sariq) - ESKI STYLE, OLIB TASHLANDI */
+/* Bu style endi ishlatilmaydi - yuqorida yangi style bor */
 
 .cart-bar-left {
     flex-shrink: 0;

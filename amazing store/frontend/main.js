@@ -1004,7 +1004,7 @@ async function handleCartItemLike(event) {
     const newLikedState = !cartItem.is_liked;
     
     try {
-        // Update cart item like state on server
+        // Update cart item like state on server (quantity yuborilmaydi - faqat is_liked)
         await api.updateCartItem(cartItemId, { is_liked: newLikedState });
         
         // Update cart item in state
