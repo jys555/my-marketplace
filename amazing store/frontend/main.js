@@ -1062,6 +1062,7 @@ function updateCartBadges() {
         const badge = document.getElementById(`cart-badge-${productId}`);
         if (badge) {
             const quantity = productQuantities[productId];
+            // CRITICAL: Badge raqamlari savatdagi raqamlar bilan bir xil (real-time collaboration)
             badge.textContent = quantity > 99 ? '99+' : quantity.toString();
         }
     });

@@ -1094,11 +1094,11 @@ body::before {
     color: #000;
 }
 
-/* Cart badge - o'ng yuqori burchakda */
+/* Cart badge - chap yuqori burchakda, rasmning o'ng borderiga mos */
 .cart-badge {
     position: absolute;
     top: -6px;
-    right: -6px;
+    left: -6px; /* O'ng o'rniga chap - rasmning o'ng borderiga mos */
     min-width: 18px;
     height: 18px;
     padding: 0 5px;
@@ -1116,6 +1116,7 @@ body::before {
     opacity: 0;
     transform: scale(0);
     transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 5; /* Rasm ustida ko'rinishi uchun */
 }
 
 .cart-badge:not(:empty) {
@@ -2455,27 +2456,43 @@ body::before {
  
  
 /* === CART MODAL (Bottom Sheet) === */
+/* CRITICAL FIX: Barcha blur va filter'larni butunlay olib tashlash */
+.cart-modal-overlay,
+.cart-modal-overlay.active,
+body:has(.cart-modal-overlay.active),
+html:has(.cart-modal-overlay.active),
+#main:has(~ .cart-modal-overlay.active) {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+    -webkit-filter: none !important;
+    transform: none !important;
+    -webkit-transform: none !important;
+}
+
 .cart-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.3); /* Yengil qoraroq kulrang rang - noaktivligi bilinib turishi uchun */
-    z-index: 9998 !important; /* Modal'dan pastroq (modal z-index: 9999) - !important bilan */
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(0, 0, 0, 0.3) !important; /* Yengil qoraroq kulrang rang - noaktivligi bilinib turishi uchun */
+    z-index: 9998 !important; /* Modal'dan pastroq (modal z-index: 9999) */
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
     backdrop-filter: none !important; /* Blur yo'q */
     -webkit-backdrop-filter: none !important; /* Safari uchun blur yo'q */
     filter: none !important; /* Barcha filter'lar yo'q */
+    -webkit-filter: none !important; /* Safari uchun filter yo'q */
     will-change: opacity; /* Performance optimization */
     transform: none !important; /* Transform yo'q */
+    -webkit-transform: none !important; /* Safari uchun transform yo'q */
 }
 
 .cart-modal-overlay.active {
-    opacity: 1;
-    pointer-events: all;
+    opacity: 1 !important;
+    pointer-events: all !important;
 }
 
 .cart-modal {
