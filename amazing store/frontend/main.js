@@ -169,6 +169,15 @@ function fixLayoutToScreen() {
     
     // Body padding kerak emas
     document.body.style.paddingBottom = '0';
+    
+    // Cart bottom bar uchun navbar top pozitsiyasini CSS custom property sifatida saqlash
+    document.documentElement.style.setProperty('--navbar-top', `${navbarTop}px`);
+    document.documentElement.style.setProperty('--navbar-height', `${navbarHeight}px`);
+    
+    // Cart page bo'lsa, bottom bar pozitsiyasini yangilash
+    if (state.getCurrentPage() === 'cart') {
+        updateCartBottomBarPosition();
+    }
 }
 
 // Telefon inputlariga event listener qo'shish
@@ -328,6 +337,13 @@ function navigateTo(pageName, addToHistory = true) {
     // Layout ni ekranga mahkamlash (navbar renderdan keyin)
     fixLayoutToScreen();
     
+    // Cart page bo'lsa, bottom bar pozitsiyasini yangilash
+    if (pageName === 'cart') {
+        setTimeout(() => {
+            updateCartBottomBarPosition();
+        }, 100);
+    }
+    
     // Telegram BackButton boshqaruvi
     updateTelegramBackButton(pageName);
 }
@@ -468,8 +484,22 @@ function attachPageEventListeners(pageName) {
                 checkbox.addEventListener('change', handleCartItemCheckbox);
             });
             
+            // Select all checkbox
+            const selectAllCheckbox = document.getElementById('cart-select-all');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', handleSelectAllCartItems);
+                // Initial state ni tekshirish
+                updateSelectAllCheckboxState();
+            }
+            
+            // Address delete button
+            document.querySelector('.cart-address-delete-btn')?.addEventListener('click', handleDeleteAllCartItems);
+            
             // Checkout button
             document.getElementById('confirm-order-btn')?.addEventListener('click', handleConfirmOrder);
+            
+            // Cart bottom bar pozitsiyasini yangilash
+            updateCartBottomBarPosition();
             break;
         case 'catalog':
             // O'ZGARTIRILDI: Kategoriya kartochkalariga event listener
@@ -970,23 +1000,42 @@ async function handleCartItemLike(event) {
     const cartItem = state.getCartItems().find(item => item.id === cartItemId);
     if (!cartItem) return;
     
+    const productId = cartItem.product_id;
     const newLikedState = !cartItem.is_liked;
     
     try {
+        // Update cart item like state on server
         await api.updateCartItem(cartItemId, { is_liked: newLikedState });
         
-        // Update state
+        // Update cart item in state
         state.updateCartItemInState(cartItemId, { is_liked: newLikedState });
         
-        // Update UI
+        // Update favorites state (product-level)
+        if (newLikedState) {
+            if (!state.isFavorite(productId)) {
+                state.toggleFavorite(productId);
+                await api.updateFavorites(state.getFavorites());
+            }
+        } else {
+            if (state.isFavorite(productId)) {
+                state.toggleFavorite(productId);
+                await api.updateFavorites(state.getFavorites());
+            }
+        }
+        
+        // Update UI - cart item like button
         btn.classList.toggle('liked', newLikedState);
         const svg = btn.querySelector('svg');
         if (svg) {
             svg.setAttribute('fill', newLikedState ? '#ff3b5c' : 'none');
             svg.setAttribute('stroke', newLikedState ? '#ff3b5c' : '#999');
         }
+        
+        // Update all like buttons for this product (if visible on other pages)
+        updateLikeButtonsForProduct(productId);
     } catch (err) {
         console.error('Update cart item like error:', err);
+        WebApp.showAlert('Xatolik yuz berdi');
     }
 }
 
@@ -1004,6 +1053,9 @@ async function handleCartItemCheckbox(event) {
         // Update state
         state.updateCartItemInState(cartItemId, { is_selected: isSelected });
         
+        // Update select all checkbox state
+        updateSelectAllCheckboxState();
+        
         // Re-render to update summary
         navigateTo('cart', false);
     } catch (err) {
@@ -1011,6 +1063,98 @@ async function handleCartItemCheckbox(event) {
         // Revert checkbox
         checkbox.checked = !isSelected;
     }
+}
+
+// YANGI: Select all cart items handler
+async function handleSelectAllCartItems(event) {
+    const selectAllCheckbox = event.currentTarget;
+    const isSelected = selectAllCheckbox.checked;
+    
+    try {
+        await api.selectAllCartItems(isSelected);
+        
+        // Update all cart items in state
+        const cartItems = state.getCartItems();
+        cartItems.forEach(item => {
+            state.updateCartItemInState(item.id, { is_selected: isSelected });
+        });
+        
+        // Update all checkboxes in UI
+        document.querySelectorAll('.cart-item-checkbox').forEach(checkbox => {
+            checkbox.checked = isSelected;
+        });
+        
+        // Re-render to update summary
+        navigateTo('cart', false);
+    } catch (err) {
+        console.error('Select all cart items error:', err);
+        // Revert checkbox
+        selectAllCheckbox.checked = !isSelected;
+    }
+}
+
+// YANGI: Update select all checkbox state
+function updateSelectAllCheckboxState() {
+    const selectAllCheckbox = document.getElementById('cart-select-all');
+    if (!selectAllCheckbox) return;
+    
+    const cartItems = state.getCartItems();
+    if (cartItems.length === 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+        return;
+    }
+    
+    const selectedCount = cartItems.filter(item => item.is_selected).length;
+    
+    if (selectedCount === 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    } else if (selectedCount === cartItems.length) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+    } else {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = true;
+    }
+}
+
+// YANGI: Delete all cart items handler
+async function handleDeleteAllCartItems() {
+    const cartItems = state.getCartItems();
+    if (cartItems.length === 0) return;
+    
+    const confirmed = confirm('Barcha tovarlarni savatdan olib tashlamoqchimisiz?');
+    if (!confirmed) return;
+    
+    try {
+        // Delete all cart items
+        for (const item of cartItems) {
+            await api.deleteCartItem(item.id);
+        }
+        
+        // Clear cart in state
+        state.clearCart();
+        
+        // Re-render cart
+        navigateTo('cart', false);
+    } catch (err) {
+        console.error('Delete all cart items error:', err);
+        WebApp.showAlert('Xatolik yuz berdi');
+    }
+}
+
+// YANGI: Update cart bottom bar position
+function updateCartBottomBarPosition() {
+    const navbar = document.getElementById('navbar');
+    if (!navbar) return;
+    
+    const navbarTop = navbar.offsetTop;
+    const navbarHeight = navbar.offsetHeight;
+    
+    // Update CSS custom property
+    document.documentElement.style.setProperty('--navbar-top', `${navbarTop}px`);
+    document.documentElement.style.setProperty('--navbar-height', `${navbarHeight}px`);
 }
 
 async function handleConfirmOrder() {

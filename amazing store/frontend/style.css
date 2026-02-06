@@ -521,6 +521,7 @@ body::before {
   display: flex;
   align-items: flex-start;
   padding: 16px 0;
+  padding-top: 0; /* yuqorida padding yo'q - checkbox rasmning yuqorisida */
   border-bottom: 0.5px solid rgba(0,0,0,0.06);
   min-height: 133px !important; /* rasm balandligiga teng - 133px */
 }
@@ -529,10 +530,10 @@ body::before {
   border-bottom: none;
 }
 
-/* Checkbox: o'ng yuqorida, rasm balandligiga mos - HAR BIR TOVARGA */
+/* Checkbox: o'ng yuqorida, rasmning yuqorisiga to'g'ri - HAR BIR TOVARGA */
 .cart-item-checkbox {
   position: absolute;
-  top: 16px; /* rasmning yuqori qismi bilan teng */
+  top: 0; /* rasmning yuqorisi bilan teng - to'g'ri joylashuv */
   right: 16px;
   width: 20px;
   height: 20px;
@@ -543,7 +544,7 @@ body::before {
 
 .cart-checkbox-label {
   position: absolute;
-  top: 16px;
+  top: 0; /* rasmning yuqorisi bilan teng - to'g'ri joylashuv */
   right: 16px;
   width: 20px;
   height: 20px;
@@ -739,14 +740,15 @@ body::before {
 /* Pastki "Rasmiylashtirish" tugmasi: sticky, navbar ustida - OQ FON, AYLANA QIRRALI MODAL */
 .cart-bottom-bar {
   position: fixed;
-  bottom: 56px; /* navbar balandligi - navbar ustida, yopilmaydi */
+  top: var(--navbar-top, calc(100vh - 56px)); /* navbar tepasidan boshlanadi */
   left: 0;
   right: 0;
   padding: 0 16px;
   padding-top: 16px;
   padding-bottom: calc(16px + var(--content-safe-area-bottom, 0px));
   z-index: 950;
-  background: transparent; /* fon yo'q */
+  background: transparent; /* fon yo'q - sariq background yo'q */
+  transform: translateY(-100%); /* navbar tepasiga ko'tarish */
 }
 
 .cart-bottom-bar::before {
