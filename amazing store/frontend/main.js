@@ -761,34 +761,9 @@ function attachCartModalEventListeners(productId) {
                 return;
             }
             
-            // CRITICAL: Modal counter va badge real-time yangilanadi
+            // CRITICAL FIX: Modal counter o'zgarganda faqat UI yangilanadi, savatga saqlanmaydi
+            // Faqat "Savatga qo'shish" tugmasi bosilganda saqlanadi
             qtyValue.textContent = newQty;
-            
-            // CRITICAL: Agar tovar savatda bo'lsa, quantity'ni yangilash (real-time collaboration)
-            if (state.isRegistered()) {
-                const cartItems = state.getCartItems();
-                const cartItem = cartItems.find(item => item.product_id === productId);
-                if (cartItem) {
-                    // OPTIMISTIC UPDATE: Avval UI yangilanadi
-                    state.updateCartItemInState(cartItem.id, { quantity: newQty });
-                    updateCartBadges(); // Badge'larni yangilash (real-time collaboration)
-                    
-                    // Keyin serverga yuboriladi (background)
-                    api.updateCartItem(cartItem.id, { quantity: newQty }).catch(err => {
-                        console.error('Update cart item error:', err);
-                        // Xatolik bo'lsa, eski qiymatga qaytariladi
-                        state.updateCartItemInState(cartItem.id, { quantity: currentQty });
-                        qtyValue.textContent = currentQty;
-                        updateCartBadges();
-                    });
-                } else {
-                    // Tovar savatda yo'q, faqat badge yangilanadi
-                    updateCartBadges();
-                }
-            } else {
-                // Ro'yxatdan o'tmagan, faqat UI yangilanadi
-                updateCartBadges();
-            }
         });
     });
     
