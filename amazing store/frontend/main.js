@@ -961,25 +961,82 @@ async function handleCartQuantityChange(event) {
     const cartItem = state.getCartItems().find(item => item.id === cartItemId);
     if (!cartItem) return;
     
-    const newQuantity = action === 'increase' ? cartItem.quantity + 1 : cartItem.quantity - 1;
+    const oldQuantity = cartItem.quantity;
+    const newQuantity = action === 'increase' ? oldQuantity + 1 : oldQuantity - 1;
     
     if (newQuantity < 1) return; // Minimum 1
     
+    // OPTIMISTIC UPDATE: Avval UI yangilanadi (tez javob)
+    updateCartItemQuantityUI(cartItemId, newQuantity);
+    state.updateCartItemInState(cartItemId, { quantity: newQuantity });
+    updateCartCheckoutButton();
+    
     try {
+        // Keyin serverga yuboriladi (background)
         await api.updateCartItem(cartItemId, { quantity: newQuantity });
-        
-        // Update state
-        state.updateCartItemInState(cartItemId, { quantity: newQuantity });
-        
-        // Real-time yangilash
-        updateCartCheckoutButton();
     } catch (err) {
+        // Xatolik bo'lsa, eski qiymatga qaytariladi
         console.error('Update cart item error:', err);
+        updateCartItemQuantityUI(cartItemId, oldQuantity);
+        state.updateCartItemInState(cartItemId, { quantity: oldQuantity });
+        updateCartCheckoutButton();
         WebApp.showAlert('Xatolik yuz berdi');
     }
 }
 
-// Real-time checkout button yangilash
+// Real-time counter UI yangilash
+function updateCartItemQuantityUI(cartItemId, quantity) {
+    const cartItem = document.querySelector(`.cart-item[data-cart-id="${cartItemId}"]`);
+    if (!cartItem) return;
+    
+    const qtyValue = cartItem.querySelector('.cart-item-qty-value');
+    const decreaseBtn = cartItem.querySelector('.cart-item-qty-btn[data-action="decrease"]');
+    
+    if (qtyValue) {
+        qtyValue.textContent = quantity;
+    }
+    
+    if (decreaseBtn) {
+        decreaseBtn.disabled = quantity <= 1;
+    }
+}
+
+/**
+ * Real-time checkout button yangilash
+ * 
+ * REAL-TIME MEXANIZM TUSHUNTIRISH:
+ * 
+ * 1. USLUB: Event-Driven (Faqat o'zgarishda yangilanadi)
+ *    - Doimiy polling YO'Q (setInterval, setTimeout ishlatilmaydi)
+ *    - Faqat user action bo'lganda ishlaydi (checkbox, quantity, delete)
+ *    - Bu juda samarali, chunki:
+ *      * CPU yuklamasi minimal (faqat kerak bo'lganda ishlaydi)
+ *      * Network yuklamasi yo'q (polling requestlar yo'q)
+ *      * Battery tejaladi (background ishlar yo'q)
+ * 
+ * 2. YANGILANISH VAQTI: Darhol (0ms delay)
+ *    - State o'zgarganda darhol UI yangilanadi
+ *    - Optimistic update: Avval UI, keyin server
+ *    - User tez javob ko'radi
+ * 
+ * 3. YUKLAMA: Minimal
+ *    - Faqat DOM elementlarini yangilaydi (textContent o'zgartirish)
+ *    - Hech qanday qayta render YO'Q (navigateTo chaqirilmaydi)
+ *    - Faqat kerakli elementlar yangilanadi
+ * 
+ * 4. ISHLASH PRINTSIPI:
+ *    a) User action (checkbox, quantity button) → Event listener
+ *    b) State yangilanadi (updateCartItemInState)
+ *    c) Summary hisoblanadi (calculateCartSummary - avtomatik)
+ *    d) UI yangilanadi (updateCartCheckoutButton, updateCartItemQuantityUI)
+ *    e) Serverga yuboriladi (background, async)
+ * 
+ * 5. FOYDALARI:
+ *    - Tez javob (optimistic update)
+ *    - Kam yuklama (faqat o'zgarishda)
+ *    - Xavfsiz (xatolik bo'lsa, eski qiymatga qaytariladi)
+ *    - Offline-friendly (state local'da saqlanadi)
+ */
 function updateCartCheckoutButton() {
     const summary = state.getCartSummary();
     const checkoutBtn = document.getElementById('confirm-order-btn');
@@ -1040,25 +1097,36 @@ async function handleSelectAllCartItems(event) {
     const selectAllCheckbox = event.currentTarget;
     const isSelected = selectAllCheckbox.checked;
     
+    const cartItems = state.getCartItems();
+    
+    // OPTIMISTIC UPDATE: Avval UI yangilanadi
+    cartItems.forEach(item => {
+        state.updateCartItemInState(item.id, { is_selected: isSelected });
+    });
+    
+    document.querySelectorAll('.cart-item-checkbox').forEach(checkbox => {
+        checkbox.checked = isSelected;
+    });
+    
+    updateCartCheckoutButton();
+    
     try {
-        const cartItems = state.getCartItems();
+        // Keyin serverga yuboriladi
         const updatePromises = cartItems.map(item => 
             api.updateCartItem(item.id, { is_selected: isSelected })
         );
         await Promise.all(updatePromises);
-        
-        cartItems.forEach(item => {
-            state.updateCartItemInState(item.id, { is_selected: isSelected });
-        });
-        
-        document.querySelectorAll('.cart-item-checkbox').forEach(checkbox => {
-            checkbox.checked = isSelected;
-        });
-        
-        updateCartCheckoutButton(); // Real-time yangilash
     } catch (err) {
+        // Xatolik bo'lsa, eski holatga qaytariladi
         console.error('Select all cart items error:', err);
         selectAllCheckbox.checked = !isSelected;
+        cartItems.forEach(item => {
+            state.updateCartItemInState(item.id, { is_selected: !isSelected });
+        });
+        document.querySelectorAll('.cart-item-checkbox').forEach(checkbox => {
+            checkbox.checked = !isSelected;
+        });
+        updateCartCheckoutButton();
     }
 }
 
