@@ -1235,7 +1235,7 @@ body::before {
     color: #666;
 }
 
-/* === Savatga qo'shish modali (YANGI DIZAYN - rasmdagidek) === */
+/* === Savatga qo'shish modali (YANGI DIZAYN - rasmdagidek 1:1) === */
 .cart-modal-overlay {
     position: fixed;
     top: 0;
@@ -1258,7 +1258,8 @@ body::before {
     position: fixed;
     left: 0;
     right: 0;
-    /* Navbar tugagan joydan boshlanadi (navbar ko'rinib turishi kerak) - xuddi cart bottom bar kabi */
+    /* CRITICAL: Navbar tugagan joydan boshlanadi (navbar ko'rinib turishi kerak) - rasmdagidek */
+    /* Navbar z-index: 900, modal z-index: 9999 - navbar modal ostida bo'ladi, lekin ko'rinib turibdi */
     bottom: calc(var(--navbar-height, 60px) + var(--total-safe-area-bottom, 34px));
     z-index: 9999;
     pointer-events: none;
@@ -1270,7 +1271,7 @@ body::before {
     pointer-events: auto;
 }
 
-/* Yaxlit content - alohida kartochka yo'q, scroll qilinmaydi */
+/* Yaxlit content - alohida kartochka yo'q, scroll qilinmaydi - rasmdagidek */
 .cart-modal-content {
     position: relative;
     width: 100%;
@@ -1283,6 +1284,8 @@ body::before {
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     /* Scroll qilinmasligi kerak */
     overflow: hidden;
+    /* Content balandligi cheklanadi - navbar va safe area hisobga olinadi */
+    max-height: calc(var(--navbar-top, calc(100vh - 60px)) - 29px);
 }
 
 .cart-modal.active .cart-modal-content {
