@@ -718,22 +718,14 @@ function attachCartModalEventListeners(productId) {
         return;
     }
     
-    // O'ZGARTIRILDI: Modal tashqarisiga bosilganda savatga qo'shish va yopish
+    // O'ZGARTIRILDI: Modal tashqarisiga bosilganda faqat yopish (savatga qo'shish yo'q)
     overlay.addEventListener('click', async function overlayClickHandler(e) {
         if (e.target === overlay) {
-            // Tanlangan miqdorni olish (modal'dagi counter bilan bir xil)
-            const quantity = parseInt(qtyValue.textContent) || 1;
-            
-            // Savatga qo'shish (agar ro'yxatdan o'tgan bo'lsa)
-            if (state.isRegistered()) {
-                await addToCartSilently(productId, quantity);
-            }
-            
             ui.closeCartModal();
         }
     });
     
-    // CRITICAL FIX: Miqdorni o'zgartirish - 0 gacha boradi, 0 bo'lganda tovar o'chiriladi va modal yopiladi
+    // CRITICAL FIX: Counter o'zgartirganda bevosita savatda yangilanishi (tasdiqlash yo'q)
     qtyBtns.forEach(btn => {
         btn.addEventListener('click', async function qtyClickHandler(e) {
             e.stopPropagation();
@@ -741,19 +733,21 @@ function attachCartModalEventListeners(productId) {
             const currentQty = parseInt(qtyValue.textContent) || 1;
             const newQty = Math.max(0, currentQty + change); // 0 gacha boradi
             
-            // Agar 0 bo'lsa, tovar o'chiriladi va modal yopiladi (x tugmasi funksiyasi bilan bir xil)
+            // Agar 0 bo'lsa, tovar o'chiriladi va modal yopiladi
             if (newQty === 0) {
                 if (state.isRegistered()) {
-                    // Savatdan tovar o'chirish
                     const cartItems = state.getCartItems();
                     const cartItem = cartItems.find(item => item.product_id === productId);
                     if (cartItem) {
                         try {
                             await api.deleteCartItem(cartItem.id);
                             state.removeCartItemFromState(cartItem.id);
-                            updateCartBadges(); // Badge'larni yangilash
+                            updateCartBadges();
                         } catch (err) {
                             console.error('Delete cart item error:', err);
+                            // Rollback UI
+                            qtyValue.textContent = currentQty;
+                            return;
                         }
                     }
                 }
@@ -761,49 +755,89 @@ function attachCartModalEventListeners(productId) {
                 return;
             }
             
-            // CRITICAL FIX: Modal counter o'zgarganda faqat UI yangilanadi, savatga saqlanmaydi
-            // Faqat "Savatga qo'shish" tugmasi bosilganda saqlanadi
+            // OPTIMISTIC UPDATE: Avval UI yangilanadi
             qtyValue.textContent = newQty;
+            
+            // CRITICAL: Bevosita savatda yangilanishi (tasdiqlash yo'q)
+            if (state.isRegistered()) {
+                const cartItems = state.getCartItems();
+                const cartItem = cartItems.find(item => item.product_id === productId);
+                
+                if (cartItem) {
+                    // Tovar savatda bor - quantity'ni yangilash
+                    try {
+                        // OPTIMISTIC: Avval state yangilanadi
+                        state.updateCartItemInState(cartItem.id, { quantity: newQty });
+                        updateCartBadges();
+                        
+                        // Keyin serverga yuboriladi (background)
+                        api.updateCartItem(cartItem.id, { quantity: newQty }).catch(err => {
+                            console.error('Update cart item error:', err);
+                            // Rollback on error
+                            state.updateCartItemInState(cartItem.id, { quantity: currentQty });
+                            qtyValue.textContent = currentQty;
+                            updateCartBadges();
+                        });
+                    } catch (err) {
+                        console.error('Update cart item error:', err);
+                        // Rollback UI
+                        qtyValue.textContent = currentQty;
+                    }
+                } else {
+                    // Tovar savatda yo'q - yangi qo'shish
+                    try {
+                        await api.addToCartAPI(productId, newQty);
+                        const updatedCartData = await api.getCartItems();
+                        state.setCartItems(updatedCartData.items);
+                        state.setCartSummary(updatedCartData.summary);
+                        updateCartBadges();
+                    } catch (err) {
+                        console.error('Add to cart error:', err);
+                        // Rollback UI
+                        qtyValue.textContent = currentQty;
+                    }
+                }
+            }
         });
     });
     
-    // CRITICAL FIX: "Savatga qo'shish" tugmasi - faqat shu yerda quantity saqlanadi
-    if (addBtn) {
-        addBtn.addEventListener('click', async function addClickHandler(e) {
+    // CRITICAL FIX: "Savatga" tugmasi - savat sahifasiga yo'naltiradi
+    const cartBtn = document.querySelector('.cart-modal-cart-btn');
+    if (cartBtn) {
+        cartBtn.addEventListener('click', async function cartBtnClickHandler(e) {
             e.stopPropagation();
-            // Joriy miqdorni olish (modal'dagi counter bilan bir xil)
+            
+            // Joriy miqdorni olish
             const quantity = parseInt(qtyValue.textContent) || 1;
             
             if (!state.isRegistered()) {
                 ui.closeCartModal();
-                pendingAction = () => addToCartAndCheckout(productId, quantity);
+                pendingAction = () => {
+                    addToCartSilently(productId, quantity);
+                    navigateTo('cart');
+                };
                 ui.openRegisterModal();
                 attachModalEventListeners();
                 return;
             }
             
-            // CRITICAL: Faqat "Savatga qo'shish" tugmasi bosilganda quantity saqlanadi
-            // Agar tovar savatda bo'lsa, quantity'ni yangilash
+            // Agar tovar savatda bo'lmasa, qo'shish
             const cartItems = state.getCartItems();
             const cartItem = cartItems.find(item => item.product_id === productId);
             
-            if (cartItem) {
-                // Tovar savatda bor - quantity'ni yangilash
+            if (!cartItem) {
                 try {
-                    await api.updateCartItem(cartItem.id, { quantity: quantity });
-                    state.updateCartItemInState(cartItem.id, { quantity: quantity });
-                    updateCartBadges(); // Badge'larni yangilash
+                    await addToCartSilently(productId, quantity);
                 } catch (err) {
-                    console.error('Update cart item error:', err);
+                    console.error('Add to cart error:', err);
                     WebApp.showAlert('Xatolik yuz berdi');
                     return;
                 }
-            } else {
-                // Tovar savatda yo'q - yangi qo'shish
-                await addToCartAndCheckout(productId, quantity);
             }
             
+            // Modal yopiladi va savat sahifasiga o'tiladi
             ui.closeCartModal();
+            navigateTo('cart');
         });
     }
 }

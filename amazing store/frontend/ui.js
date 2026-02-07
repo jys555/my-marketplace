@@ -935,27 +935,28 @@ export function openCartModal(productId) {
     const existingCartItem = cartItems.find(item => item.product_id === productId);
     const initialQuantity = existingCartItem ? existingCartItem.quantity : 1;
     
-    // CRITICAL FIX: Modal HTML - Modal birinchi, overlay keyin (DOM tartibida)
-    // Bu z-index'ning to'g'ri ishlashini ta'minlaydi
+    // CRITICAL FIX: Yangi modal dizayn - rasmdagidek
+    // Modal navbar tugagan joydan boshlanadi, 3x4 rasm, yonida nom, pastda "Savatga" tugmasi va counter
     const modalHtml = `
       <div class="cart-modal active" id="cart-modal">
-        <div class="cart-modal-header">
-          <img src="${safeImage}" alt="${safeName}" class="cart-modal-image">
-          <div class="cart-modal-info">
-            <h3 class="cart-modal-name">${safeName}</h3>
-            <p class="cart-modal-price">${Number(displayPrice).toLocaleString()} so'm</p>
+        <div class="cart-modal-content">
+          <div class="cart-modal-product">
+            <img src="${safeImage}" alt="${safeName}" class="cart-modal-image">
+            <div class="cart-modal-info">
+              <h3 class="cart-modal-name">${safeName}</h3>
+            </div>
+          </div>
+          <div class="cart-modal-actions">
+            <button class="cart-modal-cart-btn" data-id="${productId}">
+              Savatga
+            </button>
+            <div class="cart-modal-quantity">
+              <button class="cart-modal-qty-btn" data-id="${productId}" data-change="-1">−</button>
+              <span class="cart-modal-qty-value" id="qty-value-${productId}">${initialQuantity}</span>
+              <button class="cart-modal-qty-btn" data-id="${productId}" data-change="1">+</button>
+            </div>
           </div>
         </div>
-        
-        <div class="cart-modal-quantity">
-          <button class="cart-modal-qty-btn" data-id="${productId}" data-change="-1">−</button>
-          <span class="cart-modal-qty-value" id="qty-value-${productId}">${initialQuantity}</span>
-          <button class="cart-modal-qty-btn" data-id="${productId}" data-change="1">+</button>
-        </div>
-        
-        <button class="cart-modal-add-btn" data-id="${productId}">
-          Savatga qo'shish
-        </button>
       </div>
     `;
     
