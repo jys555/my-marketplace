@@ -1258,22 +1258,22 @@ body::before {
     position: fixed;
     left: 0;
     right: 0;
-    top: var(--navbar-top, calc(100vh - 60px));
-    bottom: 0;
+    /* Navbar tugagan joydan boshlanadi (navbar ko'rinib turishi kerak) - xuddi cart bottom bar kabi */
+    bottom: calc(var(--navbar-height, 60px) + var(--total-safe-area-bottom, 34px));
     z-index: 9999;
     pointer-events: none;
+    /* Scroll qilinmasligi kerak */
+    overflow: hidden;
 }
 
 .cart-modal.active {
     pointer-events: auto;
 }
 
-/* Yaxlit content - alohida kartochka yo'q */
+/* Yaxlit content - alohida kartochka yo'q, scroll qilinmaydi */
 .cart-modal-content {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    position: relative;
+    width: 100%;
     background: #fff;
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
@@ -1281,6 +1281,8 @@ body::before {
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
     transform: translateY(100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Scroll qilinmasligi kerak */
+    overflow: hidden;
 }
 
 .cart-modal.active .cart-modal-content {
