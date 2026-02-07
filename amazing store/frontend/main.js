@@ -801,7 +801,7 @@ function attachCartModalEventListeners(productId) {
         });
     });
     
-    // CRITICAL FIX: "Savatga" tugmasi - savat sahifasiga yo'naltiradi
+    // CRITICAL FIX: "Hozir sotib olish" tugmasi - rasmdagidek, checkout sahifasiga yo'naltiradi
     const cartBtn = document.querySelector('.cart-modal-cart-btn');
     if (cartBtn) {
         cartBtn.addEventListener('click', async function cartBtnClickHandler(e) {
@@ -814,7 +814,7 @@ function attachCartModalEventListeners(productId) {
                 ui.closeCartModal();
                 pendingAction = () => {
                     addToCartSilently(productId, quantity);
-                    navigateTo('cart');
+                    navigateTo('checkout');
                 };
                 ui.openRegisterModal();
                 attachModalEventListeners();
@@ -835,9 +835,9 @@ function attachCartModalEventListeners(productId) {
                 }
             }
             
-            // Modal yopiladi va savat sahifasiga o'tiladi
+            // Modal yopiladi va checkout sahifasiga o'tiladi (rasmdagidek)
             ui.closeCartModal();
-            navigateTo('cart');
+            navigateTo('checkout');
         });
     }
 }

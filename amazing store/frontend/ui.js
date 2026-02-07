@@ -948,7 +948,7 @@ export function openCartModal(productId) {
           </div>
           <div class="cart-modal-actions">
             <button class="cart-modal-cart-btn" data-id="${productId}">
-              Savatga
+              Hozir sotib olish
             </button>
             <div class="cart-modal-quantity">
               <button class="cart-modal-qty-btn" data-id="${productId}" data-change="-1">−</button>
