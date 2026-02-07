@@ -1328,7 +1328,7 @@ body::before {
     gap: 12px;
 }
 
-/* Boxlar bir xil o'lcham va shaklda */
+/* Boxlar bir xil o'lcham va shaklda - rasmdagidek */
 .cart-modal-cart-btn,
 .cart-modal-quantity {
     height: 52px;
@@ -1344,11 +1344,14 @@ body::before {
     cursor: pointer;
     transition: background 0.15s ease;
     flex-shrink: 0;
+    /* Rasmdagidek - bir xil o'lcham va shakl */
+    min-width: 0;
 }
 
 .cart-modal-cart-btn {
     flex: 1;
-    padding: 0 24px;
+    padding: 0 20px;
+    white-space: nowrap;
 }
 
 .cart-modal-cart-btn:active {
@@ -1360,6 +1363,7 @@ body::before {
     padding: 0;
     gap: 0;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .cart-modal-qty-btn {
