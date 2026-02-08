@@ -231,9 +231,6 @@ export function renderPage(pageName, attachEventListeners) {
     main.innerHTML = content;
     updateNavbar(pageName);
     attachEventListeners(pageName);
-    
-    // CRITICAL: Badge'larni har sahifa render qilinganda yangilash
-    updateCartBadges();
 }
 
 function getHomeContent() {
