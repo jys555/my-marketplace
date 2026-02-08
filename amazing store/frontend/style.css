@@ -1094,27 +1094,28 @@ body::before {
     color: #000;
 }
 
-/* Cart badge - add to cart button uchun, button o'lchamiga mos */
+/* Cart badge - aylana shaklda, o'ng yuqori burchakda (rasmdagidek) */
 .cart-badge {
     position: absolute;
     top: -4px;
     right: -4px;
     min-width: 16px;
     height: 16px;
-    padding: 0 4px;
+    padding: 0;
     background: #ff3b5c;
     color: #fff;
-    border-radius: 8px;
+    border-radius: 50%;
     font-size: 10px;
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1.5px solid #fff;
+    border: 2px solid #fff;
     box-sizing: content-box;
     line-height: 1;
     white-space: nowrap;
     z-index: 10;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .cart-badge:empty {
@@ -1483,21 +1484,21 @@ html:has(.cart-modal-overlay.active),
   color: rgb(109, 175, 247);
 }
 
-/* Navbar cart badge - aylana shaklda, kichik */
+/* Navbar cart badge - aylana shaklda, iconning yuqori o'ng burchagida (rasmdagidek) */
 .navbar button .nav-icon {
   position: relative;
 }
 
 .nav-cart-badge {
   position: absolute;
-  top: -2px;
-  right: -2px;
+  top: -4px;
+  right: -4px;
   min-width: 14px;
   height: 14px;
-  padding: 0 3px;
+  padding: 0;
   background: #ff3b5c;
   color: #fff;
-  border-radius: 7px;
+  border-radius: 50%;
   font-size: 9px;
   font-weight: 600;
   display: none;
@@ -1505,8 +1506,8 @@ html:has(.cart-modal-overlay.active),
   justify-content: center;
   z-index: 10;
   white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  border: 1.5px solid #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  border: 2px solid #fff;
   box-sizing: content-box;
   line-height: 1;
 }
