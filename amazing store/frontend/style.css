@@ -1258,10 +1258,9 @@ body::before {
     position: fixed;
     left: 0;
     right: 0;
-    /* CRITICAL: Modal navbar TEPASIDA bo'lishi kerak (navbar top'dan YUQORIDA) */
+    /* CRITICAL: Cart bottom bar kabi navbar hisoblanadi - navbar tepasidan boshlanadi */
     /* Navbar top pozitsiyasida: top = screenHeight - navbarHeight - safeAreaBottom */
-    /* Modal navbar tepasida bo'lishi kerak, demak modal bottom = navbar top */
-    bottom: calc(100vh - var(--navbar-top, calc(100vh - 60px)));
+    top: var(--navbar-top, calc(100vh - 60px));
     z-index: 9999;
     pointer-events: none;
     /* Scroll qilinmasligi kerak */
@@ -1274,15 +1273,29 @@ body::before {
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
     transform: translateY(100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    /* Flexbox layout - rasmdagidek tartib: rasm, nom, tugma, counter bir qatorda */
+    /* Flexbox layout - rasm va nom yuqorida, tugma va counter pastda */
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 12px;
 }
 
 .cart-modal.active {
     pointer-events: auto;
     transform: translateY(0);
+}
+
+/* Rasm va nom bir qatorda (yuqorida) */
+.cart-modal-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Tugma va counter bir qatorda (pastda) */
+.cart-modal-bottom {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 /* 3x4 format rasm */

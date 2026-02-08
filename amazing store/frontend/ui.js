@@ -939,17 +939,21 @@ export function openCartModal(productId) {
     // Modal navbar tugagan joydan boshlanadi, 3x4 rasm, yonida nom, pastda "Savatga" tugmasi va counter
     const modalHtml = `
       <div class="cart-modal active" id="cart-modal">
-        <img src="${safeImage}" alt="${safeName}" class="cart-modal-image">
-        <div class="cart-modal-info">
-          <h3 class="cart-modal-name">${safeName}</h3>
+        <div class="cart-modal-top">
+          <img src="${safeImage}" alt="${safeName}" class="cart-modal-image">
+          <div class="cart-modal-info">
+            <h3 class="cart-modal-name">${safeName}</h3>
+          </div>
         </div>
-        <button class="cart-modal-cart-btn" data-id="${productId}">
-          Hozir sotib olish
-        </button>
-        <div class="cart-modal-quantity">
-          <button class="cart-modal-qty-btn" data-id="${productId}" data-change="-1">−</button>
-          <span class="cart-modal-qty-value" id="qty-value-${productId}">${initialQuantity}</span>
-          <button class="cart-modal-qty-btn" data-id="${productId}" data-change="1">+</button>
+        <div class="cart-modal-bottom">
+          <button class="cart-modal-cart-btn" data-id="${productId}">
+            Savatga
+          </button>
+          <div class="cart-modal-quantity">
+            <button class="cart-modal-qty-btn" data-id="${productId}" data-change="-1">−</button>
+            <span class="cart-modal-qty-value" id="qty-value-${productId}">${initialQuantity}</span>
+            <button class="cart-modal-qty-btn" data-id="${productId}" data-change="1">+</button>
+          </div>
         </div>
       </div>
     `;
