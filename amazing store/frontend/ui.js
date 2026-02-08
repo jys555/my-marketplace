@@ -367,6 +367,9 @@ export function renderProducts(append = false) {
         `;
         productsContainer.insertAdjacentHTML('beforeend', loaderHTML);
     }
+    
+    // CRITICAL: Badge'larni yangilash (sahifa yuklanganda ham)
+    updateCartBadges();
 }
 
 // PERFORMANCE: Loading indicator ko'rsatish
@@ -1012,7 +1015,7 @@ export function closeCartModal() {
     if (modal) modal.remove();
 }
 
-// Cart badge'larni yangilash funksiyasi - REAL-TIME
+// Cart badge'larni yangilash funksiyasi - REAL-TIME, DOIMIY KO'RINISH
 export function updateCartBadges() {
     const cartItems = getCartItems();
     
@@ -1031,32 +1034,25 @@ export function updateCartBadges() {
         totalItems += quantity;
     });
     
-    // Barcha product badge'larni yangilash (real-time)
-    Object.keys(productQuantities).forEach(productId => {
-        const badge = document.getElementById(`cart-badge-${productId}`);
-        if (badge) {
-            const quantity = productQuantities[productId];
-            badge.textContent = quantity > 99 ? '99+' : quantity.toString();
-        }
-    });
-    
-    // Cart'da bo'lmagan productlar uchun badge'ni tozalash
+    // Barcha product badge'larni yangilash (real-time, doimiy ko'rinish)
     document.querySelectorAll('.cart-badge').forEach(badge => {
         const productId = badge.id.replace('cart-badge-', '');
-        if (!productQuantities[productId]) {
+        const quantity = productQuantities[productId] || 0;
+        
+        if (quantity > 0) {
+            badge.textContent = quantity > 99 ? '99+' : quantity.toString();
+        } else {
             badge.textContent = '';
         }
     });
     
-    // Navbar savat iconida umumiy tovarlar soni (real-time)
+    // Navbar savat iconida umumiy tovarlar soni (real-time, doimiy ko'rinish)
     const navCartBadge = document.getElementById('nav-cart-badge');
     if (navCartBadge) {
         if (totalItems > 0) {
             navCartBadge.textContent = totalItems > 99 ? '99+' : totalItems.toString();
-            navCartBadge.style.display = 'flex';
         } else {
             navCartBadge.textContent = '';
-            navCartBadge.style.display = 'none';
         }
     }
 }
