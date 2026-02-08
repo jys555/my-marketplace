@@ -968,9 +968,18 @@ export function openCartModal(productId) {
     
     // CRITICAL: Navbar pozitsiyasini yangilash (modal ochilganda)
     // Bu modalni navbar tepasida to'g'ri ko'rsatish uchun zarur
-    if (typeof updateCartBottomBarPosition === 'function') {
-        updateCartBottomBarPosition();
-    }
+    // setTimeout ishlatamiz - DOM yangilanishini kafolatlaydi
+    setTimeout(() => {
+        const navbar = document.getElementById('navbar');
+        if (navbar) {
+            const navbarTop = navbar.offsetTop;
+            const navbarHeight = navbar.offsetHeight;
+            // Update CSS custom property
+            document.documentElement.style.setProperty('--navbar-top', `${navbarTop}px`);
+            document.documentElement.style.setProperty('--navbar-height', `${navbarHeight}px`);
+            console.log('✅ Navbar position updated for modal:', { navbarTop, navbarHeight });
+        }
+    }, 50);
 }
 
 export function closeCartModal() {
