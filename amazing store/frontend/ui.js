@@ -1070,9 +1070,13 @@ export function updateCartBadges() {
 }
 
 // GSAP SplitText animatsiyasi - greeting text uchun (vanilla JS)
+// React kodidagi sozlamalar bilan: delay=60ms, duration=1s, threshold=0.1, rootMargin="-100px"
 export function initGreetingAnimation() {
     const greetingText = document.getElementById('greeting-text');
-    if (!greetingText) return;
+    if (!greetingText) {
+        console.warn('Greeting text element not found');
+        return;
+    }
     
     // GSAP yuklanguncha kutish
     if (!window.gsap || !window.ScrollTrigger) {
@@ -1111,8 +1115,11 @@ export function initGreetingAnimation() {
         }
         
         // Matnni harflarga ajratish
-        const originalText = greetingText.textContent || greetingText.innerText;
+        // Avval HTML'dan faqat matnni olish (tag'larni e'tiborsiz qoldirish)
+        const originalText = greetingText.textContent || greetingText.innerText || '';
         const textContent = originalText.trim();
+        
+        console.log('📝 Splitting text:', textContent);
         
         // Harflarni alohida span'larga ajratish
         let newHTML = '';
@@ -1130,35 +1137,53 @@ export function initGreetingAnimation() {
         
         const charElements = greetingText.querySelectorAll('.split-char');
         
-        if (charElements.length === 0) return;
+        if (charElements.length === 0) {
+            console.warn('No character elements found');
+            return;
+        }
         
-        // GSAP animatsiyasi
+        // React kodidagi sozlamalar:
+        // delay={60} -> stagger: 60/1000 = 0.06
+        // duration={1} -> duration: 1
+        // threshold={0.1} -> start: 'top 90%' (1 - 0.1 = 0.9 = 90%)
+        // rootMargin="-100px" -> start offset
+        const threshold = 0.1;
+        const rootMargin = -100; // -100px
+        const startPct = (1 - threshold) * 100; // 90%
+        
+        // Harflarni boshlang'ich holatga o'rnatish (ko'rinmas)
+        window.gsap.set(charElements, {
+            opacity: 0,
+            y: 40
+        });
+        
+        // GSAP animatsiyasi - React kodidagi sozlamalar bilan
         const tl = window.gsap.timeline({
             scrollTrigger: {
                 trigger: greetingText,
-                start: 'top 80%',
+                start: `top ${startPct}%`, // 'top 90%' (threshold=0.1)
+                end: `top ${rootMargin}px`, // rootMargin="-100px"
                 once: true,
                 toggleActions: 'play none none none',
                 fastScrollEnd: true,
                 anticipatePin: 0.4
+            },
+            onComplete: () => {
+                console.log('All letters have animated!');
+                greetingText._animationCompleted = true;
             }
         });
         
-        tl.fromTo(charElements, 
-            {
-                opacity: 0,
-                y: 40
-            },
-            {
-                opacity: 1,
-                y: 0,
-                duration: 1.25,
-                ease: 'power3.out',
-                stagger: 0.05,
-                force3D: true,
-                willChange: 'transform, opacity'
-            }
-        );
+        // Animatsiyani boshlash
+        tl.to(charElements, {
+            opacity: 1,
+            y: 0,
+            duration: 1, // React kodidagi duration={1}
+            ease: 'power3.out',
+            stagger: 0.06, // React kodidagi delay={60} -> 60/1000 = 0.06
+            force3D: true,
+            willChange: 'transform, opacity'
+        });
         
         greetingText._splitInstance = tl;
     };
