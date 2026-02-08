@@ -238,7 +238,7 @@ body::before {
 }
 
 .brand-name {
-    font-size: 36px; /* Yiriklashtirildi (30px -> 36px) */
+    font-size: 33px;
     font-weight: 700;
     color: #000;
     text-align: center;
@@ -1049,7 +1049,8 @@ body::before {
 
 .like-btn.liked svg {
     fill: #ff3b5c;
-    stroke: #ff3b5c;
+    stroke: #fff; /* Oq border active holatda */
+    stroke-width: 2; /* Border ko'rinishi uchun */
 }
 
 /* Chegirma badge - pastki chapda */
@@ -1101,9 +1102,9 @@ body::before {
     height: 14px;
     padding: 0;
     background: #ff3b5c;
-    color: #fff;
+    color: #000; /* Qora rang */
     border-radius: 50%;
-    font-size: 9px;
+    font-size: 11px; /* Kattalashtirildi (9px -> 11px) */
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -1157,7 +1158,7 @@ body::before {
 
 /* Asl narx - chizilgan, kulrang */
 .original-price {
-    color: #8e8e93;
+    color: rgba(0, 0, 0, 0.9); /* 90% qora rang */
     text-decoration: line-through;
     font-size: 14px;
     line-height: 1.3;
@@ -1494,9 +1495,9 @@ html:has(.cart-modal-overlay.active),
   height: 14px;
   padding: 0;
   background: #ff3b5c;
-  color: #fff;
+  color: #000; /* Qora rang */
   border-radius: 50%;
-  font-size: 9px;
+  font-size: 11px; /* Kattalashtirildi (9px -> 11px) */
   font-weight: 600;
   display: none;
   align-items: center;
