@@ -1258,28 +1258,34 @@ body::before {
     position: fixed;
     left: 0;
     right: 0;
-    /* CRITICAL: Cart bottom bar kabi navbar tepasidan boshlanadi */
-    /* Navbar top pozitsiyasida: top = screenHeight - navbarHeight - safeAreaBottom */
-    /* Console log'dan: navbarHeight: 71, screenHeight: 778, navbarTop = 707px */
+    /* CRITICAL: Cart bottom bar kabi navbar tepasidan boshlanadi - AYNAN SHU KODLAR */
     top: var(--navbar-top, calc(100vh - 56px)); /* navbar tepasidan boshlanadi */
-    z-index: 9999;
-    pointer-events: none;
-    /* Scroll qilinmasligi kerak */
-    overflow: hidden;
-    /* Modal o'zi kontent - ichida wrapper YO'Q */
-    background: #fff;
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
     padding: 0 16px;
     padding-top: 16px;
     padding-bottom: calc(16px + var(--content-safe-area-bottom, 0px));
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
-    /* Cart bottom bar kabi: navbar tepasiga ko'tarish */
+    z-index: 9999;
+    pointer-events: none;
+    background: transparent; /* fon yo'q - cart bottom bar kabi */
     transform: translateY(-100%); /* navbar tepasiga ko'tarish */
+    /* Scroll qilinmasligi kerak */
+    overflow: hidden;
     /* Flexbox layout - rasm va nom yuqorida, tugma va counter pastda */
     display: flex;
     flex-direction: column;
     gap: 12px;
+}
+
+.cart-modal::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #ffffff; /* OQ FON */
+    border-radius: 24px 24px 0 0; /* yuqorida aylana qirrali - modal shaklida */
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+    z-index: -1;
 }
 
 .cart-modal.active {
