@@ -940,21 +940,17 @@ export function openCartModal(productId) {
     const modalHtml = `
       <div class="cart-modal active" id="cart-modal">
         <div class="cart-modal-content">
-          <div class="cart-modal-product">
-            <img src="${safeImage}" alt="${safeName}" class="cart-modal-image">
-            <div class="cart-modal-info">
-              <h3 class="cart-modal-name">${safeName}</h3>
-            </div>
+          <img src="${safeImage}" alt="${safeName}" class="cart-modal-image">
+          <div class="cart-modal-info">
+            <h3 class="cart-modal-name">${safeName}</h3>
           </div>
-          <div class="cart-modal-actions">
-            <button class="cart-modal-cart-btn" data-id="${productId}">
-              Hozir sotib olish
-            </button>
-            <div class="cart-modal-quantity">
-              <button class="cart-modal-qty-btn" data-id="${productId}" data-change="-1">−</button>
-              <span class="cart-modal-qty-value" id="qty-value-${productId}">${initialQuantity}</span>
-              <button class="cart-modal-qty-btn" data-id="${productId}" data-change="1">+</button>
-            </div>
+          <button class="cart-modal-cart-btn" data-id="${productId}">
+            Hozir sotib olish
+          </button>
+          <div class="cart-modal-quantity">
+            <button class="cart-modal-qty-btn" data-id="${productId}" data-change="-1">−</button>
+            <span class="cart-modal-qty-value" id="qty-value-${productId}">${initialQuantity}</span>
+            <button class="cart-modal-qty-btn" data-id="${productId}" data-change="1">+</button>
           </div>
         </div>
       </div>

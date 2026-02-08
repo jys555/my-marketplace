@@ -1235,7 +1235,7 @@ body::before {
     color: #666;
 }
 
-/* === Savatga qo'shish modali (YANGI DIZAYN - rasmdagidek 1:1) === */
+/* === Savatga qo'shish modali (YANGI DIZAYN - cart bottom bar kabi) === */
 .cart-modal-overlay {
     position: fixed;
     top: 0;
@@ -1258,9 +1258,9 @@ body::before {
     position: fixed;
     left: 0;
     right: 0;
-    /* CRITICAL: Navbar tugagan joydan boshlanadi (navbar ko'rinib turishi kerak) - rasmdagidek */
-    /* Navbar z-index: 900, modal z-index: 9999 - navbar modal ostida bo'ladi, lekin ko'rinib turibdi */
-    bottom: calc(var(--navbar-height, 60px) + var(--total-safe-area-bottom, 34px));
+    /* CRITICAL: Navbar tugagan joydan boshlanadi (xuddi cart bottom bar kabi) */
+    /* Navbar top pozitsiyasida, demak modal top dan hisoblanadi */
+    top: var(--navbar-top, calc(100vh - 60px));
     z-index: 9999;
     pointer-events: none;
     /* Scroll qilinmasligi kerak */
@@ -1271,7 +1271,7 @@ body::before {
     pointer-events: auto;
 }
 
-/* Yaxlit content - alohida kartochka yo'q, scroll qilinmaydi - rasmdagidek */
+/* Yaxlit content - alohida kartochka YO'Q, faqat bitta kontent - rasmdagidek */
 .cart-modal-content {
     position: relative;
     width: 100%;
@@ -1284,19 +1284,14 @@ body::before {
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     /* Scroll qilinmasligi kerak */
     overflow: hidden;
-    /* Content balandligi cheklanadi - navbar va safe area hisobga olinadi */
-    max-height: calc(var(--navbar-top, calc(100vh - 60px)) - 29px);
+    /* Flexbox layout - rasmdagidek tartib */
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .cart-modal.active .cart-modal-content {
     transform: translateY(0);
-}
-
-.cart-modal-product {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
 }
 
 /* 3x4 format rasm */
@@ -1323,12 +1318,6 @@ body::before {
     -webkit-box-orient: vertical;
     overflow: hidden;
     line-height: 1.4;
-}
-
-.cart-modal-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
 }
 
 /* Boxlar bir xil o'lcham va shaklda - rasmdagidek */
