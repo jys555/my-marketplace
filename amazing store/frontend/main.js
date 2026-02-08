@@ -303,7 +303,7 @@ async function loadInitialData() {
                 state.setOrders(orders);
                 state.setCartItems(cartData.items);
                 state.setCartSummary(cartData.summary);
-                updateCartBadges(); // Cart badge'larni yangilash
+                ui.ui.updateCartBadges(); // Cart badge'larni yangilash
             } catch (orderError) {
                 console.error("Could not load user data:", orderError);
             }
@@ -742,7 +742,7 @@ function attachCartModalEventListeners(productId) {
                         try {
                             await api.deleteCartItem(cartItem.id);
                             state.removeCartItemFromState(cartItem.id);
-                            updateCartBadges();
+                            ui.updateCartBadges();
                         } catch (err) {
                             console.error('Delete cart item error:', err);
                             // Rollback UI
@@ -768,7 +768,7 @@ function attachCartModalEventListeners(productId) {
                     try {
                         // OPTIMISTIC: Avval state yangilanadi
                         state.updateCartItemInState(cartItem.id, { quantity: newQty });
-                        updateCartBadges();
+                        ui.updateCartBadges();
                         
                         // Keyin serverga yuboriladi (background)
                         api.updateCartItem(cartItem.id, { quantity: newQty }).catch(err => {
@@ -776,7 +776,7 @@ function attachCartModalEventListeners(productId) {
                             // Rollback on error
                             state.updateCartItemInState(cartItem.id, { quantity: currentQty });
                             qtyValue.textContent = currentQty;
-                            updateCartBadges();
+                            ui.updateCartBadges();
                         });
                     } catch (err) {
                         console.error('Update cart item error:', err);
@@ -790,7 +790,7 @@ function attachCartModalEventListeners(productId) {
                         const updatedCartData = await api.getCartItems();
                         state.setCartItems(updatedCartData.items);
                         state.setCartSummary(updatedCartData.summary);
-                        updateCartBadges();
+                        ui.updateCartBadges();
                     } catch (err) {
                         console.error('Add to cart error:', err);
                         // Rollback UI
@@ -801,19 +801,15 @@ function attachCartModalEventListeners(productId) {
         });
     });
     
-    // CRITICAL FIX: "Savatga" tugmasi - savatga yunaltiriladi
+    // CRITICAL: "Savatga" tugmasi - faqat savat sahifasiga yunaltiradi (qiymat allaqachon saqlangan)
     const cartBtn = document.querySelector('.cart-modal-cart-btn');
     if (cartBtn) {
         cartBtn.addEventListener('click', async function cartBtnClickHandler(e) {
             e.stopPropagation();
             
-            // Joriy miqdorni olish
-            const quantity = parseInt(qtyValue.textContent) || 1;
-            
             if (!state.isRegistered()) {
                 ui.closeCartModal();
                 pendingAction = () => {
-                    addToCartSilently(productId, quantity);
                     navigateTo('cart');
                 };
                 ui.openRegisterModal();
@@ -821,21 +817,8 @@ function attachCartModalEventListeners(productId) {
                 return;
             }
             
-            // Agar tovar savatda bo'lmasa, qo'shish
-            const cartItems = state.getCartItems();
-            const cartItem = cartItems.find(item => item.product_id === productId);
-            
-            if (!cartItem) {
-                try {
-                    await addToCartSilently(productId, quantity);
-                } catch (err) {
-                    console.error('Add to cart error:', err);
-                    WebApp.showAlert('Xatolik yuz berdi');
-                    return;
-                }
-            }
-            
             // Modal yopiladi va savat sahifasiga o'tiladi
+            // Qiymat allaqachon counter o'zgartirganda saqlangan
             ui.closeCartModal();
             navigateTo('cart');
         });
@@ -852,7 +835,7 @@ async function addToCartSilently(productId, quantity) {
         const cartData = await api.getCartItems();
         state.setCartItems(cartData.items);
         state.setCartSummary(cartData.summary);
-        updateCartBadges(); // Cart badge'larni yangilash
+        ui.updateCartBadges(); // Cart badge'larni yangilash
     } catch (err) {
         console.error('Add to cart error:', err);
         // Xato bo'lsa ham davom etadi (modal yopiladi)
@@ -871,7 +854,7 @@ async function addToCartAndCheckout(productId, quantity) {
         state.setCartSummary(cartData.summary);
         
         // Cart badge'larni yangilash
-        updateCartBadges();
+        ui.updateCartBadges();
         
         ui.closeCartModal();
         
@@ -1053,7 +1036,7 @@ async function handleCartQuantityChange(event) {
     updateCartItemQuantityUI(cartItemId, newQuantity);
     state.updateCartItemInState(cartItemId, { quantity: newQuantity });
     updateCartCheckoutButton();
-    updateCartBadges(); // Cart badge'larni yangilash
+    ui.updateCartBadges(); // Cart badge'larni yangilash
     
     try {
         // Keyin serverga yuboriladi (background)
@@ -1122,37 +1105,7 @@ function updateCartItemQuantityUI(cartItemId, quantity) {
  *    - Offline-friendly (state local'da saqlanadi)
  */
 // YANGI: Cart badge'larni yangilash (barcha product kartochkalarida)
-function updateCartBadges() {
-    const cartItems = state.getCartItems();
-    
-    // Har bir product ID uchun umumiy quantity hisoblash
-    const productQuantities = {};
-    cartItems.forEach(item => {
-        const productId = item.product_id;
-        if (!productQuantities[productId]) {
-            productQuantities[productId] = 0;
-        }
-        productQuantities[productId] += item.quantity || 1;
-    });
-    
-    // Barcha badge'larni yangilash
-    Object.keys(productQuantities).forEach(productId => {
-        const badge = document.getElementById(`cart-badge-${productId}`);
-        if (badge) {
-            const quantity = productQuantities[productId];
-            // CRITICAL: Badge raqamlari savatdagi raqamlar bilan bir xil (real-time collaboration)
-            badge.textContent = quantity > 99 ? '99+' : quantity.toString();
-        }
-    });
-    
-    // Cart'da bo'lmagan productlar uchun badge'ni tozalash
-    document.querySelectorAll('.cart-badge').forEach(badge => {
-        const productId = badge.id.replace('cart-badge-', '');
-        if (!productQuantities[productId]) {
-            badge.textContent = '';
-        }
-    });
-}
+// updateCartBadges moved to ui.js to avoid circular dependency
 
 function updateCartCheckoutButton() {
     const summary = state.getCartSummary();
@@ -1186,7 +1139,7 @@ async function handleDeleteCartItem(event) {
         state.removeCartItemFromState(cartItemId);
         
         // Cart badge'larni yangilash
-        updateCartBadges();
+        ui.updateCartBadges();
         
         // Re-render cart
         navigateTo('cart', false);

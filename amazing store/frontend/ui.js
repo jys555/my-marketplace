@@ -1,5 +1,7 @@
 // PERFORMANCE: Pagination importlar
-import { getLang, getUser, isRegistered as isUserRegistered, getProducts, getCart, getProductById, isFavorite, getOrders, getBanners, getGuestTelegramUser, getFavorites, getCategories, getSelectedCategory, getProductsPagination, setProductsLoading, getCartItems, getCartSummary } from './state.js';
+import { getLang, getUser, isRegistered as isUserRegistered, getProducts, getCart, getProductById, isFavorite, getOrders, getBanners, getGuestTelegramUser, getFavorites, getCategories, getSelectedCategory, getProductsPagination, setProductsLoading, getCartItems, getCartSummary, setCartItems, setCartSummary } from './state.js';
+import * as api from './api.js';
+import * as state from './state.js';
 
 // XSS himoyasi uchun HTML escape funksiyasi
 function escapeHtml(str) {
@@ -930,10 +932,26 @@ export function openCartModal(productId) {
         ? product.sale_price 
         : product.price;
     
-    // CRITICAL FIX: Modal counter savatdagi quantity bilan bir xil bo'lishi kerak
+    // CRITICAL: Modal counter savatdagi quantity bilan bir xil bo'lishi kerak
     const cartItems = getCartItems();
     const existingCartItem = cartItems.find(item => item.product_id === productId);
     const initialQuantity = existingCartItem ? existingCartItem.quantity : 1;
+    
+    // CRITICAL: Agar tovar savatda bo'lmasa, default 1 qiymat bilan avtomatik qo'shish
+    if (!existingCartItem && state.isRegistered()) {
+        // Modal ochilganda default 1 qiymat avtomatik savatga qo'shiladi
+        // Bu async, lekin modal ochilishi kutmaydi
+        api.addToCartAPI(productId, 1).then(() => {
+            const updatedCartData = api.getCartItems();
+            updatedCartData.then(cartData => {
+                state.setCartItems(cartData.items);
+                state.setCartSummary(cartData.summary);
+                updateCartBadges();
+            });
+        }).catch(err => {
+            console.error('Auto add to cart error:', err);
+        });
+    }
     
     // CRITICAL FIX: Yangi modal dizayn - rasmdagidek
     // Modal navbar tugagan joydan boshlanadi, 3x4 rasm, yonida nom, pastda "Savatga" tugmasi va counter
@@ -989,4 +1007,37 @@ export function closeCartModal() {
     
     if (overlay) overlay.remove();
     if (modal) modal.remove();
+}
+
+// Cart badge'larni yangilash funksiyasi
+export function updateCartBadges() {
+    const cartItems = getCartItems();
+    
+    // Har bir product ID uchun umumiy quantity hisoblash
+    const productQuantities = {};
+    cartItems.forEach(item => {
+        const productId = item.product_id;
+        if (!productQuantities[productId]) {
+            productQuantities[productId] = 0;
+        }
+        productQuantities[productId] += item.quantity || 1;
+    });
+    
+    // Barcha badge'larni yangilash
+    Object.keys(productQuantities).forEach(productId => {
+        const badge = document.getElementById(`cart-badge-${productId}`);
+        if (badge) {
+            const quantity = productQuantities[productId];
+            // CRITICAL: Badge raqamlari savatdagi raqamlar bilan bir xil (real-time collaboration)
+            badge.textContent = quantity > 99 ? '99+' : quantity.toString();
+        }
+    });
+    
+    // Cart'da bo'lmagan productlar uchun badge'ni tozalash
+    document.querySelectorAll('.cart-badge').forEach(badge => {
+        const productId = badge.id.replace('cart-badge-', '');
+        if (!productQuantities[productId]) {
+            badge.textContent = '';
+        }
+    });
 }
