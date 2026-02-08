@@ -1260,7 +1260,7 @@ body::before {
     right: 0;
     /* CRITICAL: Cart bottom bar kabi navbar tepasidan boshlanadi */
     /* Navbar top pozitsiyasida: top = screenHeight - navbarHeight - safeAreaBottom */
-    top: var(--navbar-top, calc(100vh - 60px));
+    top: var(--navbar-top, calc(100vh - 56px)); /* navbar tepasidan boshlanadi */
     z-index: 9999;
     pointer-events: none;
     /* Scroll qilinmasligi kerak */
@@ -1270,9 +1270,10 @@ body::before {
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
     padding: 16px;
+    padding-bottom: calc(16px + var(--content-safe-area-bottom, 0px));
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
     /* Cart bottom bar kabi: navbar tepasiga ko'tarish */
-    transform: translateY(-100%);
+    transform: translateY(-100%); /* navbar tepasiga ko'tarish */
     /* Flexbox layout - rasm va nom yuqorida, tugma va counter pastda */
     display: flex;
     flex-direction: column;
