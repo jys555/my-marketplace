@@ -960,10 +960,10 @@ export function openCartModal(productId) {
     
     const overlayHtml = `<div class="cart-modal-overlay active" id="cart-modal-overlay"></div>`;
     
-    // Body ga qo'shish - Modal birinchi, overlay keyin
+    // Body ga qo'shish - Overlay birinchi (navbar ostida), keyin modal (navbar ustida)
     console.log('📝 Inserting modal HTML');
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
     document.body.insertAdjacentHTML('beforeend', overlayHtml);
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
     console.log('✅ Modal HTML inserted');
     
     // CRITICAL: Navbar pozitsiyasini yangilash (modal ochilganda)

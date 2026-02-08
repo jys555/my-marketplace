@@ -1244,7 +1244,7 @@ body::before {
     bottom: 0;
     background: rgba(0, 0, 0, 0.3);
     /* CRITICAL: Overlay navbar ostida bo'lishi kerak - navbar ko'rinib turishi uchun */
-    z-index: 899; /* Navbar z-index: 900, overlay navbar ostida */
+    z-index: 850 !important; /* Navbar z-index: 900, overlay navbar ostida */
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
