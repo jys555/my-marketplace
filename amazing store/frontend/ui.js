@@ -848,7 +848,10 @@ export function updateNavbar(pageName) {
 
     navbar.innerHTML = navItems.map(item => `
         <button data-page="${item.page}" class="${pageName === item.page ? 'active' : ''}">
-            <span class="nav-icon"><i class="${item.icon}"></i></span>
+            <span class="nav-icon">
+                <i class="${item.icon}"></i>
+                ${item.page === 'cart' ? '<span class="nav-cart-badge" id="nav-cart-badge"></span>' : ''}
+            </span>
             <span class="nav-label">${t(item.labelKey)}</span>
         </button>
     `).join('');
@@ -1009,26 +1012,30 @@ export function closeCartModal() {
     if (modal) modal.remove();
 }
 
-// Cart badge'larni yangilash funksiyasi
+// Cart badge'larni yangilash funksiyasi - REAL-TIME
 export function updateCartBadges() {
     const cartItems = getCartItems();
     
     // Har bir product ID uchun umumiy quantity hisoblash
     const productQuantities = {};
+    let totalItems = 0;
+    
     cartItems.forEach(item => {
         const productId = item.product_id;
+        const quantity = item.quantity || 1;
+        
         if (!productQuantities[productId]) {
             productQuantities[productId] = 0;
         }
-        productQuantities[productId] += item.quantity || 1;
+        productQuantities[productId] += quantity;
+        totalItems += quantity;
     });
     
-    // Barcha badge'larni yangilash
+    // Barcha product badge'larni yangilash (real-time)
     Object.keys(productQuantities).forEach(productId => {
         const badge = document.getElementById(`cart-badge-${productId}`);
         if (badge) {
             const quantity = productQuantities[productId];
-            // CRITICAL: Badge raqamlari savatdagi raqamlar bilan bir xil (real-time collaboration)
             badge.textContent = quantity > 99 ? '99+' : quantity.toString();
         }
     });
@@ -1040,4 +1047,16 @@ export function updateCartBadges() {
             badge.textContent = '';
         }
     });
+    
+    // Navbar savat iconida umumiy tovarlar soni (real-time)
+    const navCartBadge = document.getElementById('nav-cart-badge');
+    if (navCartBadge) {
+        if (totalItems > 0) {
+            navCartBadge.textContent = totalItems > 99 ? '99+' : totalItems.toString();
+            navCartBadge.style.display = 'flex';
+        } else {
+            navCartBadge.textContent = '';
+            navCartBadge.style.display = 'none';
+        }
+    }
 }
