@@ -1094,11 +1094,11 @@ body::before {
     color: #000;
 }
 
-/* Cart badge - aylana shaklda, o'ng yuqori burchakda, 30% yuqorida (rasmdagidek) */
+/* Cart badge - aylana shaklda, o'ng yuqori burchakda, o'ng uchi kartochka borderi bilan mos (rasmdagidek) */
 .cart-badge {
     position: absolute;
-    top: calc(-14px * 0.3);
-    right: 0px;
+    top: -6px;
+    right: -2px;
     min-width: 14px;
     height: 14px;
     padding: 0;
@@ -1115,7 +1115,6 @@ body::before {
     line-height: 1;
     white-space: nowrap;
     z-index: 10;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .cart-badge:empty {
@@ -1484,7 +1483,7 @@ html:has(.cart-modal-overlay.active),
   color: rgb(109, 175, 247);
 }
 
-/* Navbar cart badge - aylana shaklda, iconning yuqori o'ng burchagida, kichikroq va yuqoriroq (rasmdagidek) */
+/* Navbar cart badge - aylana shaklda, iconning yuqori o'ng burchagida, add to cart badge bilan bir xil o'lchamda (rasmdagidek) */
 .navbar button .nav-icon {
   position: relative;
 }
@@ -1493,21 +1492,20 @@ html:has(.cart-modal-overlay.active),
   position: absolute;
   top: -6px;
   right: -4px;
-  min-width: 12px;
-  height: 12px;
+  min-width: 14px;
+  height: 14px;
   padding: 0;
   background: #ff3b5c;
   color: #fff;
   border-radius: 50%;
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 600;
   display: none;
   align-items: center;
   justify-content: center;
   z-index: 10;
   white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-  border: 1.5px solid #fff;
+  border: 2px solid #fff;
   box-sizing: content-box;
   line-height: 1;
 }
