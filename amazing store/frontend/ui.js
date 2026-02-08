@@ -208,6 +208,12 @@ export function renderPage(pageName, attachEventListeners) {
     
     // BackButton boshqaruvi main.js dagi navigateTo() da amalga oshiriladi
     
+    // CRITICAL: Avvalgi animatsiyani tozalash (sahifa o'zgarganda)
+    const greetingText = document.getElementById('greeting-text');
+    if (greetingText && greetingText._cleanupAnimation) {
+        greetingText._cleanupAnimation();
+    }
+    
     let content = '';
     switch (pageName) {
         case 'home':
@@ -1070,7 +1076,7 @@ export function updateCartBadges() {
 }
 
 // GSAP SplitText animatsiyasi - greeting text uchun (vanilla JS)
-// React kodidagi sozlamalar bilan: delay=60ms, duration=1s, threshold=0.1, rootMargin="-100px"
+// Uzluksiz aylanib turuvchi animatsiya - har 2-3 sekundda yangi matn
 export function initGreetingAnimation() {
     const greetingText = document.getElementById('greeting-text');
     if (!greetingText) {
@@ -1089,8 +1095,23 @@ export function initGreetingAnimation() {
         window.gsap.registerPlugin(window.ScrollTrigger);
     }
     
+    // Matnlar ro'yxati - uzluksiz aylanadi
+    const user = getUser();
+    const rawName = isUserRegistered() ? (user.first_name || window.Telegram.WebApp.initDataUnsafe?.user?.first_name) : t('guest');
+    const displayName = escapeHtml(rawName);
+    
+    const texts = [
+        `Salom, ${displayName}!`,
+        'AMAZING STORE ga xush kelibsiz!',
+        'Butun marketni aylanib chiqing',
+        'Albatta o\'zingizga keraklisini topasiz'
+    ];
+    
+    let currentTextIndex = 0;
+    let animationInProgress = false;
+    
     // Avvalgi animatsiyani tozalash
-    if (greetingText._splitInstance) {
+    const cleanup = () => {
         try {
             // ScrollTrigger'larni o'chirish
             window.ScrollTrigger.getAll().forEach(st => {
@@ -1099,11 +1120,14 @@ export function initGreetingAnimation() {
             // Split elementlarni olib tashlash
             const splitElements = greetingText.querySelectorAll('.split-char');
             splitElements.forEach(el => el.remove());
-            greetingText._splitInstance = null;
+            if (greetingText._splitInstance) {
+                greetingText._splitInstance.kill();
+                greetingText._splitInstance = null;
+            }
         } catch (e) {
             console.warn('Animation cleanup error:', e);
         }
-    }
+    };
     
     // Fontlar yuklanguncha kutish
     const initAnimation = () => {
@@ -1114,12 +1138,19 @@ export function initGreetingAnimation() {
             return;
         }
         
-        // Matnni harflarga ajratish
-        // Avval HTML'dan faqat matnni olish (tag'larni e'tiborsiz qoldirish)
-        const originalText = greetingText.textContent || greetingText.innerText || '';
-        const textContent = originalText.trim();
+        // Animatsiya davom etmoqda bo'lsa, kutish
+        if (animationInProgress) {
+            return;
+        }
         
-        console.log('📝 Splitting text:', textContent);
+        animationInProgress = true;
+        
+        // Avvalgi animatsiyani tozalash
+        cleanup();
+        
+        // Joriy matnni olish
+        const textContent = texts[currentTextIndex].trim();
+        console.log('📝 Animating text:', textContent, `(${currentTextIndex + 1}/${texts.length})`);
         
         // Harflarni alohida span'larga ajratish
         let newHTML = '';
@@ -1139,17 +1170,9 @@ export function initGreetingAnimation() {
         
         if (charElements.length === 0) {
             console.warn('No character elements found');
+            animationInProgress = false;
             return;
         }
-        
-        // React kodidagi sozlamalar:
-        // delay={60} -> stagger: 60/1000 = 0.06
-        // duration={1} -> duration: 1
-        // threshold={0.1} -> start: 'top 90%' (1 - 0.1 = 0.9 = 90%)
-        // rootMargin="-100px" -> start offset
-        const threshold = 0.1;
-        const rootMargin = -100; // -100px
-        const startPct = (1 - threshold) * 100; // 90%
         
         // Harflarni boshlang'ich holatga o'rnatish (ko'rinmas)
         window.gsap.set(charElements, {
@@ -1159,18 +1182,15 @@ export function initGreetingAnimation() {
         
         // GSAP animatsiyasi - React kodidagi sozlamalar bilan
         const tl = window.gsap.timeline({
-            scrollTrigger: {
-                trigger: greetingText,
-                start: `top ${startPct}%`, // 'top 90%' (threshold=0.1)
-                end: `top ${rootMargin}px`, // rootMargin="-100px"
-                once: true,
-                toggleActions: 'play none none none',
-                fastScrollEnd: true,
-                anticipatePin: 0.4
-            },
             onComplete: () => {
                 console.log('All letters have animated!');
-                greetingText._animationCompleted = true;
+                animationInProgress = false;
+                
+                // 2-3 sekund kutib, keyingi matnga o'tish
+                setTimeout(() => {
+                    currentTextIndex = (currentTextIndex + 1) % texts.length;
+                    initAnimation(); // Keyingi matnni ko'rsatish
+                }, 2500); // 2.5 sekund
             }
         });
         
@@ -1190,4 +1210,7 @@ export function initGreetingAnimation() {
     
     // Kichik kechikish bilan animatsiyani boshlash
     setTimeout(initAnimation, 100);
+    
+    // Cleanup funksiyasini saqlash (sahifa o'zgarganda tozalash uchun)
+    greetingText._cleanupAnimation = cleanup;
 }
