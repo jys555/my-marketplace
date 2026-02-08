@@ -755,6 +755,9 @@ function getFavoritesContent() {
               </div>
         </div>
     `;
+    
+    // CRITICAL: Favorites sahifasida badge'larni yangilash
+    setTimeout(() => updateCartBadges(), 50);
 }
 
 export function renderLanguageModal() {
@@ -862,6 +865,9 @@ export function updateNavbar(pageName) {
             <span class="nav-label">${t(item.labelKey)}</span>
         </button>
     `).join('');
+    
+    // CRITICAL: Navbar yaratilgandan keyin badge'ni yangilash (har sahifada)
+    updateCartBadges();
 }
 
 export function initCarousel() {
