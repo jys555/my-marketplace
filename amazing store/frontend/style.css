@@ -1260,6 +1260,7 @@ body::before {
     right: 0;
     /* CRITICAL: Cart bottom bar kabi navbar tepasidan boshlanadi */
     /* Navbar top pozitsiyasida: top = screenHeight - navbarHeight - safeAreaBottom */
+    /* Console log'dan: navbarHeight: 71, screenHeight: 778, navbarTop = 707px */
     top: var(--navbar-top, calc(100vh - 56px)); /* navbar tepasidan boshlanadi */
     z-index: 9999;
     pointer-events: none;
@@ -1269,7 +1270,8 @@ body::before {
     background: #fff;
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
-    padding: 16px;
+    padding: 0 16px;
+    padding-top: 16px;
     padding-bottom: calc(16px + var(--content-safe-area-bottom, 0px));
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
     /* Cart bottom bar kabi: navbar tepasiga ko'tarish */

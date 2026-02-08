@@ -965,6 +965,12 @@ export function openCartModal(productId) {
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     document.body.insertAdjacentHTML('beforeend', overlayHtml);
     console.log('✅ Modal HTML inserted');
+    
+    // CRITICAL: Navbar pozitsiyasini yangilash (modal ochilganda)
+    // Bu modalni navbar tepasida to'g'ri ko'rsatish uchun zarur
+    if (typeof updateCartBottomBarPosition === 'function') {
+        updateCartBottomBarPosition();
+    }
 }
 
 export function closeCartModal() {
