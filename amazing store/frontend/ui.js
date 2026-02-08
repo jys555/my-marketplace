@@ -266,7 +266,6 @@ function getHomeContent() {
     return `
       <div class="home-header">
         <div class="brand-container">
-          <span class="brand-icon">🛒</span>
           <span class="brand-name">Amazing Store</span>
         </div>
         <div class="search-container">

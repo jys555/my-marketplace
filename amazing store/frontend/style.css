@@ -230,25 +230,19 @@ body::before {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
     margin-bottom: 14px;
 }
 
 .brand-icon {
-    font-size: 28px;
-    background: rgba(255,255,255,0.25);
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: none; /* Logo olib tashlandi */
 }
 
 .brand-name {
-    font-size: 30px;
+    font-size: 36px; /* Yiriklashtirildi (30px -> 36px) */
     font-weight: 700;
     color: #000;
+    text-align: center;
+    width: 100%;
 }
 
 .search-container {
@@ -283,7 +277,7 @@ body::before {
 
 /* Salomlashish qismi - text animatsiyasi */
 .greeting-text {
-    font-size: 40px; /* 2ga kattalashtirildi (20px -> 40px) */
+    font-size: 22px; /* 2px ga kattalashtirildi (20px -> 22px) */
     font-weight: 600;
     text-align: center;
     color: #000;
@@ -292,7 +286,7 @@ body::before {
     white-space: normal;
     word-wrap: break-word;
     will-change: transform, opacity;
-    min-height: 50px; /* Animatsiya uchun minimal balandlik */
+    min-height: 30px; /* Animatsiya uchun minimal balandlik */
 }
 
 /* Split parent - animatsiya uchun */
