@@ -397,6 +397,8 @@ function attachPageEventListeners(pageName) {
         case 'home':
             ui.initCarousel();
             ui.renderProducts();
+            // Greeting text animatsiyasini boshlash
+            setTimeout(() => ui.initGreetingAnimation(), 200);
             
             // PERFORMANCE: Infinite scroll sozlash (DOM tayyor bo'lgandan keyin)
             setTimeout(() => setupInfiniteScroll(), 100);

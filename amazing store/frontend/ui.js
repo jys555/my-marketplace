@@ -272,7 +272,7 @@ function getHomeContent() {
           </span>
           <input type="text" class="search-input" placeholder="${t('search_placeholder')}">
         </div>
-        <div class="greeting-text">${t('home_greeting', { name: displayName })}</div>
+        <div class="greeting-text split-parent" id="greeting-text">${t('home_greeting', { name: displayName })}</div>
       </div>
       ${carouselHtml}
       <div class="categories-section">
@@ -1061,8 +1061,108 @@ export function updateCartBadges() {
     if (navCartBadge) {
         if (totalItems > 0) {
             navCartBadge.textContent = totalItems > 99 ? '99+' : totalItems.toString();
+            navCartBadge.style.display = 'flex';
         } else {
             navCartBadge.textContent = '';
+            navCartBadge.style.display = 'none';
         }
     }
+}
+
+// GSAP SplitText animatsiyasi - greeting text uchun (vanilla JS)
+export function initGreetingAnimation() {
+    const greetingText = document.getElementById('greeting-text');
+    if (!greetingText) return;
+    
+    // GSAP yuklanguncha kutish
+    if (!window.gsap || !window.ScrollTrigger) {
+        setTimeout(() => initGreetingAnimation(), 100);
+        return;
+    }
+    
+    // ScrollTrigger ni registratsiya qilish
+    if (window.gsap && window.gsap.registerPlugin && window.ScrollTrigger) {
+        window.gsap.registerPlugin(window.ScrollTrigger);
+    }
+    
+    // Avvalgi animatsiyani tozalash
+    if (greetingText._splitInstance) {
+        try {
+            // ScrollTrigger'larni o'chirish
+            window.ScrollTrigger.getAll().forEach(st => {
+                if (st.trigger === greetingText) st.kill();
+            });
+            // Split elementlarni olib tashlash
+            const splitElements = greetingText.querySelectorAll('.split-char');
+            splitElements.forEach(el => el.remove());
+            greetingText._splitInstance = null;
+        } catch (e) {
+            console.warn('Animation cleanup error:', e);
+        }
+    }
+    
+    // Fontlar yuklanguncha kutish
+    const initAnimation = () => {
+        if (document.fonts && document.fonts.status !== 'loaded') {
+            document.fonts.ready.then(() => {
+                setTimeout(initAnimation, 100);
+            });
+            return;
+        }
+        
+        // Matnni harflarga ajratish
+        const originalText = greetingText.textContent || greetingText.innerText;
+        const textContent = originalText.trim();
+        
+        // Harflarni alohida span'larga ajratish
+        let newHTML = '';
+        for (let i = 0; i < textContent.length; i++) {
+            const char = textContent[i];
+            if (char === ' ') {
+                newHTML += '<span class="split-char" style="display: inline-block;">&nbsp;</span>';
+            } else {
+                newHTML += `<span class="split-char" style="display: inline-block;">${char}</span>`;
+            }
+        }
+        
+        // HTML strukturasini yangilash
+        greetingText.innerHTML = newHTML;
+        
+        const charElements = greetingText.querySelectorAll('.split-char');
+        
+        if (charElements.length === 0) return;
+        
+        // GSAP animatsiyasi
+        const tl = window.gsap.timeline({
+            scrollTrigger: {
+                trigger: greetingText,
+                start: 'top 80%',
+                once: true,
+                toggleActions: 'play none none none',
+                fastScrollEnd: true,
+                anticipatePin: 0.4
+            }
+        });
+        
+        tl.fromTo(charElements, 
+            {
+                opacity: 0,
+                y: 40
+            },
+            {
+                opacity: 1,
+                y: 0,
+                duration: 1.25,
+                ease: 'power3.out',
+                stagger: 0.05,
+                force3D: true,
+                willChange: 'transform, opacity'
+            }
+        );
+        
+        greetingText._splitInstance = tl;
+    };
+    
+    // Kichik kechikish bilan animatsiyani boshlash
+    setTimeout(initAnimation, 100);
 }
