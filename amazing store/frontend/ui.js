@@ -231,6 +231,9 @@ export function renderPage(pageName, attachEventListeners) {
     main.innerHTML = content;
     updateNavbar(pageName);
     attachEventListeners(pageName);
+    
+    // CRITICAL: Badge'larni har sahifa render qilinganda yangilash
+    updateCartBadges();
 }
 
 function getHomeContent() {
@@ -737,6 +740,10 @@ function getFavoritesContent() {
                             </svg>
                           </div>
                           ${hasSale ? `<div class="sale-badge">-${salePercentage}%</div>` : ''}
+                          <button class="add-to-cart-btn" data-id="${p.id}">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="cart-badge" id="cart-badge-${p.id}"></span>
+                          </button>
                         </div>
                         <div class="product-card-info">
                           <h4>${safeName}</h4>
