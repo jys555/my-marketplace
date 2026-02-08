@@ -1281,7 +1281,7 @@ body::before {
 
 .cart-modal.active {
     pointer-events: auto;
-    /* Modal ochilganda navbar tepasida ko'rinadi */
+    /* Modal ochilganda navbar tepasida ko'rinadi - cart bottom bar kabi */
     transform: translateY(-100%);
 }
 
