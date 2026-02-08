@@ -1235,7 +1235,7 @@ body::before {
     color: #666;
 }
 
-/* === Savatga qo'shish modali (YANGI DIZAYN - cart bottom bar kabi) === */
+/* === Savatga qo'shish modali (Cart bottom bar kabi navbar tepasida) === */
 .cart-modal-overlay {
     position: fixed;
     top: 0;
@@ -1256,20 +1256,17 @@ body::before {
 
 .cart-modal {
     position: fixed;
+    top: var(--navbar-top, calc(100vh - 56px)); /* navbar tepasidan boshlanadi */
     left: 0;
     right: 0;
-    /* CRITICAL: Cart bottom bar kabi navbar tepasidan boshlanadi - AYNAN SHU KODLAR */
-    top: var(--navbar-top, calc(100vh - 56px)); /* navbar tepasidan boshlanadi */
     padding: 0 16px;
     padding-top: 16px;
     padding-bottom: calc(16px + var(--content-safe-area-bottom, 0px));
     z-index: 9999;
-    pointer-events: none;
     background: transparent; /* fon yo'q - cart bottom bar kabi */
     transform: translateY(-100%); /* navbar tepasiga ko'tarish */
-    /* Scroll qilinmasligi kerak */
+    pointer-events: none;
     overflow: hidden;
-    /* Flexbox layout - rasm va nom yuqorida, tugma va counter pastda */
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -1290,8 +1287,7 @@ body::before {
 
 .cart-modal.active {
     pointer-events: auto;
-    /* Modal ochilganda navbar tepasida ko'rinadi - cart bottom bar kabi */
-    transform: translateY(-100%);
+    transform: translateY(-100%); /* navbar tepasida ko'rinadi */
 }
 
 /* Rasm va nom bir qatorda (yuqorida) */
