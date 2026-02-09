@@ -1059,7 +1059,7 @@ body::before {
     bottom: 5px;
     left: 5px;
     background-color: #ff4949;
-    color: #FFF1F2;
+    color: #fff4f5;
     padding: 2px 6px;
     border-radius: 6px;
     font-size: 16px;
@@ -1155,10 +1155,10 @@ body::before {
 
 /* Chegirma narxi - qizil */
 .current-price {
-    color: #760d0d;
+    color: #9a1414;
     font-weight: 700;
     font-size: 19px;
-    line-height: 1;
+    line-height: 1.1;
 }
 
 /* Asl narx - chizilgan, kulrang */
@@ -1166,8 +1166,8 @@ body::before {
     color: rgb(26, 24, 24); /* 90% qora rang */
     text-decoration: line-through;
     font-weight: 400;
-    font-size: 16px;
-    line-height: 1;
+    font-size: 15px;
+    line-height: 1.1;
 }
 
 /* === Modal === */
