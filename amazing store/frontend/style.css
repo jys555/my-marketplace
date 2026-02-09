@@ -741,8 +741,8 @@ body::before {
 .cart-item-name {
   font-size: 14px;
   line-height: 1.4; /* 14px * 1.4 = 19.6px */
-  font-weight: 500;
-  color: #000;
+  font-weight: 400;
+  color: #1c1b1b;
   margin-bottom: 6px;
   margin-top: 0; /* yuqorida margin yo'q */
   padding-top: 0; /* yuqorida padding yo'q */
@@ -757,7 +757,7 @@ body::before {
 .cart-item-price {
   font-size: 16px;
   font-weight: 600;
-  color: #000; /* qizil emas, neytral */
+  color: #c81d1d; 
   margin-bottom: auto; /* pastki qismga itarish */
   flex-shrink: 0;
 }
@@ -797,8 +797,8 @@ body::before {
 }
 
 .cart-item-actions .like-btn.liked svg {
-  fill: #F43F5E !important; /* rose-500 */
-  stroke: #F43F5E !important; /* rose-500 */
+  fill: #ff4949 !important; /* rose-500 */
+  stroke: #ff4949 !important; /* rose-500 */
 }
 
 /* X button - like buttondan o'ngda */
@@ -1142,7 +1142,7 @@ body::before {
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.2;
+    line-height: 1.3;
     min-height: 34px;
 }
 
@@ -1150,7 +1150,7 @@ body::before {
 .price-line {
     display: flex;
     flex-direction: column;
-    gap: 1.5;
+    gap: 1;
 }
 
 /* Chegirma narxi - qizil */
@@ -1158,16 +1158,16 @@ body::before {
     color: #c81d1d;
     font-weight: 700;
     font-size: 19px;
-    line-height: 1.2;
+    line-height: 1.3;
 }
 
 /* Asl narx - chizilgan, kulrang */
 .original-price {
-    color: #2b2929;
+    color: #464545;
     text-decoration: line-through;
     font-weight: 500;
     font-size: 15px;
-    line-height: 1.2;
+    line-height: 1.3;
 }
 
 /* === Modal === */
