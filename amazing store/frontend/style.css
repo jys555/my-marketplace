@@ -797,8 +797,8 @@ body::before {
 }
 
 .cart-item-actions .like-btn.liked svg {
-  fill: #ff3b5c !important;
-  stroke: #ff3b5c !important;
+  fill: #FF7F7F !important; /* Zarg'aldoq/alvon olovrang */
+  stroke: #FF7F7F !important; /* Zarg'aldoq/alvon olovrang */
 }
 
 /* X button - like buttondan o'ngda */
@@ -1048,7 +1048,7 @@ body::before {
 }
 
 .like-btn.liked svg {
-    fill: #ff3b5c;
+    fill: #FF7F7F; /* Zarg'aldoq/alvon olovrang */
     stroke: #fff; /* Oq border active holatda */
     stroke-width: 2; /* Border ko'rinishi uchun */
 }
@@ -1058,7 +1058,7 @@ body::before {
     position: absolute;
     bottom: 10px;
     left: 10px;
-    background-color: #ff3b5c;
+    background-color: #FF7F7F; /* Zarg'aldoq/alvon olovrang */
     color: rgb(255, 255, 255);
     padding: 5px 10px;
     border-radius: 8px;
@@ -1097,12 +1097,12 @@ body::before {
 .cart-badge {
     position: absolute;
     top: -6px;
-    right: -2px;
+    right: -1,5px; /* Kartochka borderi bilan mos tushishi uchun */
     min-width: 14px;
     height: 14px;
     padding: 0;
-    background: #ff3b5c;
-    color: #000; /* Qora rang */
+    background: #FF7F7F; /* Zarg'aldoq/alvon olovrang */
+    color: #fff; /* Oq rang */
     border-radius: 50%;
     font-size: 11px; /* Kattalashtirildi (9px -> 11px) */
     font-weight: 600;
@@ -1494,8 +1494,8 @@ html:has(.cart-modal-overlay.active),
   min-width: 14px;
   height: 14px;
   padding: 0;
-  background: #ff3b5c;
-  color: #000; /* Qora rang */
+  background: #FF7F7F; /* Zarg'aldoq/alvon olovrang */
+  color: #fff; /* Oq rang */
   border-radius: 50%;
   font-size: 11px; /* Kattalashtirildi (9px -> 11px) */
   font-weight: 600;
