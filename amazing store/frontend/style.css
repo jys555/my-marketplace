@@ -1049,7 +1049,7 @@ body::before {
 
 .like-btn.liked svg {
     fill: #ff4949; 
-    stroke: #fff; /* Oq border active holatda */
+    stroke: #FAFAFA; /* Oq border active holatda */
     stroke-width: 2; /* Border ko'rinishi uchun */
 }
 
@@ -1058,7 +1058,7 @@ body::before {
     position: absolute;
     bottom: 5px;
     left: 5px;
-    background-color: #ff4949;
+    background-color: #bb2d2d;
     color: #fff4f5;
     padding: 2px 6px;
     border-radius: 6px;
@@ -1080,7 +1080,7 @@ body::before {
     height: 48px;
     border-radius: 14px;
     background: rgb(109, 175, 247);
-    border: 2px solid #fff;
+    border: 2px solid #FAFAFA;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1107,7 +1107,7 @@ body::before {
     height: 14px;
     padding: 0;
     background: #ff4949; 
-    color: #FFFFFF; /* Oq rang */
+    color: #FAFAFA; /* Oq rang */
     border-radius: 50%;
     font-size: 11px; /* Kattalashtirildi (9px -> 11px) */
     font-weight: 600;
@@ -1155,7 +1155,7 @@ body::before {
 
 /* Chegirma narxi - qizil */
 .current-price {
-    color: #ff2525;
+    color: #b51b1b;
     font-weight: 700;
     font-size: 19px;
     line-height: 1.1;
@@ -1500,8 +1500,8 @@ html:has(.cart-modal-overlay.active),
   min-width: 14px;
   height: 14px;
   padding: 0;
-  background: #EF4444; /* red-500 */
-  color: #FFFFFF; /* Oq rang */
+  background: #ff4949;
+  color: #FAFAFA; /* Oq rang */
   border-radius: 50%;
   font-size: 11px; /* Kattalashtirildi (9px -> 11px) */
   font-weight: 600;
