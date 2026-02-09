@@ -12,6 +12,7 @@ const {
     integer,
     url,
     boolean,
+    array,
 } = require('../middleware/validate');
 const { NotFoundError, ConflictError } = require('../utils/errors');
 const logger = require('../utils/logger');
