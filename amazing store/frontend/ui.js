@@ -337,7 +337,7 @@ export function renderProducts(append = false) {
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                 </svg>
               </div>
-              ${hasSale ? `<div class="sale-badge">-${salePercentage}%</div>` : ''}
+              ${hasSale ? `<div class="sale-badge">-<span class="sale-number">${salePercentage}</span><span class="sale-percent">%</span></div>` : ''}
               <button class="add-to-cart-btn" data-id="${p.id}">
                 <i class="fas fa-shopping-cart"></i>
                 <span class="cart-badge" id="cart-badge-${p.id}"></span>
@@ -741,7 +741,7 @@ function getFavoritesContent() {
                               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                             </svg>
                           </div>
-                          ${hasSale ? `<div class="sale-badge">-${salePercentage}%</div>` : ''}
+                          ${hasSale ? `<div class="sale-badge">-<span class="sale-number">${salePercentage}</span><span class="sale-percent">%</span></div>` : ''}
                           <button class="add-to-cart-btn" data-id="${p.id}">
                             <i class="fas fa-shopping-cart"></i>
                             <span class="cart-badge" id="cart-badge-${p.id}"></span>

@@ -1056,14 +1056,29 @@ body::before {
 /* Chegirma badge - pastki chapda */
 .sale-badge {
     position: absolute;
-    bottom: 10px;
-    left: 10px;
+    bottom: 4px; /* Burchakka yaqinlashtirildi (10px -> 4px) */
+    left: 4px; /* Burchakka yaqinlashtirildi (10px -> 4px) */
     background-color: #e12850e7; /* rose-600 */
     color: #FFF1F2; /* rose-50 */
-    padding: 5px 10px;
-    border-radius: 8px;
-    font-size: 13px;
+    padding: 2px 6px; /* Kichraytirildi (5px 10px -> 2px 6px) */
+    border-radius: 6px; /* Kichraytirildi (8px -> 6px) */
     font-weight: 600;
+    line-height: 1.2;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 1px;
+}
+
+/* Raqam shrifti */
+.sale-badge .sale-number {
+    font-size: 13px; /* Yiriklashtirildi */
+    line-height: 1;
+}
+
+/* Foiz belgisi - raqamdan 2px yirikroq */
+.sale-badge .sale-percent {
+    font-size: 15px; /* 13px + 2px = 15px */
+    line-height: 1;
 }
 
 /* Savatga qo'shish tugmasi - pastki o'ng burchakda (namunadagidek) */
