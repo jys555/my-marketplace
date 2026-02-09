@@ -579,7 +579,7 @@ body::before {
   border-radius: 14px;
   overflow: hidden;
   flex-shrink: 0;
-  margin-right: 4px; /* Tovar rasmiga yanada yaqinlashtirildi */
+  margin-right: 12px; /* Matnlarni tovar rasmidan biroz uzoqlashtirildi */
   background: #f5f5f5;
   aspect-ratio: 3 / 4;
 }
@@ -616,7 +616,7 @@ body::before {
   font-weight: 400;
   color: #1c1b1b;
   margin: 0;
-  margin-right: 10px; /* Matn va checkbox label orasida label va kartochka borderi orasidagi masofaga teng oraliq */
+  margin-right: 12px; /* Checkbox label va text orasida mos joy */
   margin-bottom: 8px; /* Nomi va narxi orasidagi masofa oshirildi */
   padding: 0;
   display: -webkit-box;
@@ -633,7 +633,7 @@ body::before {
   right: 0; /* O'ng tomonda */
   transform: translateY(-50%); /* Vertikal markazlash */
   z-index: 10;
-  margin-right: -8px; /* Biroz chapga surildi */
+  margin-right: 0; /* Chapga surildi - checkbox label o'ng tomonda */
 }
 
 .cart-item-checkbox {
@@ -788,6 +788,7 @@ body::before {
   padding: 0 4px; /* Enliroq box uchun padding */
   overflow: hidden;
   margin-left: auto;
+  margin-right: -8px; /* Biroz chapga surildi */
   flex-shrink: 0;
 }
 
