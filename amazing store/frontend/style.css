@@ -633,7 +633,7 @@ body::before {
   right: 0; /* O'ng tomonda */
   transform: translateY(-50%); /* Vertikal markazlash */
   z-index: 10;
-  margin-right: -12; /* Chapga surildi - checkbox label o'ng tomonda */
+  margin-right: 8px; /* Chapga surildi - checkbox label chapga surildi */
 }
 
 .cart-item-checkbox {
@@ -788,7 +788,7 @@ body::before {
   padding: 0 4px; /* Enliroq box uchun padding */
   overflow: hidden;
   margin-left: auto;
-  margin-right: -8px; /* Biroz chapga surildi */
+  margin-right: 8px; /* Chapga surildi - counter chapga surildi */
   flex-shrink: 0;
 }
 
