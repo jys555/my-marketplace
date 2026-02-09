@@ -718,16 +718,22 @@ body::before {
   flex-shrink: 0;
 }
 
-/* Pastki boshqaruvlar: gorizontal qator - like, X, counter ketma-ketlikda */
+/* Pastki boshqaruvlar: gorizontal qator - like, X, counter ketma-ketlikda - tovar rasmi va kartochka borderi orasidagi masofaning markazida */
 .cart-item-actions {
   display: flex !important;
   flex-direction: row !important;
   align-items: center !important;
-  gap: 12px !important;
+  gap: 12px !important; /* Bir xil masofa - like va X buttonlariniki kabi */
   margin-top: auto;
   flex-shrink: 0;
   width: 100%;
-  justify-content: flex-start;
+  justify-content: center; /* Markazda joylashtirish - tovar rasmi va kartochka borderi orasidagi masofaning markazida */
+  /* Rasm o'ng cheti: 100px (rasm kengligi) + 12px (margin-right) = 112px */
+  /* Kartochka borderi: cart-items-list padding: 12px */
+  /* Masofa markazida joylashtirish uchun margin-left va margin-right teng bo'lishi kerak */
+  margin-left: calc((100px + 12px) / 2); /* Rasm o'ng chetidan boshlanadi */
+  margin-right: calc(12px / 2); /* Kartochka borderigacha */
+  width: calc(100% - (100px + 12px) - 12px); /* Rasm va border masofasini hisobga olgan holda */
 }
 
 /* Like button - pastki qatorda, X dan chapda */
@@ -778,7 +784,7 @@ body::before {
   transition: fill 0.15s ease, stroke 0.15s ease;
 }
 
-/* Counter - X buttondan o'ngda, o'ng borderga yaqin - aylana qirrali, enliroq box */
+/* Counter - X buttondan o'ngda - aylana qirrali, enliroq box */
 .cart-item-quantity {
   display: inline-flex !important;
   align-items: center !important;
@@ -787,8 +793,8 @@ body::before {
   height: 36px !important;
   padding: 0 4px; /* Enliroq box uchun padding */
   overflow: hidden;
-  margin-left: auto;
-  margin-right: 8px; /* Chapga surildi - counter chapga surildi */
+  margin-left: 0; /* Auto olib tashlandi - markazda joylashtirish uchun */
+  margin-right: 0; /* Margin olib tashlandi - markazda joylashtirish uchun */
   flex-shrink: 0;
 }
 
