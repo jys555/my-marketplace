@@ -48,30 +48,30 @@ function createInlineRunner() {
                 // Markazlashtirilgan migration'lar - barcha path'larni tekshirish
                 // Railway'da working directory har xil bo'lishi mumkin
                 const possibleMigrationDirs = [
-                    // 1. Local migrations (build vaqtida copy qilingan) - BIRINCHI O'RINDA
-                    // Bu Railway'da build script ishlaganda copy qilingan migration'lar
-                    path.join(__dirname, '../migrations/centralized'),
-                    path.join(process.cwd(), 'migrations/centralized'),
-                    '/app/migrations/centralized',
-                    // 2. Centralized migrations (monorepo root) - asosiy path
-                    // amazing store/backend/utils/migrate.js -> ../../../database/migrations
+                    // 1. Centralized migrations (monorepo root) - ASOSIY PATH
+                    // database/migrate.js va database/migrations - markazlashtirilgan joy
                     path.join(__dirname, '../../../database/migrations'),
                     path.join(__dirname, '../../../../database/migrations'),
                     path.join(__dirname, '../../../../../database/migrations'),
                     path.join(__dirname, '../../../../../../database/migrations'),
-                    // 3. process.cwd() orqali (Railway'da working directory)
+                    // 2. process.cwd() orqali (Railway'da working directory)
                     // Railway'da working directory: /app (amazing store/backend)
                     // Monorepo root: /app/../.. (agar Railway root directory = monorepo root bo'lsa)
                     path.join(process.cwd(), '../../database/migrations'),
                     path.join(process.cwd(), '../../../database/migrations'),
                     path.join(process.cwd(), '../../../../database/migrations'),
-                    // 4. Absolute path (Railway'da /app/database/migrations)
+                    // 3. Absolute path (Railway'da /app/database/migrations)
                     // Railway'da root directory = monorepo root bo'lsa
                     '/app/database/migrations',
                     '/app/../database/migrations',
-                    // 5. Railway'da root directory = amazing store/backend bo'lsa
+                    // 4. Railway'da root directory = amazing store/backend bo'lsa
                     // Working directory: /app, root: /app
                     path.join(process.cwd(), 'database/migrations'),
+                    // 5. Local migrations (build vaqtida copy qilingan) - FALLBACK
+                    // Bu Railway'da build script ishlaganda copy qilingan migration'lar
+                    path.join(__dirname, '../migrations/centralized'),
+                    path.join(process.cwd(), 'migrations/centralized'),
+                    '/app/migrations/centralized',
                     // 6. Fallback migrations
                     path.join(__dirname, '../migrations'),
                 ];
