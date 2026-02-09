@@ -405,9 +405,11 @@ body::before {
 .cart-page {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100%; /* height o'rniga min-height - scroll uchun */
   background: #F5F6F7; /* juda och kulrang fon */
   padding-bottom: calc(56px + 72px); /* navbar + bottom bar uchun joy */
+  overflow-y: auto; /* Scroll qo'shildi */
+  -webkit-overflow-scrolling: touch; /* iOS uchun smooth scroll */
 }
 
 /* Top header: "Savat" markazda, back YO'Q */
@@ -477,6 +479,7 @@ body::before {
   align-items: center;
   gap: 12px;
   margin-left: 12px;
+  position: relative; /* checkbox label pozitsiyasi uchun */
 }
 
 .cart-address-delete-btn {
@@ -493,11 +496,6 @@ body::before {
   width: 20px;
   height: 20px;
   stroke: #999;
-}
-
-/* Select-all checkbox: bir xil formatda va brend rangida */
-.cart-address-actions {
-  position: relative; /* checkbox label pozitsiyasi uchun */
 }
 
 .cart-address-checkbox {
@@ -539,6 +537,9 @@ body::before {
 .cart-items-container {
   padding: 0 12px;
   margin-bottom: 12px;
+  flex: 1; /* Qolgan joyni egallash uchun */
+  overflow-y: auto; /* Scroll qo'shildi */
+  -webkit-overflow-scrolling: touch; /* iOS uchun smooth scroll */
 }
 
 .cart-items-list {
@@ -546,6 +547,7 @@ body::before {
   border-radius: 24px;
   padding: 12px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  min-height: fit-content; /* Kontentga moslashadi */
 }
 
 .cart-item {
@@ -602,8 +604,8 @@ body::before {
   flex: 1;
   font-size: 14px;
   line-height: 1.4;
-  font-weight: 500;
-  color: #000;
+  font-weight: 400;
+  color: #1c1b1b;
   margin: 0;
   padding: 0;
   display: -webkit-box;
@@ -613,46 +615,7 @@ body::before {
   text-overflow: ellipsis;
 }
 
-/* Professional checkbox - cart pagedagi like buttonning o'rnida */
-.cart-item-checkbox-wrapper {
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 10;
-  flex-shrink: 0;
-}
-
-.cart-item-checkbox {
-  position: absolute;
-  opacity: 0;
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  margin: 0;
-}
-
-.cart-item-checkbox-label {
-  display: block;
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  border: 2px solid #ddd;
-  border-radius: 4px;
-  background: #fff;
-  transition: all 0.2s ease;
-  box-sizing: border-box;
-}
-
-.cart-item-checkbox:checked + .cart-item-checkbox-label {
-  background: rgb(109, 175, 247);
-  border-color: rgb(109, 175, 247);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23fff' d='M10 3L4.5 8.5 2 6l1.5-1.5L4.5 6l4-4z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 12px;
-}
-
-/* Professional checkbox - rasmning o'ng yuqori burchagida (like button o'rnida) */
+/* Checkbox - rasmning o'ng yuqori burchagida */
 .cart-item-image-wrapper {
   position: relative;
 }
@@ -694,7 +657,7 @@ body::before {
   background-size: 12px;
 }
 
-/* Professional select-all checkbox */
+/* Select-all checkbox */
 .cart-select-all-wrapper {
   position: relative;
 }
@@ -736,22 +699,6 @@ body::before {
   background-repeat: no-repeat;
   background-position: center;
   background-size: 12px;
-}
-
-.cart-item-name {
-  font-size: 14px;
-  line-height: 1.4; /* 14px * 1.4 = 19.6px */
-  font-weight: 400;
-  color: #1c1b1b;
-  margin-bottom: 6px;
-  margin-top: 0; /* yuqorida margin yo'q */
-  padding-top: 0; /* yuqorida padding yo'q */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex-shrink: 0;
 }
 
 .cart-item-price {
