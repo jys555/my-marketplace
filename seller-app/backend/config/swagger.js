@@ -65,10 +65,24 @@ const swaggerOptions = {
                             format: 'float',
                             description: 'Product sale price (optional)',
                         },
-                        image_url: {
-                            type: 'string',
-                            format: 'uri',
-                            description: 'Product image URL',
+                        images: {
+                            type: 'array',
+                            description: 'Product images array with white background info',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    url: {
+                                        type: 'string',
+                                        format: 'uri',
+                                        description: 'Image URL',
+                                    },
+                                    has_white_background: {
+                                        type: 'boolean',
+                                        description: 'Whether the image has white background',
+                                    },
+                                },
+                                required: ['url'],
+                            },
                         },
                         category_id: {
                             type: 'integer',

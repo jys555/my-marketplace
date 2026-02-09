@@ -325,13 +325,43 @@ export function renderProducts(append = false) {
         const hasSale = salePrice && price > salePrice && salePrice > 0;
         const salePercentage = hasSale ? Math.round(((price - salePrice) / price) * 100) : 0;
         const safeName = escapeHtml(p.name);
-        const safeImage = escapeHtml(p.image) || 'https://via.placeholder.com/150';
         const displayPrice = hasSale ? salePrice : price;
+
+        // Images array'ni tekshirish va formatlash
+        let images = [];
+        if (p.images && Array.isArray(p.images) && p.images.length > 0) {
+            images = p.images;
+        } else if (p.image) {
+            // Fallback: eski image field
+            images = [{ url: p.image, has_white_background: false }];
+        } else {
+            // Default placeholder
+            images = [{ url: 'https://via.placeholder.com/150', has_white_background: false }];
+        }
+
+        // Carousel HTML yaratish
+        const carouselImagesHTML = images.map((img, idx) => {
+            const safeUrl = escapeHtml(img.url || 'https://via.placeholder.com/150');
+            const whiteBgClass = img.has_white_background ? 'has-white-background' : '';
+            return `<img src="${safeUrl}" alt="${safeName}" class="${whiteBgClass}" data-index="${idx}">`;
+        }).join('');
+
+        // Indicators HTML yaratish
+        const indicatorsHTML = images.length > 1 
+            ? `<div class="carousel-indicators">${images.map((_, idx) => 
+                `<span class="carousel-indicator ${idx === 0 ? 'active' : ''}" data-index="${idx}"></span>`
+            ).join('')}</div>`
+            : '';
 
         return `
           <div class="product-card" data-id="${p.id}">
             <div class="product-card-image-wrapper">
-              <img src="${safeImage}" alt="${safeName}">
+              <div class="product-images-carousel" data-product-id="${p.id}">
+                <div class="carousel-track">
+                  ${carouselImagesHTML}
+                </div>
+                ${indicatorsHTML}
+              </div>
               <div class="like-btn ${isFavorite(p.id) ? 'liked' : ''}" data-id="${p.id}">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="${isFavorite(p.id) ? '#ff3b5c' : 'none'}" stroke="${isFavorite(p.id) ? '#ff3b5c' : '#999'}" stroke-width="2">
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -361,6 +391,9 @@ export function renderProducts(append = false) {
         // PERFORMANCE: To'liq almashtirish (yangi yuklash)
         productsContainer.innerHTML = productsHTML;
     }
+    
+    // Carousel funksiyalarini init qilish
+    initProductCarousels();
     
     // PERFORMANCE: Infinite scroll uchun loading indicator qo'shish
     if (pagination.hasMore) {
@@ -603,7 +636,15 @@ function getCartContent() {
 
     const itemsHtml = cartItems.map(item => {
         const safeName = escapeHtml(item.name_uz);
-        const safeImage = escapeHtml(item.image_url) || 'https://via.placeholder.com/100';
+        // Images array'ni tekshirish
+        let imageUrl = 'https://via.placeholder.com/100';
+        if (item.images && Array.isArray(item.images) && item.images.length > 0) {
+            imageUrl = item.images[0].url || imageUrl;
+        } else if (item.image_url) {
+            // Fallback: eski image_url
+            imageUrl = item.image_url;
+        }
+        const safeImage = escapeHtml(imageUrl);
         const price = item.sale_price || item.price;
         
         return `
@@ -875,6 +916,93 @@ export function updateNavbar(pageName) {
     updateCartBadges();
 }
 
+/**
+ * Product carousel funksiyalari - swipe va indicators
+ */
+function initProductCarousels() {
+    const carousels = document.querySelectorAll('.product-images-carousel');
+    
+    carousels.forEach(carousel => {
+        const track = carousel.querySelector('.carousel-track');
+        const indicators = carousel.querySelectorAll('.carousel-indicator');
+        const images = carousel.querySelectorAll('.carousel-track img');
+        
+        if (!track || images.length <= 1) return; // Faqat bir rasm bo'lsa carousel kerak emas
+        
+        let currentIndex = 0;
+        let startX = 0;
+        let currentX = 0;
+        let isDragging = false;
+        
+        // Swipe funksiyalari
+        const handleStart = (e) => {
+            isDragging = true;
+            startX = e.touches ? e.touches[0].clientX : e.clientX;
+            track.style.transition = 'none';
+        };
+        
+        const handleMove = (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            currentX = e.touches ? e.touches[0].clientX : e.clientX;
+            const diff = currentX - startX;
+            const translateX = -currentIndex * 100 + (diff / track.offsetWidth) * 100;
+            track.style.transform = `translateX(${translateX}%)`;
+        };
+        
+        const handleEnd = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            track.style.transition = 'transform 0.3s ease';
+            
+            const diff = currentX - startX;
+            const threshold = track.offsetWidth * 0.3; // 30% threshold
+            
+            if (Math.abs(diff) > threshold) {
+                if (diff > 0 && currentIndex > 0) {
+                    currentIndex--;
+                } else if (diff < 0 && currentIndex < images.length - 1) {
+                    currentIndex++;
+                }
+            }
+            
+            updateCarousel();
+        };
+        
+        const updateCarousel = () => {
+            track.style.transform = `translateX(-${currentIndex * 100}%)`;
+            
+            // Indicators yangilash
+            indicators.forEach((indicator, idx) => {
+                if (idx === currentIndex) {
+                    indicator.classList.add('active');
+                } else {
+                    indicator.classList.remove('active');
+                }
+            });
+        };
+        
+        // Event listener'lar
+        carousel.addEventListener('touchstart', handleStart, { passive: false });
+        carousel.addEventListener('touchmove', handleMove, { passive: false });
+        carousel.addEventListener('touchend', handleEnd);
+        
+        // Mouse events (desktop uchun)
+        carousel.addEventListener('mousedown', handleStart);
+        carousel.addEventListener('mousemove', handleMove);
+        carousel.addEventListener('mouseup', handleEnd);
+        carousel.addEventListener('mouseleave', handleEnd);
+        
+        // Indicators click
+        indicators.forEach((indicator, idx) => {
+            indicator.addEventListener('click', () => {
+                currentIndex = idx;
+                updateCarousel();
+            });
+        });
+    });
+}
+
 export function initCarousel() {
     const carousel = document.getElementById('carousel');
     if (!carousel) return;
@@ -947,7 +1075,15 @@ export function openCartModal(productId) {
         return;
     }
     
-    const safeImage = escapeHtml(product.image) || 'https://via.placeholder.com/150';
+    // Images array'ni tekshirish
+    let imageUrl = 'https://via.placeholder.com/150';
+    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+        imageUrl = product.images[0].url || imageUrl;
+    } else if (product.image) {
+        // Fallback: eski image field
+        imageUrl = product.image;
+    }
+    const safeImage = escapeHtml(imageUrl);
     const safeName = escapeHtml(product.name);
     const displayPrice = product.sale_price && product.price > product.sale_price 
         ? product.sale_price 

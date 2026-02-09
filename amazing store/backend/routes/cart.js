@@ -30,7 +30,7 @@ router.get('/', authenticate, async (req, res, next) => {
                 p.name_ru,
                 p.price,
                 p.sale_price,
-                p.image_url,
+                COALESCE(p.images, '[]'::jsonb) AS images,
                 p.sku
             FROM cart_items ci
             JOIN products p ON ci.product_id = p.id

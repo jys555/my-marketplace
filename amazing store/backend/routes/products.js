@@ -163,7 +163,7 @@ router.get('/', async (req, res, next) => {
                 END as description,
                 p.price, 
                 p.sale_price, 
-                p.image_url AS image,
+                COALESCE(p.images, '[]'::jsonb) AS images,
                 p.category_id,
                 p.sku,
                 COALESCE(i.quantity, 0) AS stock_quantity,

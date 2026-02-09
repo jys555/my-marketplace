@@ -126,7 +126,7 @@ router.get('/', async (req, res) => {
             SELECT 
                 p.id, p.name_uz, p.name_ru, p.description_uz, p.description_ru,
                 p.price, p.sale_price, p.cost_price, p.service_fee, 
-                p.image_url, p.category_id, p.is_active,
+                COALESCE(p.images, '[]'::jsonb) AS images, p.category_id, p.is_active,
                 p.sku,
                 c.name_uz as category_name_uz, c.name_ru as category_name_ru,
                 p.created_at
@@ -359,7 +359,7 @@ router.post(
         sale_price: optional(positive),
         cost_price: optional(positive),
         service_fee: optional(positive),
-        image_url: optional(url),
+        images: optional(array),
         is_active: optional(boolean),
     }),
     async (req, res, next) => {
@@ -376,7 +376,7 @@ router.post(
                 sale_price,
                 cost_price,
                 service_fee,
-                image_url,
+                images,
                 is_active = true,
             } = req.body;
 
@@ -421,11 +421,29 @@ router.post(
                     .json({ error: 'Service fee majburiy (0 yoki undan yuqori)' });
             }
 
+            // Validate images array format
+            let imagesArray = [];
+            if (images) {
+                if (!Array.isArray(images)) {
+                    return res.status(400).json({ error: 'Images must be an array' });
+                }
+                // Validate each image object
+                for (const img of images) {
+                    if (!img.url || typeof img.url !== 'string') {
+                        return res.status(400).json({ error: 'Each image must have a valid url' });
+                    }
+                    if (img.has_white_background === undefined) {
+                        img.has_white_background = false; // Default value
+                    }
+                }
+                imagesArray = images;
+            }
+
             // Insert product (marketplace ma'lumotlari alohida table'ga yoziladi)
             const { rows } = await pool.query(
                 `INSERT INTO products (
                     sku, barcode, name_uz, name_ru, description_uz, description_ru,
-                    category_id, price, sale_price, cost_price, service_fee, image_url, is_active
+                    category_id, price, sale_price, cost_price, service_fee, images, is_active
                 )
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                 RETURNING *`,
@@ -441,7 +459,7 @@ router.post(
                     sale_price || null,
                     cost_price,
                     service_fee,
-                    image_url || null,
+                    imagesArray.length > 0 ? JSON.stringify(imagesArray) : '[]',
                     is_active,
                 ]
             );
@@ -567,7 +585,7 @@ router.put(
         description_ru: optional(string),
         price: optional(positive),
         sale_price: optional(positive),
-        image_url: optional(url),
+        images: optional(array),
         category_id: optional(integer),
         sku: optional(string),
         is_active: optional(boolean),
@@ -582,7 +600,7 @@ router.put(
                 description_ru,
                 price,
                 sale_price,
-                image_url,
+                images,
                 category_id,
                 sku,
                 is_active,
@@ -599,6 +617,24 @@ router.put(
                 }
             }
 
+            // Validate images array format if provided
+            let imagesArray = null;
+            if (images !== undefined) {
+                if (!Array.isArray(images)) {
+                    return res.status(400).json({ error: 'Images must be an array' });
+                }
+                // Validate each image object
+                for (const img of images) {
+                    if (!img.url || typeof img.url !== 'string') {
+                        return res.status(400).json({ error: 'Each image must have a valid url' });
+                    }
+                    if (img.has_white_background === undefined) {
+                        img.has_white_background = false; // Default value
+                    }
+                }
+                imagesArray = images;
+            }
+
             const { rows } = await pool.query(
                 `
             UPDATE products
@@ -609,11 +645,11 @@ router.put(
                 description_ru = COALESCE($4, description_ru),
                 price = COALESCE($5, price),
                 sale_price = COALESCE($6, sale_price),
-                image_url = COALESCE($7, image_url),
+                images = COALESCE($7::jsonb, images),
                 category_id = COALESCE($8, category_id),
                 sku = COALESCE($9, sku)
-            WHERE id = $10
-            RETURNING id, name_uz, name_ru, description_uz, description_ru, price, sale_price, image_url, category_id, is_active, sku, created_at
+            WHERE id = $10 OR sku = $10
+            RETURNING id, name_uz, name_ru, description_uz, description_ru, price, sale_price, images, category_id, is_active, sku, created_at
         `,
                 [
                     name_uz,
@@ -622,7 +658,7 @@ router.put(
                     description_ru,
                     price,
                     sale_price,
-                    image_url,
+                    imagesArray ? JSON.stringify(imagesArray) : null,
                     category_id,
                     sku,
                     id,
