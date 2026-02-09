@@ -616,7 +616,7 @@ body::before {
   font-weight: 400;
   color: #1c1b1b;
   margin: 0;
-  margin-right: 12px; /* Checkbox label va text orasida mos joy */
+  margin-right: 8px; /* Checkbox label va text orasida mos joy */
   margin-bottom: 8px; /* Nomi va narxi orasidagi masofa oshirildi */
   padding: 0;
   display: -webkit-box;
@@ -633,7 +633,7 @@ body::before {
   right: 0; /* O'ng tomonda */
   transform: translateY(-50%); /* Vertikal markazlash */
   z-index: 10;
-  margin-right: 0; /* Chapga surildi - checkbox label o'ng tomonda */
+  margin-right: -12; /* Chapga surildi - checkbox label o'ng tomonda */
 }
 
 .cart-item-checkbox {
