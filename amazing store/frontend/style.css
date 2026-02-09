@@ -1071,13 +1071,13 @@ body::before {
 
 /* Raqam shrifti */
 .sale-badge .sale-number {
-    font-size: 13px; /* Yiriklashtirildi */
+    font-size: 16px; /* Yiriklashtirildi */
     line-height: 1;
 }
 
 /* Foiz belgisi - raqamdan 2px yirikroq */
 .sale-badge .sale-percent {
-    font-size: 15px; /* 13px + 2px = 15px */
+    font-size: 20px; /* 13px + 2px = 15px */
     line-height: 1;
 }
 
