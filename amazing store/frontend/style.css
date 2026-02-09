@@ -626,6 +626,7 @@ body::before {
   text-overflow: ellipsis;
 }
 
+
 /* Checkbox - name va kartochka borderi orasidagi masofaning o'rtasida */
 .cart-item-checkbox-wrapper {
   position: absolute;
