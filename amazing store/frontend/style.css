@@ -17,7 +17,7 @@ html {
 }
 
 body {
-  background: #fff;
+  background: #FAFAFA; /* Yengilroq oq, ko'zni og'ritmaydigan */
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
@@ -82,7 +82,7 @@ body::before {
 }
 
 #main {
-  background: #fff;
+  background: #FAFAFA; /* Yengilroq oq, ko'zni og'ritmaydigan */
   border-radius: 25px 25px 0 0;
   height: calc(100vh - 29px - 56px - var(--total-safe-area-bottom, 34px));
   height: calc(100dvh - 29px - 56px - var(--total-safe-area-bottom, 34px));
@@ -797,8 +797,8 @@ body::before {
 }
 
 .cart-item-actions .like-btn.liked svg {
-  fill: #FF7F7F !important; /* Zarg'aldoq/alvon olovrang */
-  stroke: #FF7F7F !important; /* Zarg'aldoq/alvon olovrang */
+  fill: #F43F5E !important; /* rose-500 */
+  stroke: #F43F5E !important; /* rose-500 */
 }
 
 /* X button - like buttondan o'ngda */
@@ -1048,7 +1048,7 @@ body::before {
 }
 
 .like-btn.liked svg {
-    fill: #FF7F7F; /* Zarg'aldoq/alvon olovrang */
+    fill: #F43F5E; /* rose-500 */
     stroke: #fff; /* Oq border active holatda */
     stroke-width: 2; /* Border ko'rinishi uchun */
 }
@@ -1058,8 +1058,8 @@ body::before {
     position: absolute;
     bottom: 10px;
     left: 10px;
-    background-color: #FF7F7F; /* Zarg'aldoq/alvon olovrang */
-    color: rgb(255, 255, 255);
+    background-color: #FFF1F2; /* rose-50 */
+    color: #E11D48; /* rose-600 */
     padding: 5px 10px;
     border-radius: 8px;
     font-size: 13px;
@@ -1101,8 +1101,8 @@ body::before {
     min-width: 14px;
     height: 14px;
     padding: 0;
-    background: #FF7F7F; /* Zarg'aldoq/alvon olovrang */
-    color: #fff; /* Oq rang */
+    background: #EF4444; /* red-500 */
+    color: #FFFFFF; /* Oq rang */
     border-radius: 50%;
     font-size: 11px; /* Kattalashtirildi (9px -> 11px) */
     font-weight: 600;
@@ -1494,8 +1494,8 @@ html:has(.cart-modal-overlay.active),
   min-width: 14px;
   height: 14px;
   padding: 0;
-  background: #FF7F7F; /* Zarg'aldoq/alvon olovrang */
-  color: #fff; /* Oq rang */
+  background: #EF4444; /* red-500 */
+  color: #FFFFFF; /* Oq rang */
   border-radius: 50%;
   font-size: 11px; /* Kattalashtirildi (9px -> 11px) */
   font-weight: 600;
