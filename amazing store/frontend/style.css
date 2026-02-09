@@ -105,6 +105,16 @@ body::before {
 
 .page-content {
     padding-bottom: 20px;
+    overflow-y: auto; /* Scroll qo'shildi */
+    -webkit-overflow-scrolling: touch; /* iOS uchun smooth scroll */
+    flex: 1; /* Qolgan joyni egallash uchun */
+    min-height: 0; /* Flex container ichida scroll uchun zarur */
+}
+
+.favorites-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* To'liq balandlik */
 }
 
 .favorites-page .products-grid {
@@ -569,7 +579,7 @@ body::before {
   border-radius: 14px;
   overflow: hidden;
   flex-shrink: 0;
-  margin-right: 8px; /* Nomi rasmga biroz yaqinroq bo'lishi uchun */
+  margin-right: 4px; /* Tovar rasmiga yanada yaqinlashtirildi */
   background: #f5f5f5;
   aspect-ratio: 3 / 4;
 }
@@ -606,7 +616,7 @@ body::before {
   font-weight: 400;
   color: #1c1b1b;
   margin: 0;
-  margin-right: 2px; /* Kartochka borderi bilan masofa 2pxga oshirildi */
+  margin-right: 10px; /* Matn va checkbox label orasida label va kartochka borderi orasidagi masofaga teng oraliq */
   padding: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -622,7 +632,7 @@ body::before {
   right: 0; /* O'ng tomonda */
   transform: translateY(-50%); /* Vertikal markazlash */
   z-index: 10;
-  margin-right: -11px; /* Name va border orasidagi masofaning o'rtasida (2px masofaning o'rtasi = 1px) */
+  margin-right: -10px; /* Label va kartochka borderi orasidagi masofa (10px) */
 }
 
 .cart-item-checkbox {
@@ -767,21 +777,23 @@ body::before {
   transition: fill 0.15s ease, stroke 0.15s ease;
 }
 
-/* Counter - X buttondan o'ngda, o'ng borderga yaqin */
+/* Counter - X buttondan o'ngda, o'ng borderga yaqin - rasmdagidek oddiy ko'rinish */
 .cart-item-quantity {
-  display: flex !important;
+  display: inline-flex !important;
   align-items: center !important;
-  gap: 4px;
+  border-radius: 999px;
+  background: #f5f5f7;
+  height: 36px !important;
+  overflow: hidden;
   margin-left: auto;
   flex-shrink: 0;
 }
 
 .cart-item-qty-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  border: 1px solid #e0e0e0;
-  background: #fff;
+  border: none;
+  background: transparent;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -789,15 +801,11 @@ body::before {
   font-weight: 500;
   color: #000;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
+  transition: background 0.15s ease;
 }
 
 .cart-item-qty-btn:hover {
-  background: #f5f5f5;
-}
-
-.cart-item-qty-btn:active {
-  transform: scale(0.94);
+  background: rgba(0,0,0,0.05);
 }
 
 .cart-item-qty-btn[disabled] {
@@ -806,7 +814,7 @@ body::before {
 }
 
 .cart-item-qty-value {
-  min-width: 26px;
+  min-width: 28px;
   text-align: center;
   font-size: 15px;
   font-weight: 600;
