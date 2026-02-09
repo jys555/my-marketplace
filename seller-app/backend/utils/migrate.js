@@ -128,31 +128,37 @@ function createInlineRunner() {
                     // ⚠️ XAVFSIZLIK: RESET migration'larini production'da skip qilish
                     // 000_RESET_DATABASE.sql kabi migration'lar faqat development'da ishlatilishi kerak
                     // Production'da barcha ma'lumotlarni o'chirib yuboradi!
-                    const isResetMigration = file.toLowerCase().includes('reset') || 
-                                             file.toLowerCase().includes('000_reset') ||
-                                             (version === 0 && file.toLowerCase().includes('reset'));
-                    
+                    const isResetMigration =
+                        file.toLowerCase().includes('reset') ||
+                        file.toLowerCase().includes('000_reset') ||
+                        (version === 0 && file.toLowerCase().includes('reset'));
+
                     if (isResetMigration) {
                         // Production environment'da RESET migration'ni skip qilish
-                        const isProduction = process.env.NODE_ENV === 'production' || 
-                                             process.env.RAILWAY_ENVIRONMENT === 'production' ||
-                                             process.env.ENVIRONMENT === 'production';
-                        
+                        const isProduction =
+                            process.env.NODE_ENV === 'production' ||
+                            process.env.RAILWAY_ENVIRONMENT === 'production' ||
+                            process.env.ENVIRONMENT === 'production';
+
                         if (isProduction) {
                             console.warn(`⚠️  SKIPPING RESET migration in production: ${file}`);
-                            console.warn(`⚠️  This migration would DROP ALL TABLES and DELETE ALL DATA!`);
+                            console.warn(
+                                `⚠️  This migration would DROP ALL TABLES and DELETE ALL DATA!`
+                            );
                             skipped++;
                             continue;
                         }
-                        
+
                         // Development'da ham ogohlantirish
                         console.warn(`⚠️  WARNING: Running RESET migration: ${file}`);
                         console.warn(`⚠️  This will DROP ALL TABLES and DELETE ALL DATA!`);
-                        
+
                         // Development'da ham explicit ruxsat kerak
                         const allowResetInDev = process.env.ALLOW_RESET_MIGRATION === 'true';
                         if (!allowResetInDev) {
-                            console.warn(`⚠️  SKIPPING RESET migration. Set ALLOW_RESET_MIGRATION=true to allow.`);
+                            console.warn(
+                                `⚠️  SKIPPING RESET migration. Set ALLOW_RESET_MIGRATION=true to allow.`
+                            );
                             skipped++;
                             continue;
                         }

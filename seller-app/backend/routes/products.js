@@ -137,15 +137,15 @@ router.get('/', async (req, res) => {
             ORDER BY p.id, p.created_at DESC
             LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
         `;
-        
+
         logger.info('📦 Products query:', { query, params });
 
         params.push(validLimit, validOffset);
 
         const { rows } = await pool.query(query, params);
-        
-        logger.info('📦 Products query result:', { 
-            rowsCount: rows.length
+
+        logger.info('📦 Products query result:', {
+            rowsCount: rows.length,
         });
 
         // ID'ni yashirish (frontend uchun SKU asosiy identifier)
