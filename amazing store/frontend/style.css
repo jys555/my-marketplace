@@ -1048,7 +1048,7 @@ body::before {
 }
 
 .like-btn.liked svg {
-    fill: #F43F5E; /* rose-500 */
+    fill: #ff4949; 
     stroke: #fff; /* Oq border active holatda */
     stroke-width: 2; /* Border ko'rinishi uchun */
 }
@@ -1061,8 +1061,8 @@ body::before {
     background-color: #ff4949;
     color: #FFF1F2;
     padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 13px;
+    border-radius: 6px;
+    font-size: 16px;
     font-weight: 600;
     line-height: 0.8;
     display: inline-flex;
@@ -1106,7 +1106,7 @@ body::before {
     min-width: 14px;
     height: 14px;
     padding: 0;
-    background: #EF4444; /* red-500 */
+    background: #ff4949; 
     color: #FFFFFF; /* Oq rang */
     border-radius: 50%;
     font-size: 11px; /* Kattalashtirildi (9px -> 11px) */
@@ -1132,7 +1132,7 @@ body::before {
 }
 
 .product-card-info h4 {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 400;
     color: #000;
     margin-bottom: 0;
@@ -1155,18 +1155,19 @@ body::before {
 
 /* Chegirma narxi - qizil */
 .current-price {
-    color: #e31837;
+    color: #760d0d;
     font-weight: 700;
-    font-size: 17px;
-    line-height: 1.3;
+    font-size: 19px;
+    line-height: 1;
 }
 
 /* Asl narx - chizilgan, kulrang */
 .original-price {
-    color: rgba(0, 0, 0, 0.9); /* 90% qora rang */
+    color: rgb(26, 24, 24); /* 90% qora rang */
     text-decoration: line-through;
-    font-size: 14px;
-    line-height: 1.3;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1;
 }
 
 /* === Modal === */
