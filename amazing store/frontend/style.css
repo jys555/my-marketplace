@@ -1150,7 +1150,7 @@ body::before {
 .price-line {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    gap: 1;
 }
 
 /* Chegirma narxi - qizil */
@@ -1163,9 +1163,9 @@ body::before {
 
 /* Asl narx - chizilgan, kulrang */
 .original-price {
-    color: 1c1b1b;
+    color: #1c1b1b;
     text-decoration: line-through;
-    font-weight: 400;
+    font-weight: 500;
     font-size: 15px;
     line-height: 1.3;
 }
