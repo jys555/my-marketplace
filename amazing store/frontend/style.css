@@ -617,6 +617,7 @@ body::before {
   color: #1c1b1b;
   margin: 0;
   margin-right: 10px; /* Matn va checkbox label orasida label va kartochka borderi orasidagi masofaga teng oraliq */
+  margin-bottom: 8px; /* Nomi va narxi orasidagi masofa oshirildi */
   padding: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -632,7 +633,7 @@ body::before {
   right: 0; /* O'ng tomonda */
   transform: translateY(-50%); /* Vertikal markazlash */
   z-index: 10;
-  margin-right: -10px; /* Label va kartochka borderi orasidagi masofa (10px) */
+  margin-right: -8px; /* Biroz chapga surildi */
 }
 
 .cart-item-checkbox {
@@ -777,13 +778,14 @@ body::before {
   transition: fill 0.15s ease, stroke 0.15s ease;
 }
 
-/* Counter - X buttondan o'ngda, o'ng borderga yaqin - rasmdagidek oddiy ko'rinish */
+/* Counter - X buttondan o'ngda, o'ng borderga yaqin - aylana qirrali, enliroq box */
 .cart-item-quantity {
   display: inline-flex !important;
   align-items: center !important;
-  border-radius: 999px;
+  border-radius: 8px; /* Aylana qirrali (999px o'rniga) */
   background: #f5f5f7;
   height: 36px !important;
+  padding: 0 4px; /* Enliroq box uchun padding */
   overflow: hidden;
   margin-left: auto;
   flex-shrink: 0;
@@ -1090,7 +1092,7 @@ body::before {
     font-size: 14px;
     font-weight: 400;
     color: #1c1b1b;
-    margin-bottom: 0;
+    margin-bottom: 8px; /* Nomi va narxi orasidagi masofa oshirildi */
     /* 2 qatordan keyin ko'p nuqta */
     display: -webkit-box;
     -webkit-line-clamp: 2;
