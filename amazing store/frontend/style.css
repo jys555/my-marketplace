@@ -1056,9 +1056,9 @@ body::before {
 /* Chegirma badge - pastki chapda */
 .sale-badge {
     position: absolute;
-    bottom: 4px; /* Burchakka yaqinlashtirildi (10px -> 4px) */
-    left: 4px; /* Burchakka yaqinlashtirildi (10px -> 4px) */
-    background-color: #e12850e7; /* rose-600 */
+    bottom: 5px; /* Burchakka yaqinlashtirildi (10px -> 5px) */
+    left: 5px; /* Burchakka yaqinlashtirildi (10px -> 5px) */
+    background-color: #f41747; /* rose-600 */
     color: #FFF1F2; /* rose-50 */
     padding: 2px 6px; /* Kichraytirildi (5px 10px -> 2px 6px) */
     border-radius: 6px; /* Kichraytirildi (8px -> 6px) */
@@ -1066,7 +1066,7 @@ body::before {
     line-height: 1.2;
     display: inline-flex;
     align-items: baseline;
-    gap: 1px;
+    gap: 0.1px;
 }
 
 /* Raqam shrifti */
