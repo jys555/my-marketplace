@@ -1132,9 +1132,9 @@ body::before {
 }
 
 .product-card-info h4 {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 400;
-    color: #000;
+    color: #1c1b1b;
     margin-bottom: 0;
     /* 2 qatordan keyin ko'p nuqta */
     display: -webkit-box;
@@ -1142,7 +1142,7 @@ body::before {
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1;
+    line-height: 1.1;
     min-height: 34px;
 }
 
@@ -1163,7 +1163,7 @@ body::before {
 
 /* Asl narx - chizilgan, kulrang */
 .original-price {
-    color: rgb(26, 24, 24); /* 90% qora rang */
+    color: rgb(34, 32, 32); /* 90% qora rang */
     text-decoration: line-through;
     font-weight: 400;
     font-size: 15px;

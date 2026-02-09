@@ -196,6 +196,30 @@ function attachPhoneFormatting() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Zoomni butunlay o‘chirish (pinch, ctrl + scroll va boshqalar)
+    try {
+        // Mobil pinch-zoom
+        document.addEventListener('touchmove', (e) => {
+            if (e.scale && e.scale !== 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Desktop ctrl + wheel zoom
+        window.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // iOS gesture zoom
+        window.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+        window.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+        window.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+    } catch (err) {
+        console.warn('Zoom disable handlers error:', err);
+    }
+
     if (!WebApp.initData) {
         ui.showLoading(ui.t('error_telegram'));
         console.error("Telegram.WebApp.initData is not available.");
