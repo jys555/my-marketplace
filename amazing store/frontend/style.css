@@ -1058,8 +1058,8 @@ body::before {
     position: absolute;
     bottom: 10px;
     left: 10px;
-    background-color: #FFF1F2; /* rose-50 */
-    color: #E11D48; /* rose-600 */
+    background-color: #E11D48; /* rose-600 */
+    color: #FFF1F2; /* rose-50 */
     padding: 5px 10px;
     border-radius: 8px;
     font-size: 13px;
@@ -1097,7 +1097,7 @@ body::before {
 .cart-badge {
     position: absolute;
     top: -6px;
-    right: -1,5px; /* Kartochka borderi bilan mos tushishi uchun */
+    right: -1.5px; /* Kartochka borderi bilan mos tushishi uchun */
     min-width: 14px;
     height: 14px;
     padding: 0;
