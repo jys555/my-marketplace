@@ -523,6 +523,7 @@ body::before {
     /* 2 qatordan keyin ko'p nuqta */
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -669,6 +670,7 @@ body::before {
     margin: 0 0 4px 0;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -1855,5 +1857,4 @@ body::before {
     .cart-item-price {
         font-size: 16px;
     }
-} 
- 
+}
