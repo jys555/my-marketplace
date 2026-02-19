@@ -181,6 +181,69 @@ async function startServer() {
         await initializeDatabase();
         logger.info('✅ Database initialized successfully');
 
+        // CRITICAL FIX: Ensure products.images column exists (production DB drift fix)
+        // Some environments may have migration tracking out-of-sync with actual schema.
+        logger.info('🔄 Verifying products.images column...');
+        try {
+            const imagesColumnCheck = await pool.query(
+                `
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = 'products'
+                  AND column_name = 'images'
+                LIMIT 1
+                `
+            );
+
+            if (imagesColumnCheck.rows.length === 0) {
+                logger.warn('⚠️  products.images column missing, applying schema fix now...');
+
+                // 1) Add images column
+                await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS images JSONB DEFAULT '[]'`);
+                logger.info('✅ products.images column added');
+
+                // 2) Best-effort migrate from image_url if that legacy column exists
+                const legacyImageUrlCheck = await pool.query(
+                    `
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'products'
+                      AND column_name = 'image_url'
+                    LIMIT 1
+                    `
+                );
+
+                if (legacyImageUrlCheck.rows.length > 0) {
+                    await pool.query(`
+                        UPDATE products
+                        SET images = jsonb_build_array(
+                            jsonb_build_object(
+                                'url', image_url,
+                                'has_white_background', false
+                            )
+                        )
+                        WHERE (images IS NULL OR images = '[]'::jsonb)
+                          AND image_url IS NOT NULL
+                          AND image_url <> ''
+                    `);
+                    logger.info('✅ Migrated legacy products.image_url into products.images');
+
+                    // Drop legacy column to keep schema clean
+                    await pool.query(`ALTER TABLE products DROP COLUMN IF EXISTS image_url`);
+                    logger.info('✅ Dropped legacy products.image_url column');
+                } else {
+                    logger.info('ℹ️  Legacy products.image_url column not present, skipping migration step');
+                }
+            } else {
+                logger.info('✅ products.images column exists');
+            }
+        } catch (e) {
+            logger.error('❌ Failed verifying/applying products.images schema fix:', e);
+            throw e;
+        }
+
         // CRITICAL FIX: Ensure cart_items table exists and has required columns
         // This is a workaround for migration tracking bug
         logger.info('🔄 Verifying cart_items table...');
