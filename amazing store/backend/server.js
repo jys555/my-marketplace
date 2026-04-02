@@ -19,6 +19,7 @@ console.log('NODE_ENV:', process.env.NODE_ENV || 'development');
 console.log('Step 6: Loading database utilities...');
 const { initializeDatabase } = require('./utils/initDb');
 const botService = require('./services/bot');
+const multiBotRegistry = require('./services/multiBot');
 console.log('Step 7: Database utilities loaded');
 
 console.log('Step 8: Loading logger...');
@@ -36,6 +37,7 @@ const userRoutes = require('./routes/users');
 const orderRoutes = require('./routes/orders');
 const categoryRoutes = require('./routes/categories');
 const cartRoutes = require('./routes/cart');
+const sellerAdminRoutes = require('./routes/seller');
 const healthRoutes = require('./routes/health');
 const metricsRoutes = require('./routes/metrics');
 const errorHandler = require('./middleware/errorHandler');
@@ -100,21 +102,48 @@ app.use(
     })
 );
 
-// Webhook endpoint (agar webhook ishlatilsa) - express.json() dan oldin
-app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+// Webhook endpoints (express.json() dan oldin) — scalable multi-bot scheme
+// 1) Marketplace bot webhook
+app.post('/webhook/marketplace', express.raw({ type: 'application/json' }), async (req, res) => {
     if (!botService.bot) {
-        // Bot hali initialize bo'lmagan yoki disabled
-        return res.sendStatus(200); // Telegram'ga 200 qaytarish kerak
+        return res.sendStatus(200);
     }
-
     try {
-        // express.raw() Buffer qaytaradi, Grammy JSON object kutadi
         const update = JSON.parse(req.body.toString());
         await botService.bot.handleUpdate(update);
         res.sendStatus(200);
     } catch (error) {
-        logger.error('Webhook error:', error);
-        res.sendStatus(200); // Telegram'ga 200 qaytarish kerak
+        logger.error('Marketplace webhook error:', error);
+        res.sendStatus(200);
+    }
+});
+
+// 2) Seller bot webhook — identifies seller via URL segment (future: route to per-seller bot instance)
+app.post('/webhook/seller/:sellerId', express.raw({ type: 'application/json' }), async (req, res) => {
+    const { sellerId } = req.params;
+    // For now we just acknowledge; dynamic per-seller bot routing will be wired with a registry.
+    try {
+        // Optionally log or enqueue for later processing
+        logger.info(`Received seller webhook for seller_id=${sellerId}`);
+        res.sendStatus(200);
+    } catch (error) {
+        logger.error(`Seller webhook error (seller_id=${sellerId}):`, error);
+        res.sendStatus(200);
+    }
+});
+
+// 3) Backward-compat single webhook (kept for existing deployments)
+app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    if (!botService.bot) {
+        return res.sendStatus(200);
+    }
+    try {
+        const update = JSON.parse(req.body.toString());
+        await botService.bot.handleUpdate(update);
+        res.sendStatus(200);
+    } catch (error) {
+        logger.error('Legacy webhook error:', error);
+        res.sendStatus(200);
     }
 });
 
@@ -148,6 +177,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/admin/sellers', sellerAdminRoutes);
 
 // Frontend marshrutizatsiyasi (Amazing Store)
 app.get('*', (req, res) => {
@@ -343,6 +373,11 @@ async function startServer() {
         logger.info('🤖 Initializing Telegram bot...');
         await botService.initialize();
         logger.info('✅ Bot initialization completed');
+
+        // Multi-seller bots (webhook-based)
+        logger.info('🤖 Initializing multi-seller bots (webhooks)...');
+        await multiBotRegistry.startAll();
+        logger.info('✅ Multi-seller bots initialization completed');
 
         // Server ishga tushirish
         app.listen(PORT, () => {
