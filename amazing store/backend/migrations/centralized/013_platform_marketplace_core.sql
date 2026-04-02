@@ -4,6 +4,17 @@
 
 BEGIN;
 
+-- Core sellers table (platform-owned bots and contact info)
+CREATE TABLE IF NOT EXISTS sellers (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    bot_token TEXT UNIQUE,
+    bot_username TEXT UNIQUE,
+    telegram_chat_id TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Global customers table (platform identity by Telegram user id)
 CREATE TABLE IF NOT EXISTS customers (
     id BIGSERIAL PRIMARY KEY,
